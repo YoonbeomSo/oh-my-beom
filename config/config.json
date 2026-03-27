@@ -1,0 +1,62 @@
+{
+  "issueKey": {
+    "pattern": "^[A-Z]+-[0-9]+$",
+    "description": "대문자 영문 1자 이상 + '-' + 숫자 1자 이상 (e.g., JIRA-123, AFS-6)"
+  },
+  "sensitiveFilePatterns": [
+    ".env*",
+    "*.key",
+    "*.pem",
+    "credentials*",
+    "*secret*",
+    "*.p12",
+    "*.jks"
+  ],
+  "buildArtifactPatterns": [
+    "build/",
+    ".gradle/",
+    "node_modules/",
+    "dist/",
+    "__pycache__/",
+    ".venv/",
+    "target/",
+    ".next/",
+    "out/"
+  ],
+  "projectTypes": {
+    "kotlin-java": {
+      "detect": ["build.gradle.kts", "build.gradle"],
+      "build": "./gradlew build",
+      "lint": "./gradlew ktlintFormat",
+      "test": "./gradlew test"
+    },
+    "nodejs": {
+      "detect": ["package.json"],
+      "build": "npm run build | bun run build",
+      "lint": "npm run lint -- --fix | bun run lint --fix",
+      "test": "npm test | bun test",
+      "runtimeDetect": "which bun -> bun, otherwise npm"
+    },
+    "python": {
+      "detect": ["pyproject.toml", "setup.py"],
+      "build": "python -m build",
+      "lint": "ruff format . && ruff check --fix .",
+      "test": "pytest --tb=short"
+    }
+  },
+  "timeouts": {
+    "lint": 300000,
+    "test": 300000,
+    "build": 300000,
+    "network": 120000,
+    "install": 300000
+  },
+  "contextLimits": {
+    "explorer": { "maxInputLines": 1000, "note": "프로젝트 탐색, 구조 파악" },
+    "researcher": { "maxInputLines": 1000, "note": "조사 요청 + 코드 맵" },
+    "planner": { "maxInputLines": 800, "note": "요구사항 + 코드 맵" },
+    "coder": { "maxInputLines": 2000, "note": "설계서 + 코드 맵 + 참조 코드" },
+    "reviewer": { "maxInputLines": 1500, "note": "diff + 설계서" },
+    "critic": { "maxInputLines": 800, "note": "계획서 + 기준 문서" }
+  }
+}

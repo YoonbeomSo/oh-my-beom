@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# SessionStart hook for oh-syb-claude plugin
+# Injects coding guidelines into every Claude Code session
+
+set -euo pipefail
+
+# Determine plugin root directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Read guidelines content
+guidelines_content=$(cat "${PLUGIN_ROOT}/guidelines/CLAUDE.md" 2>&1 || echo "Error reading guidelines")
+
+# Escape string for JSON embedding using bash parameter substitution.
+# Uses printf instead of heredoc to work around a bash 5.3+ bug
+# where heredoc variable expansion hangs when content exceeds ~512 bytes.
+escape_for_json() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"
+    s="${s//$'\t'/\\t}"
+    printf '%s' "$s"
+}
+
+guidelines_escaped=$(escape_for_json "$guidelines_content")
+session_context="<oh-syb-claude-guidelines>\n${guidelines_escaped}\n</oh-syb-claude-guidelines>"
+
+# Output context injection as JSON.
+# Cursor hooks expect additional_context.
+# Claude Code hooks expect hookSpecificOutput.additionalContext.
+if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
+  printf '{\n  "additional_context": "%s"\n}\n' "$session_context"
+elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+  printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$session_context"
+else
+  printf '{\n  "additional_context": "%s"\n}\n' "$session_context"
+fi
+
+exit 0
