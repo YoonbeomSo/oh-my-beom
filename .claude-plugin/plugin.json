@@ -1,12 +1,12 @@
 {
-  "name": "oh-syb-claude",
+  "name": "oh-my-beom",
   "description": "Korean developer toolkit for Claude Code: coding guidelines, requirements analysis, git worktree automation, Spring Boot review, and Playwright testing agents",
   "version": "1.0.0",
   "author": {
     "name": "YoonbeomSo"
   },
-  "homepage": "https://github.com/YoonbeomSo/oh-syb-claude",
-  "repository": "https://github.com/YoonbeomSo/oh-syb-claude",
+  "homepage": "https://github.com/YoonbeomSo/oh-my-beom",
+  "repository": "https://github.com/YoonbeomSo/oh-my-beom",
   "license": "MIT",
   "keywords": [
     "korean",

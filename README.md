@@ -1,4 +1,4 @@
-# oh-syb-claude
+# oh-my-beom
 
 한국어 개발자를 위한 Claude Code 플러그인.
 에이전트 기반 개발 파이프라인, 동적 스킬 라우팅, 코딩 가이드라인 자동 주입을 제공합니다.
@@ -6,7 +6,7 @@
 ## 설치
 
 ```bash
-claude plugin add --from-github YoonbeomSo/oh-syb-claude
+claude plugin add --from-github YoonbeomSo/oh-my-beom
 ```
 
 ---
@@ -95,7 +95,7 @@ main/master/develop 브랜치에서 직접 커밋을 차단합니다.
 ## 디렉토리 구조
 
 ```
-oh-syb-claude/
+oh-my-beom/
 ├── .claude-plugin/plugin.json        # 플러그인 메타데이터
 ├── CLAUDE.md                         # 플러그인 스코프/제약사항
 ├── guidelines/

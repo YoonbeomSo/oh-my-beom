@@ -1,11 +1,11 @@
 # 플러그인 구조
 
-oh-syb-claude 플러그인의 디렉토리 구조와 각 역할을 정의한다.
+oh-my-beom 플러그인의 디렉토리 구조와 각 역할을 정의한다.
 
 ## 디렉토리 구조
 
 ```
-oh-syb-claude/                  <- 플러그인 루트
+oh-my-beom/                  <- 플러그인 루트
 ├── .claude-plugin/
 │   └── plugin.json             <- 플러그인 메타데이터
 ├── CLAUDE.md                   <- 플러그인 레벨 지침
