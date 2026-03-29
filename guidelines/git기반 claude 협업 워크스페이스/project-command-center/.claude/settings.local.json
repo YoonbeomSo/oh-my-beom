@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(gh auth:*)",
+      "Bash(GH_HOST=github.com gh repo:*)",
+      "Bash(GH_HOST=github.com gh api:*)",
+      "Bash(bun create:*)",
+      "Bash(curl:*)",
+      "Bash(export:*)",
+      "Skill(worktree)",
+      "Skill(dev)",
+      "Bash(GH_HOST=github.com gh pr:*)",
+      "Bash(xargs cat:*)",
+      "Bash(bun add:*)",
+      "Bash(python3:*)",
+      "Skill(commit)",
+      "WebFetch(domain:www.loopers.im)",
+      "Bash(grep node brew list --versions node)",
+      "Bash(grep:*)",
+      "Bash(./gradlew :apps:offline-helper-api:build:*)",
+      "Bash(./gradlew :apps:offline-helper-api:compileKotlin:*)",
+      "Bash(./gradlew :apps:offline-helper-api:ktlintFormat:*)",
+      "Bash(./gradlew :apps:offline-helper-api:test:*)",
+      "Bash(/Users/alenheo/.bun/bin/bun run:*)",
+      "Bash(docker info:*)",
+      "Bash(bun run:*)",
+      "Bash(npm run:*)",
+      "mcp__browsermcp__browser_navigate",
+      "mcp__browsermcp__browser_screenshot",
+      "Bash(bunx:*)",
+      "Bash(done)",
+      "WebFetch(domain:claude.ai)",
+      "WebSearch",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(command:*)",
+      "Bash(ls:*)",
+      "Bash(lsof:*)",
+      "Bash(kill 28082:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "browsermcp"
+  ]
+}

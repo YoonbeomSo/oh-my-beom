@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# UserPromptSubmit hook for oh-syb-claude plugin
+# UserPromptSubmit hook for oh-my-beom plugin
 # Routes user prompts to appropriate skills based on keyword detection
 
 set -euo pipefail
@@ -87,7 +87,7 @@ if [ -z "$MATCHED_SKILL" ]; then
   echo '{"continue": true, "suppressOutput": true}'
 else
   PROMPT_ESCAPED=$(escape_for_json "$PROMPT")
-  CONTEXT="[KEYWORD DETECTED: ${MATCHED_SKILL}]\n\nYou MUST invoke the skill using the Skill tool:\n\nSkill: oh-syb-claude:${MATCHED_SKILL}\n\nUser request:\n${PROMPT_ESCAPED}\n\nIMPORTANT: Invoke the skill IMMEDIATELY before any other action."
+  CONTEXT="[KEYWORD DETECTED: ${MATCHED_SKILL}]\n\nYou MUST invoke the skill using the Skill tool:\n\nSkill: oh-my-beom:${MATCHED_SKILL}\n\nUser request:\n${PROMPT_ESCAPED}\n\nIMPORTANT: Invoke the skill IMMEDIATELY before any other action."
   CONTEXT_ESCAPED=$(escape_for_json "$CONTEXT")
   printf '{"continue": true, "hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": "%s"}}' "$CONTEXT_ESCAPED"
 fi

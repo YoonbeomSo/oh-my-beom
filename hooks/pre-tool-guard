@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PreToolUse Guard for oh-syb-claude plugin
+# PreToolUse Guard for oh-my-beom plugin
 # Blocks git commit on protected branches (main/master/develop)
 
 set -uo pipefail

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SessionStart hook for oh-syb-claude plugin
+# SessionStart hook for oh-my-beom plugin
 # Injects coding guidelines into every Claude Code session
 
 set -euo pipefail
@@ -25,7 +25,7 @@ escape_for_json() {
 }
 
 guidelines_escaped=$(escape_for_json "$guidelines_content")
-session_context="<oh-syb-claude-guidelines>\n${guidelines_escaped}\n</oh-syb-claude-guidelines>"
+session_context="<oh-my-beom-guidelines>\n${guidelines_escaped}\n</oh-my-beom-guidelines>"
 
 # Output context injection as JSON.
 # Cursor hooks expect additional_context.
