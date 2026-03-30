@@ -29,6 +29,24 @@
           "timeout": 2
         }]
       }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [{
+          "type": "command",
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/task-verifier\"",
+          "timeout": 300
+        }]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [{
+          "type": "command",
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/idle-checker\"",
+          "timeout": 10
+        }]
+      }
     ]
   }
 }
