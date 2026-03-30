@@ -38,9 +38,18 @@ escape_for_json() {
 PROMPT_LOWER=$(echo "$PROMPT" | python3 -c "import sys; print(sys.stdin.read().lower())" 2>/dev/null || echo "$PROMPT")
 
 # Keyword matching (Korean + English)
+# NOTE: "mac" must be checked FIRST to avoid "mac 개발해" matching "dev"
 MATCHED_SKILL=""
 
 if echo "$PROMPT_LOWER" | python3 -c "
+import sys, re
+text = sys.stdin.read()
+if re.search(r'^mac\b', text):
+    sys.exit(0)
+sys.exit(1)
+" 2>/dev/null; then
+  MATCHED_SKILL="mac"
+elif echo "$PROMPT_LOWER" | python3 -c "
 import sys, re
 text = sys.stdin.read()
 if re.search(r'계획|plan|설계해|플랜', text):
@@ -48,6 +57,14 @@ if re.search(r'계획|plan|설계해|플랜', text):
 sys.exit(1)
 " 2>/dev/null; then
   MATCHED_SKILL="plan"
+elif echo "$PROMPT_LOWER" | python3 -c "
+import sys, re
+text = sys.stdin.read()
+if re.search(r'정책|비즈니스|lens|영향도', text):
+    sys.exit(0)
+sys.exit(1)
+" 2>/dev/null; then
+  MATCHED_SKILL="lens"
 elif echo "$PROMPT_LOWER" | python3 -c "
 import sys, re
 text = sys.stdin.read()
@@ -72,14 +89,6 @@ if re.search(r'개발해|dev |구현해|만들어줘', text):
 sys.exit(1)
 " 2>/dev/null; then
   MATCHED_SKILL="dev"
-elif echo "$PROMPT_LOWER" | python3 -c "
-import sys, re
-text = sys.stdin.read()
-if re.search(r'정책|비즈니스|lens|영향도', text):
-    sys.exit(0)
-sys.exit(1)
-" 2>/dev/null; then
-  MATCHED_SKILL="lens"
 fi
 
 # Output result

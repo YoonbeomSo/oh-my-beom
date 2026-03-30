@@ -158,7 +158,7 @@
         <h3>Team Agents (5) &mdash; TeamCreate + tmux pane</h3>
         <div class="agent-group">
           <div class="agent-item" data-agent="product-owner"><span class="agent-dot" style="background:#58a6ff"></span><span class="agent-name">product-owner</span><span class="agent-role">PRD 작성 + 인수 검증</span><span class="agent-model">sonnet</span></div>
-          <div class="agent-item" data-agent="architect"><span class="agent-dot" style="background:#7ee787"></span><span class="agent-name">architect</span><span class="agent-role">기술 설계</span><span class="agent-model">sonnet</span></div>
+          <div class="agent-item" data-agent="architect"><span class="agent-dot" style="background:#7ee787"></span><span class="agent-name">architect</span><span class="agent-role">기술 설계</span><span class="agent-model">opus</span></div>
           <div class="agent-item" data-agent="coder"><span class="agent-dot" style="background:#f0883e"></span><span class="agent-name">coder</span><span class="agent-role">구현 + 수정</span><span class="agent-model">inherit</span></div>
           <div class="agent-item" data-agent="qa-manager"><span class="agent-dot" style="background:#3fb950"></span><span class="agent-name">qa-manager</span><span class="agent-role">코드 리뷰 + 스펙 검증</span><span class="agent-model">sonnet</span></div>
           <div class="agent-item" data-agent="security-auditor"><span class="agent-dot" style="background:#d2a8ff"></span><span class="agent-name">security-auditor</span><span class="agent-role">보안/정책 감사</span><span class="agent-model">sonnet</span></div>
@@ -167,7 +167,7 @@
       <div>
         <h3>Utility Agents (7) &mdash; On-demand</h3>
         <div class="agent-group">
-          <div class="agent-item" data-agent="web-test-qa"><span class="agent-dot" style="background:#7ee787"></span><span class="agent-name">web-test-qa</span><span class="agent-role">E2E 테스트 전체 사이클</span><span class="agent-model">sonnet</span></div>
+          <div class="agent-item" data-agent="web-test-qa"><span class="agent-dot" style="background:#7ee787"></span><span class="agent-name">web-test-qa</span><span class="agent-role">브라우저 UI 테스트</span><span class="agent-model">sonnet</span></div>
           <div class="agent-item" data-agent="design-critic"><span class="agent-dot" style="background:#f0883e"></span><span class="agent-name">design-critic</span><span class="agent-role">설계 가정 도전</span><span class="agent-model">opus</span></div>
           <div class="agent-item" data-agent="todo-verifier"><span class="agent-dot" style="background:#8b949e"></span><span class="agent-name">todo-verifier</span><span class="agent-role">계획 완료 기준 검증</span><span class="agent-model">sonnet</span></div>
           <div class="agent-item" data-agent="plan-visualizer"><span class="agent-dot" style="background:#8b949e"></span><span class="agent-name">plan-visualizer</span><span class="agent-role">계획 MD &rarr; HTML</span><span class="agent-model">sonnet</span></div>
@@ -242,6 +242,180 @@
     <div class="legend" style="margin-top:12px">
       <div class="legend-item"><span class="legend-line" style="background:#7ee787"></span>에이전트 직접 연결</div>
       <div class="legend-item"><span class="legend-line" style="background:#f0883e"></span>스킬 체이닝</div>
+    </div>
+  </div>
+
+  <!-- Simple Flow -->
+  <div class="card full">
+    <h2>한눈에 보는 흐름</h2>
+    <style>
+      .sf { max-width:800px; margin:0 auto; padding:20px 0; position:relative; }
+      /* vertical step */
+      .sf-step { display:grid; grid-template-columns:56px 1fr; gap:0; align-items:start; position:relative; }
+      .sf-rail { display:flex; flex-direction:column; align-items:center; }
+      .sf-dot { width:12px; height:12px; border-radius:50%; border:2px solid; background:#0d1117; z-index:1; margin-top:18px; }
+      .sf-line { width:2px; flex:1; min-height:20px; }
+      .sf-body { padding:10px 0 24px; }
+      /* agent card inside step */
+      .sf-agent { display:inline-flex; align-items:center; gap:8px; background:#1c2128; border-radius:8px; padding:10px 16px; margin:3px; border:1px solid #30363d; }
+      .sf-agent .a-name { font-weight:700; font-size:13px; }
+      .sf-agent .a-model { font-size:10px; padding:1px 5px; border-radius:3px; background:#30363d; color:#8b949e; }
+      /* skill tag */
+      .sf-skill { display:inline-block; color:#d2a8ff; font-family:monospace; font-size:11px; font-weight:600; background:#d2a8ff15; padding:2px 8px; border-radius:4px; margin:2px; }
+      /* step label */
+      .sf-label { font-size:12px; font-weight:600; margin-bottom:8px; }
+      .sf-desc { font-size:11px; color:#8b949e; margin-top:4px; line-height:1.6; }
+      /* loop bracket */
+      .sf-loop { border:1.5px dashed #f0883e44; border-radius:12px; padding:4px 12px 12px; margin:8px 0; position:relative; }
+      .sf-loop-tag { position:absolute; top:-10px; left:16px; background:#0d1117; padding:0 8px; color:#f0883e; font-size:11px; font-weight:600; }
+      /* arrow label between steps */
+      .sf-arrow-label { color:#484f58; font-size:10px; text-align:center; padding:2px 0; }
+    </style>
+
+    <div class="sf">
+
+      <!-- Step 1: Requirements -->
+      <div class="sf-step">
+        <div class="sf-rail">
+          <div class="sf-dot" style="border-color:#58a6ff"></div>
+          <div class="sf-line" style="background:linear-gradient(#58a6ff,#7ee787)"></div>
+        </div>
+        <div class="sf-body">
+          <div class="sf-label" style="color:#58a6ff">1. 요구사항</div>
+          <div>
+            <span class="sf-agent" style="border-color:#58a6ff"><span class="a-name" style="color:#58a6ff">product-owner</span><span class="a-model">sonnet</span></span>
+          </div>
+          <div class="sf-desc">PRD 작성 (Q&A 1회) &rarr; <code style="color:#7ee787;font-size:11px">.dev/prd.md</code></div>
+        </div>
+      </div>
+
+      <!-- Step 2: Design -->
+      <div class="sf-step">
+        <div class="sf-rail">
+          <div class="sf-dot" style="border-color:#7ee787"></div>
+          <div class="sf-line" style="background:linear-gradient(#7ee787,#f0883e)"></div>
+        </div>
+        <div class="sf-body">
+          <div class="sf-label" style="color:#7ee787">2. 설계</div>
+          <div>
+            <span class="sf-agent" style="border-color:#7ee787"><span class="a-name" style="color:#7ee787">architect</span><span class="a-model">opus</span></span>
+          </div>
+          <div class="sf-desc">설계서 + 테스트 전략 (단위/통합/E2E 기본) &rarr; <code style="color:#7ee787;font-size:11px">.dev/design.md</code></div>
+          <!-- Branch: design-critic -->
+          <div style="margin-top:10px;padding:8px 12px;background:#1c2128;border-radius:8px;border-left:3px solid #f0883e">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="color:#f0883e;font-size:11px;font-weight:600;background:#f0883e22;padding:2px 8px;border-radius:4px">IF 중형/대형</span>
+              <span class="sf-agent" style="border-color:#f0883e;border-style:dashed;margin:0;padding:6px 12px"><span class="a-name" style="color:#f0883e">design-critic</span><span class="a-model">opus</span></span>
+            </div>
+            <div class="sf-desc" style="margin-top:4px">
+              <span class="sf-skill">/design-critic</span> 가정 도전 + 복잡도 검토 + 근본 원인 검증
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Implement -->
+      <div class="sf-step">
+        <div class="sf-rail">
+          <div class="sf-dot" style="border-color:#f0883e"></div>
+          <div class="sf-line" style="background:linear-gradient(#f0883e,#d2a8ff)"></div>
+        </div>
+        <div class="sf-body">
+          <div class="sf-label" style="color:#f0883e">3. 구현</div>
+          <div>
+            <span class="sf-agent" style="border-color:#f0883e"><span class="a-name" style="color:#f0883e">coder</span><span class="a-model">inherit</span></span>
+          </div>
+          <div class="sf-desc">TDD: 코드 + 단위/통합/E2E 테스트 작성 + 빌드/테스트 검증</div>
+          <!-- Branch: escalation -->
+          <div style="margin-top:10px;padding:8px 12px;background:#1c2128;border-radius:8px;border-left:3px solid #f778ba">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span style="color:#f778ba;font-size:11px;font-weight:600;background:#f778ba22;padding:2px 8px;border-radius:4px">IF 정체</span>
+              <span class="sf-agent" style="border-color:#f778ba;border-style:dashed;margin:0;padding:6px 10px"><span class="a-name" style="color:#f778ba">hacker</span><span class="a-model">sonnet</span></span>
+              <span style="color:#484f58;font-size:11px">또는</span>
+              <span class="sf-agent" style="border-color:#f778ba;border-style:dashed;margin:0;padding:6px 10px"><span class="a-name" style="color:#f778ba">simplifier</span><span class="a-model">sonnet</span></span>
+            </div>
+            <div class="sf-desc" style="margin-top:4px">반복 실패 &rarr; 제약 우회 / 복잡도 제거 후 재시도</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Review (with loop) -->
+      <div class="sf-step">
+        <div class="sf-rail">
+          <div class="sf-dot" style="border-color:#d2a8ff"></div>
+          <div class="sf-line" style="background:linear-gradient(#d2a8ff,#f778ba)"></div>
+        </div>
+        <div class="sf-body">
+          <div class="sf-label" style="color:#d2a8ff">4. 리뷰</div>
+
+          <div class="sf-loop">
+            <div class="sf-loop-tag">최대 2회 반복</div>
+
+            <!-- Reviewers -->
+            <div style="margin-top:8px">
+              <span class="sf-agent" style="border-color:#3fb950"><span class="a-name" style="color:#3fb950">qa-manager</span><span class="a-model">sonnet</span></span>
+              <span class="sf-agent" style="border-color:#d2a8ff"><span class="a-name" style="color:#d2a8ff">security-auditor</span><span class="a-model">sonnet</span></span>
+            </div>
+            <div class="sf-desc" style="margin-bottom:6px">코드 리뷰 + 보안 감사 (병렬, 읽기 전용)</div>
+
+            <!-- Conditional: web-test-qa -->
+            <div style="margin-top:8px;padding:8px 12px;background:#0d111766;border-radius:8px;border-left:3px solid #7ee787">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="color:#7ee787;font-size:11px;font-weight:600;background:#7ee78722;padding:2px 8px;border-radius:4px">IF 프론트엔드 변경</span>
+                <span class="sf-agent" style="border-color:#7ee787;border-style:dashed;margin:0;padding:6px 12px"><span class="a-name" style="color:#7ee787">web-test-qa</span><span class="a-model">sonnet</span></span>
+              </div>
+              <div class="sf-desc" style="margin-top:4px">
+                <span class="sf-skill">/test-plan</span> &rarr;
+                <span class="sf-skill">/test-generate</span> &rarr;
+                <span class="sf-skill">/test-heal</span>
+                <span style="color:#8b949e">(브라우저 UI 테스트)</span>
+              </div>
+            </div>
+
+            <!-- Loop: problem → coder fix → re-review -->
+            <div style="margin-top:12px;padding-top:10px;border-top:1px solid #30363d">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span style="color:#f0883e;font-size:12px;font-weight:600">Critical 발견</span>
+                <span style="color:#484f58">&rarr;</span>
+                <span class="sf-agent" style="border-color:#f0883e;border-style:dashed;margin:0"><span class="a-name" style="color:#f0883e">coder</span><span style="color:#8b949e;font-size:10px">수정</span></span>
+                <span style="color:#484f58">&rarr;</span>
+                <span style="color:#8b949e;font-size:11px">재검증</span>
+                <svg width="24" height="16" viewBox="0 0 24 16" style="vertical-align:middle"><path d="M20,2 C22,8 22,8 20,14 L4,14 C2,8 2,8 4,2" fill="none" stroke="#f0883e" stroke-width="1.2" stroke-dasharray="3,2" marker-start="url(#loop-ah)"/><defs><marker id="loop-ah" markerWidth="6" markerHeight="5" refX="0" refY="2.5" orient="auto"><path d="M6,0 L0,2.5 L6,5Z" fill="#f0883e"/></marker></defs></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="sf-desc" style="margin-top:6px">통과 &darr; &nbsp;/ &nbsp;2회 초과 미해결 &rarr; 사용자에게 보고</div>
+        </div>
+      </div>
+
+      <!-- Step 5: Complete -->
+      <div class="sf-step">
+        <div class="sf-rail">
+          <div class="sf-dot" style="border-color:#f778ba"></div>
+        </div>
+        <div class="sf-body">
+          <div class="sf-label" style="color:#f778ba">5. 완료</div>
+          <div>
+            <span class="sf-agent" style="border-color:#f778ba"><span class="a-name" style="color:#f778ba">product-owner</span><span style="color:#8b949e;font-size:10px">인수</span></span>
+          </div>
+          <div class="sf-desc">
+            인수 검증 &rarr;
+            <span class="sf-skill">/commit</span>
+            <span class="sf-skill">/pull-request</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Legend -->
+    <div style="display:flex;gap:20px;justify-content:center;padding:8px 0;flex-wrap:wrap;border-top:1px solid #21262d;margin-top:8px;padding-top:16px">
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#8b949e"><span style="display:inline-block;width:24px;height:1px;border:1px solid #30363d;border-radius:2px"></span>필수 에이전트</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#8b949e"><span style="display:inline-block;width:24px;height:1px;border:1px dashed #30363d;border-radius:2px"></span>조건부 에이전트</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#8b949e"><span style="display:inline-block;padding:1px 6px;font-size:10px;font-weight:600;border-radius:4px;background:#f0883e22;color:#f0883e">IF 조건</span>분기 조건</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#8b949e"><span class="sf-skill" style="margin:0">/skill</span>호출 스킬</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#8b949e"><span style="display:inline-block;padding:1px 6px;font-size:10px;border-radius:3px;background:#30363d;color:#8b949e">model</span>사용 모델</div>
     </div>
   </div>
 
