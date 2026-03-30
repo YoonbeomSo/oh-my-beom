@@ -130,7 +130,7 @@
     <div class="flow-row" style="justify-content:center;">
       <span class="node n-hook">session-start</span>
       <span class="arrow">&rarr;</span>
-      <span class="node n-file">guidelines/LOOPERS_ALEN_CLAUDE.md</span>
+      <span class="node n-file">guidelines/CLAUDE.md</span>
       <span class="arrow">&rarr;</span>
       <span class="node n-output">additionalContext 주입</span>
     </div>
@@ -220,7 +220,7 @@
       <tr>
         <td><span class="conn-from">session-start</span></td>
         <td>SessionStart</td>
-        <td><code>guidelines/LOOPERS_ALEN_CLAUDE.md</code></td>
+        <td><code>guidelines/CLAUDE.md</code></td>
         <td>&mdash;</td>
         <td class="conn-how">파일 전문을 읽어 JSON escape &rarr; <code>additionalContext</code>로 출력. 모든 세션에 §0~§7 가이드라인이 주입되어 한국어 응답, 읽기 우선, 단순함 우선 등이 강제됨</td>
       </tr>
@@ -862,7 +862,7 @@
       <tr>
         <td><span class="conn-from">rules/behavior.md</span></td>
         <td><span class="conn-to">모든 에이전트 (session-start로 주입)</span></td>
-        <td class="conn-how">LOOPERS §1~§7 원칙. "코딩 전에 생각하라", "단순함 우선" 등 모든 에이전트의 기본 행동 원칙</td>
+        <td class="conn-how">행동 원칙 §1~§7. "코딩 전에 생각하라", "단순함 우선" 등 모든 에이전트의 기본 행동 원칙</td>
       </tr>
       <tr>
         <td><span class="conn-from">rules/git-workflow.md</span></td>
@@ -959,7 +959,7 @@
       <tr>
         <td><span style="color:#fca5a5;">coder</span></td>
         <td>PCC agent</td>
-        <td>HH_CLAUDE.md의 Spring Boot 컨벤션</td>
+        <td>CLAUDE.md의 Spring Boot 컨벤션</td>
         <td>Service Read/Write 분리, DTO/Entity 분리, @Transactional 패턴, LAZY fetch 강제, QueryDSL 패턴이 내장됨</td>
       </tr>
       <tr>
@@ -971,8 +971,8 @@
       <tr>
         <td><span style="color:#fef08a;">rules/behavior.md</span></td>
         <td>PCC rules</td>
-        <td>LOOPERS §1~§7 가이드라인</td>
-        <td>PCC의 행동 규칙 + LOOPERS의 코딩 전 사고, 단순함 우선, 외과적 변경, 실패 대응 등이 통합됨</td>
+        <td>행동 원칙 §1~§7 가이드라인</td>
+        <td>PCC의 행동 규칙 + 코딩 전 사고, 단순함 우선, 외과적 변경, 실패 대응 등이 통합됨</td>
       </tr>
       <tr>
         <td><span style="color:#c4b5fd;">plan / research / persist</span></td>
