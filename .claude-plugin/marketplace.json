@@ -1,0 +1,16 @@
+{
+  "name": "oh-my-beom",
+  "description": "Korean developer toolkit marketplace",
+  "owner": {
+    "name": "YoonbeomSo",
+    "url": "https://github.com/YoonbeomSo"
+  },
+  "plugins": [
+    {
+      "name": "oh-my-beom",
+      "source": "./",
+      "description": "Korean developer toolkit for Claude Code: coding guidelines, agent teams, verification loop, planning, and Playwright testing",
+      "version": "1.1.0"
+    }
+  ]
+}
