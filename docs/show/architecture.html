@@ -3,341 +3,342 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>oh-my-beom Plugin Architecture</title>
+<title>oh-my-beom Architecture</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 40px; }
-  h1 { text-align: center; font-size: 28px; margin-bottom: 8px; color: #f0f6fc; }
-  .subtitle { text-align: center; color: #8b949e; margin-bottom: 40px; font-size: 14px; }
-  .stats { display: flex; justify-content: center; gap: 32px; margin-bottom: 40px; }
-  .stat { text-align: center; }
-  .stat-num { font-size: 32px; font-weight: 700; color: #58a6ff; }
-  .stat-label { font-size: 12px; color: #8b949e; margin-top: 4px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; padding: 24px; }
+  h1 { text-align: center; font-size: 28px; margin-bottom: 8px; color: #58a6ff; }
+  .subtitle { text-align: center; color: #8b949e; margin-bottom: 32px; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1400px; margin: 0 auto; }
+  .full { grid-column: 1 / -1; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 20px; }
+  .card h2 { font-size: 16px; color: #58a6ff; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .card h2 .count { background: #1f6feb; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+  .card h3 { font-size: 13px; color: #8b949e; margin: 12px 0 8px; text-transform: uppercase; letter-spacing: 1px; }
 
-  /* Flow Diagram */
-  .flow-section { margin-bottom: 48px; }
-  .flow-title { font-size: 18px; font-weight: 600; color: #f0f6fc; margin-bottom: 20px; text-align: center; }
-  .flow { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; padding: 24px; background: #161b22; border-radius: 12px; border: 1px solid #30363d; }
-  .flow-node { padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; text-align: center; min-width: 120px; position: relative; }
-  .flow-arrow { color: #484f58; font-size: 20px; margin: 0 4px; flex-shrink: 0; }
-  .flow-input { background: #1f2937; border: 2px solid #3b82f6; color: #93c5fd; }
-  .flow-hook { background: #1a1e2e; border: 2px solid #a78bfa; color: #c4b5fd; }
-  .flow-skill { background: #1a2e1a; border: 2px solid #4ade80; color: #86efac; }
-  .flow-agent { background: #2e1a1a; border: 2px solid #f87171; color: #fca5a5; }
-  .flow-output { background: #2e2a1a; border: 2px solid #fbbf24; color: #fde68a; }
-  .flow-sub { font-size: 10px; color: #8b949e; margin-top: 4px; font-weight: 400; }
+  /* Hooks */
+  .hook-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; background: #1c2128; }
+  .hook-event { background: #388bfd22; color: #58a6ff; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; min-width: 140px; text-align: center; }
+  .hook-arrow { color: #484f58; }
+  .hook-script { color: #7ee787; font-family: monospace; font-size: 13px; }
+  .hook-desc { color: #8b949e; font-size: 11px; margin-left: auto; }
 
-  /* Grid */
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 40px; }
-  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; transition: border-color 0.2s; }
-  .card:hover { border-color: #58a6ff; }
-  .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-  .card-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-  .card-title { font-size: 16px; font-weight: 600; color: #f0f6fc; }
-  .card-desc { font-size: 12px; color: #8b949e; }
+  /* Rules */
+  .rule-item { padding: 8px 12px; border-left: 3px solid #f0883e; margin-bottom: 6px; background: #1c2128; border-radius: 0 8px 8px 0; }
+  .rule-name { color: #f0883e; font-weight: 600; font-size: 13px; }
+  .rule-desc { color: #8b949e; font-size: 12px; }
 
-  .file-list { list-style: none; }
-  .file-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #21262d; font-size: 13px; }
-  .file-item:last-child { border-bottom: none; }
-  .file-icon { font-size: 14px; flex-shrink: 0; }
-  .file-name { color: #c9d1d9; font-family: 'SF Mono', monospace; }
-  .file-lines { margin-left: auto; color: #484f58; font-size: 11px; font-family: 'SF Mono', monospace; }
-  .file-badge { font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600; margin-left: 8px; }
-  .badge-merged { background: #1f3a1f; color: #4ade80; }
-  .badge-toss { background: #3a2f1f; color: #fbbf24; }
-  .badge-pcc { background: #1f2a3a; color: #60a5fa; }
-  .badge-new { background: #3a1f3a; color: #c084fc; }
+  /* Agents */
+  .agent-group { margin-bottom: 16px; }
+  .agent-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; margin-bottom: 6px; background: #1c2128; cursor: pointer; transition: background .15s; }
+  .agent-item:hover { background: #22272e; }
+  .agent-item.active { background: #1f6feb22; border: 1px solid #1f6feb44; }
+  .agent-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .agent-name { font-weight: 600; font-size: 13px; min-width: 130px; }
+  .agent-role { color: #8b949e; font-size: 12px; flex: 1; }
+  .agent-model { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #30363d; color: #8b949e; }
 
-  /* Hook Flow Detail */
-  .hook-flow { margin-top: 48px; }
-  .hook-row { display: flex; align-items: stretch; gap: 16px; margin-bottom: 16px; }
-  .hook-label { width: 160px; flex-shrink: 0; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-  .hook-detail { flex: 1; padding: 12px 16px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; font-size: 13px; color: #8b949e; display: flex; align-items: center; }
-  .hook-detail code { background: #0d1117; padding: 2px 6px; border-radius: 4px; color: #c9d1d9; font-family: 'SF Mono', monospace; font-size: 12px; }
+  /* Skills */
+  .skill-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+  .skill-item { padding: 8px 12px; border-radius: 8px; background: #1c2128; font-size: 12px; transition: background .15s; cursor: default; }
+  .skill-item:hover { background: #22272e; }
+  .skill-cmd { color: #d2a8ff; font-family: monospace; font-weight: 600; }
+  .skill-desc { color: #8b949e; display: block; margin-top: 2px; font-size: 11px; }
+  .skill-item.linked { border-left: 3px solid #7ee787; }
+  .skill-item.chain { border-left: 3px solid #f0883e; }
 
-  .keyword-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-top: 12px; }
-  .keyword-item { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; font-size: 12px; }
-  .keyword-trigger { color: #fbbf24; font-family: 'SF Mono', monospace; }
-  .keyword-target { color: #4ade80; }
+  /* Pipeline */
+  .pipeline { display: flex; gap: 4px; align-items: stretch; overflow-x: auto; padding: 8px 0; }
+  .phase { flex: 1; min-width: 180px; background: #1c2128; border-radius: 10px; padding: 14px; position: relative; }
+  .phase-name { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+  .phase-agents { font-size: 11px; color: #8b949e; line-height: 1.6; }
+  .phase-agents .ag { color: #7ee787; font-weight: 500; }
+  .phase-agents .sk { color: #d2a8ff; }
+  .phase-arrow { display: flex; align-items: center; color: #484f58; font-size: 20px; flex-shrink: 0; }
+  .phase.setup { border-top: 3px solid #484f58; }
+  .phase.req { border-top: 3px solid #58a6ff; }
+  .phase.design { border-top: 3px solid #7ee787; }
+  .phase.impl { border-top: 3px solid #f0883e; }
+  .phase.review { border-top: 3px solid #d2a8ff; }
+  .phase.complete { border-top: 3px solid #f778ba; }
 
-  /* Agent Pipeline */
-  .pipeline { margin-top: 48px; }
-  .pipeline-title { font-size: 18px; font-weight: 600; color: #f0f6fc; margin-bottom: 20px; text-align: center; }
-  .pipeline-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-  .pipeline-node { padding: 10px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; text-align: center; min-width: 100px; }
-  .pipeline-arrow { color: #484f58; font-size: 16px; }
-  .p-setup { background: #1a2332; border: 1px solid #1d4ed8; color: #93c5fd; }
-  .p-req { background: #2d1a32; border: 1px solid #9333ea; color: #d8b4fe; }
-  .p-design { background: #1a3232; border: 1px solid #0d9488; color: #5eead4; }
-  .p-impl { background: #1a321a; border: 1px solid #16a34a; color: #86efac; }
-  .p-review { background: #32321a; border: 1px solid #ca8a04; color: #fde68a; }
-  .p-complete { background: #321a1a; border: 1px solid #dc2626; color: #fca5a5; }
+  /* Connections */
+  .connections { margin-top: 12px; }
+  .conn-row { display: flex; align-items: center; gap: 8px; padding: 6px 12px; margin-bottom: 4px; font-size: 12px; background: #1c2128; border-radius: 6px; }
+  .conn-from { color: #7ee787; font-weight: 600; min-width: 120px; }
+  .conn-arrow { color: #484f58; }
+  .conn-to { color: #d2a8ff; font-weight: 600; }
+  .conn-cond { color: #8b949e; font-size: 11px; margin-left: auto; }
 
-  .pipeline-agents { display: flex; gap: 6px; justify-content: center; margin-top: 4px; flex-wrap: wrap; }
-  .pipeline-agent { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #21262d; color: #8b949e; }
-
-  .legend { display: flex; gap: 16px; justify-content: center; margin: 32px 0; flex-wrap: wrap; }
+  /* Legend */
+  .legend { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 8px; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #8b949e; }
-  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .legend-line { width: 16px; height: 3px; border-radius: 2px; }
+
+  /* Escalation */
+  .esc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .esc-table th { text-align: left; padding: 6px 10px; color: #8b949e; border-bottom: 1px solid #30363d; font-weight: 500; }
+  .esc-table td { padding: 6px 10px; border-bottom: 1px solid #21262d; }
+  .esc-pattern { color: #f0883e; font-weight: 600; }
+  .esc-agent { color: #7ee787; }
 </style>
 </head>
 <body>
 
 <h1>oh-my-beom</h1>
-<p class="subtitle">Korean Developer Toolkit for Claude Code &mdash; Plugin Architecture</p>
+<p class="subtitle">Claude Code Plugin Architecture &mdash; 5 Hooks / 3 Rules / 12 Agents / 18 Skills</p>
 
-<div class="stats">
-  <div class="stat"><div class="stat-num">13</div><div class="stat-label">Agents</div></div>
-  <div class="stat"><div class="stat-num">11</div><div class="stat-label">Skills</div></div>
-  <div class="stat"><div class="stat-num">5</div><div class="stat-label">Hooks</div></div>
-  <div class="stat"><div class="stat-num">3</div><div class="stat-label">Rules</div></div>
-  <div class="stat"><div class="stat-num">5,267</div><div class="stat-label">Total Lines</div></div>
-</div>
-
-<!-- Dynamic Routing Flow -->
-<div class="flow-section">
-  <div class="flow-title">Dynamic Routing Flow (Toss Pattern)</div>
-  <div class="flow">
-    <div class="flow-node flow-input">User Input<div class="flow-sub">사용자 프롬프트</div></div>
-    <span class="flow-arrow">&rarr;</span>
-    <div class="flow-node flow-hook">prompt-router<div class="flow-sub">UserPromptSubmit Hook</div></div>
-    <span class="flow-arrow">&rarr;</span>
-    <div class="flow-node flow-hook" style="border-color: #f59e0b; color: #fcd34d;">Keyword Detection<div class="flow-sub">계획 / 분석 / 개발 / 정책 / 지속</div></div>
-    <span class="flow-arrow">&rarr;</span>
-    <div class="flow-node flow-skill">Skill Invocation<div class="flow-sub">additionalContext 주입</div></div>
-    <span class="flow-arrow">&rarr;</span>
-    <div class="flow-node flow-agent">Agent Pipeline<div class="flow-sub">에이전트 팀 실행</div></div>
-    <span class="flow-arrow">&rarr;</span>
-    <div class="flow-node flow-output">Result<div class="flow-sub">검증된 결과물</div></div>
-  </div>
-</div>
-
-<div class="legend">
-  <div class="legend-item"><div class="legend-dot" style="background: #4ade80;"></div> Merged (기존 skill 병합)</div>
-  <div class="legend-item"><div class="legend-dot" style="background: #fbbf24;"></div> Toss Pattern (신규)</div>
-  <div class="legend-item"><div class="legend-dot" style="background: #60a5fa;"></div> PCC (포팅)</div>
-  <div class="legend-item"><div class="legend-dot" style="background: #c084fc;"></div> New (신규)</div>
-</div>
-
-<!-- Cards Grid -->
 <div class="grid">
 
   <!-- Hooks -->
   <div class="card">
-    <div class="card-header">
-      <div class="card-icon" style="background: #2d1a3a; color: #a78bfa;">&#9889;</div>
-      <div><div class="card-title">hooks/</div><div class="card-desc">Lifecycle Hooks (5 events)</div></div>
+    <h2>Hooks <span class="count">5</span></h2>
+    <div class="hook-row">
+      <span class="hook-event">SessionStart</span>
+      <span class="hook-arrow">&rarr;</span>
+      <span class="hook-script">session-start</span>
+      <span class="hook-desc">워크플로우 가이드 / 활성 계획 감지</span>
     </div>
-    <ul class="file-list">
-      <li class="file-item"><span class="file-icon">&#128268;</span><span class="file-name">hooks.json</span><span class="file-lines">52 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#9889;</span><span class="file-name">session-start</span><span class="file-badge badge-pcc">SessionStart</span><span class="file-lines">87 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#128269;</span><span class="file-name">prompt-router</span><span class="file-badge badge-toss">UserPromptSubmit</span><span class="file-lines">95 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#128737;</span><span class="file-name">pre-tool-guard</span><span class="file-badge badge-pcc">PreToolUse</span><span class="file-lines">35 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#9989;</span><span class="file-name">task-verifier</span><span class="file-badge badge-new">TaskCompleted</span><span class="file-lines">148 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#9654;</span><span class="file-name">idle-checker</span><span class="file-badge badge-new">TeammateIdle</span><span class="file-lines">93 lines</span></li>
-    </ul>
-  </div>
-
-  <!-- Agents: Pipeline -->
-  <div class="card" style="grid-column: span 2;">
-    <div class="card-header">
-      <div class="card-icon" style="background: #2d1a1a; color: #f87171;">&#129302;</div>
-      <div><div class="card-title">agents/ &mdash; Development Pipeline (9)</div><div class="card-desc">Role-isolated agents with strict I/O contracts</div></div>
+    <div class="hook-row">
+      <span class="hook-event">UserPromptSubmit</span>
+      <span class="hook-arrow">&rarr;</span>
+      <span class="hook-script">prompt-router</span>
+      <span class="hook-desc">키워드 감지 &rarr; 스킬 라우팅</span>
     </div>
-    <ul class="file-list">
-      <li class="file-item"><span class="file-icon" style="color: #f0abfc;">&#9679;</span><span class="file-name">product-owner.md</span><span class="file-badge badge-merged">+ requirements-analysis</span><span class="file-lines">327 lines</span></li>
-      <li class="file-item"><span class="file-icon" style="color: #22d3ee;">&#9679;</span><span class="file-name">architect.md</span><span class="file-badge badge-merged">opus + api-design + jpa-entity</span><span class="file-lines">347 lines</span></li>
-      <li class="file-item"><span class="file-icon" style="color: #fb923c;">&#9679;</span><span class="file-name">design-critic.md</span><span class="file-badge badge-pcc">PCC</span><span class="file-lines">148 lines</span></li>
-      <li class="file-item"><span class="file-icon" style="color: #4ade80;">&#9679;</span><span class="file-name">coder.md</span><span class="file-badge badge-merged">opus + Spring Boot conventions</span><span class="file-lines">232 lines</span></li>
-      <li class="file-item"><span class="file-icon" style="color: #facc15;">&#9679;</span><span class="file-name">qa-manager.md</span><span class="file-badge badge-merged">opus + spring-boot-review 45 rules</span><span class="file-lines">331 lines</span></li>
-      <li class="file-item"><span class="file-icon" style="color: #a78bfa;">&#9679;</span><span class="file-name">security-auditor.md</span><span class="file-badge badge-pcc">opus</span><span class="file-lines">183 lines</span></li>
-      <li class="file-item"><span class="file-icon" style="color: #60a5fa;">&#9679;</span><span class="file-name">researcher.md</span><span class="file-badge badge-pcc">PCC</span><span class="file-lines">152 lines</span></li>
-      <li class="file-item"><span class="file-icon" style="color: #f87171;">&#9679;</span><span class="file-name">hacker.md</span><span class="file-badge badge-pcc">PCC</span><span class="file-lines">120 lines</span></li>
-      <li class="file-item"><span class="file-icon" style="color: #e2e8f0;">&#9679;</span><span class="file-name">simplifier.md</span><span class="file-badge badge-pcc">PCC</span><span class="file-lines">119 lines</span></li>
-    </ul>
-  </div>
-
-  <!-- Agents: Playwright -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-icon" style="background: #1a2d1a; color: #4ade80;">&#127917;</div>
-      <div><div class="card-title">agents/ &mdash; Playwright Testing (2)</div><div class="card-desc">Test planning+generation (merged), healing</div></div>
+    <div class="hook-row">
+      <span class="hook-event">PreToolUse</span>
+      <span class="hook-arrow">&rarr;</span>
+      <span class="hook-script">pre-tool-guard</span>
+      <span class="hook-desc">보호 브랜치 커밋 차단</span>
     </div>
-    <ul class="file-list">
-      <li class="file-item"><span class="file-icon" style="color: #4ade80;">&#9679;</span><span class="file-name">playwright-tester.md</span><span class="file-badge badge-merged">planner + generator merged</span><span class="file-lines">sonnet</span></li>
-      <li class="file-item"><span class="file-icon" style="color: #f87171;">&#9679;</span><span class="file-name">playwright-test-healer.md</span><span class="file-lines">sonnet</span></li>
-    </ul>
-  </div>
-
-  <!-- Agents: Verification -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-icon" style="background: #1a2d2d; color: #2dd4bf;">&#9989;</div>
-      <div><div class="card-title">agents/ &mdash; Verification (2)</div><div class="card-desc">TODO verification, plan visualization</div></div>
+    <div class="hook-row">
+      <span class="hook-event">TaskCompleted</span>
+      <span class="hook-arrow">&rarr;</span>
+      <span class="hook-script">task-verifier</span>
+      <span class="hook-desc">계획 완료 기준 자동 검증</span>
     </div>
-    <ul class="file-list">
-      <li class="file-item"><span class="file-icon" style="color: #2dd4bf;">&#9679;</span><span class="file-name">todo-verifier.md</span><span class="file-badge badge-new">NEW</span><span class="file-lines">sonnet</span></li>
-      <li class="file-item"><span class="file-icon" style="color: #5eead4;">&#9679;</span><span class="file-name">plan-visualizer.md</span><span class="file-badge badge-new">NEW</span><span class="file-lines">sonnet</span></li>
-    </ul>
-  </div>
-
-  <!-- Skills: Dev Workflow -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-icon" style="background: #1a2d1a; color: #4ade80;">&#128736;</div>
-      <div><div class="card-title">skills/ &mdash; Dev Workflow (4)</div><div class="card-desc">Full development lifecycle</div></div>
+    <div class="hook-row">
+      <span class="hook-event">TeammateIdle</span>
+      <span class="hook-arrow">&rarr;</span>
+      <span class="hook-script">idle-checker</span>
+      <span class="hook-desc">미완료 TODO 자동 할당</span>
     </div>
-    <ul class="file-list">
-      <li class="file-item"><span class="file-icon">&#9733;</span><span class="file-name">dev/SKILL.md</span><span class="file-badge badge-pcc">flagship</span><span class="file-lines">680 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#128221;</span><span class="file-name">commit/SKILL.md</span><span class="file-badge badge-pcc">PCC</span><span class="file-lines">120 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#128640;</span><span class="file-name">pull-request/SKILL.md</span><span class="file-badge badge-pcc">PCC</span><span class="file-lines">134 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#127795;</span><span class="file-name">worktree/SKILL.md</span><span class="file-badge badge-merged">merged</span><span class="file-lines">313 lines</span></li>
-    </ul>
-  </div>
-
-  <!-- Skills: Analysis + Planning (Toss) -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-icon" style="background: #2d2a1a; color: #fbbf24;">&#128161;</div>
-      <div><div class="card-title">skills/ &mdash; Analysis &amp; Planning (4)</div><div class="card-desc">Toss architecture patterns</div></div>
-    </div>
-    <ul class="file-list">
-      <li class="file-item"><span class="file-icon">&#128204;</span><span class="file-name">plan/SKILL.md</span><span class="file-badge badge-toss">4-Mode</span><span class="file-lines">203 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#128270;</span><span class="file-name">research/SKILL.md</span><span class="file-badge badge-toss">3-Phase</span><span class="file-lines">149 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#128065;</span><span class="file-name">lens/SKILL.md</span><span class="file-badge badge-pcc">PCC</span><span class="file-lines">202 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#9851;</span><span class="file-name">persist/SKILL.md</span><span class="file-badge badge-toss">6-Phase</span><span class="file-lines">239 lines</span></li>
-    </ul>
-  </div>
-
-  <!-- Skills: Utility -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-icon" style="background: #1a2a3a; color: #60a5fa;">&#128295;</div>
-      <div><div class="card-title">skills/ &mdash; Utility (3)</div><div class="card-desc">Setup, context, humanizer</div></div>
-    </div>
-    <ul class="file-list">
-      <li class="file-item"><span class="file-icon">&#9881;</span><span class="file-name">hecto-setup/SKILL.md</span><span class="file-lines">34 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#128218;</span><span class="file-name">new-context/SKILL.md</span><span class="file-badge badge-pcc">PCC</span><span class="file-lines">189 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#9998;</span><span class="file-name">humanizer/SKILL.md</span><span class="file-badge badge-pcc">PCC</span><span class="file-lines">444 lines</span></li>
-    </ul>
   </div>
 
   <!-- Rules -->
   <div class="card">
-    <div class="card-header">
-      <div class="card-icon" style="background: #2d2d1a; color: #facc15;">&#128220;</div>
-      <div><div class="card-title">rules/</div><div class="card-desc">Behavioral guidelines</div></div>
+    <h2>Rules <span class="count">3</span></h2>
+    <div class="rule-item">
+      <div class="rule-name">behavior.md</div>
+      <div class="rule-desc">코딩 전 사고, 단순함 우선, 외과적 변경, 목표 중심, 점진적 실행, 실패 대응, 피드백 반영</div>
     </div>
-    <ul class="file-list">
-      <li class="file-item"><span class="file-icon">&#128161;</span><span class="file-name">behavior.md</span><span class="file-badge badge-merged">행동 원칙 7조 + PCC</span><span class="file-lines">77 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#128268;</span><span class="file-name">git-workflow.md</span><span class="file-badge badge-pcc">PCC</span><span class="file-lines">43 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#128193;</span><span class="file-name">workspace-structure.md</span><span class="file-badge badge-pcc">PCC</span><span class="file-lines">52 lines</span></li>
-    </ul>
+    <div class="rule-item">
+      <div class="rule-name">git-workflow.md</div>
+      <div class="rule-desc">브랜치 전략, 커밋 컨벤션, PR 규칙, 보호 브랜치</div>
+    </div>
+    <div class="rule-item">
+      <div class="rule-name">workspace-structure.md</div>
+      <div class="rule-desc">플러그인 디렉토리 구조, .dev/ 산출물, config 설명</div>
+    </div>
+    <div style="height:16px"></div>
+    <h2>Prompt Router &rarr; Skill 라우팅</h2>
+    <div class="hook-row"><span class="hook-event" style="background:#d2a8ff22;color:#d2a8ff">계획, plan, 설계</span><span class="hook-arrow">&rarr;</span><span class="hook-script">/plan</span></div>
+    <div class="hook-row"><span class="hook-event" style="background:#d2a8ff22;color:#d2a8ff">분석, 조사, research</span><span class="hook-arrow">&rarr;</span><span class="hook-script">/research</span></div>
+    <div class="hook-row"><span class="hook-event" style="background:#d2a8ff22;color:#d2a8ff">끝까지, 멈추지마</span><span class="hook-arrow">&rarr;</span><span class="hook-script">/persist</span></div>
+    <div class="hook-row"><span class="hook-event" style="background:#d2a8ff22;color:#d2a8ff">개발, dev, 구현</span><span class="hook-arrow">&rarr;</span><span class="hook-script">/dev</span></div>
+    <div class="hook-row"><span class="hook-event" style="background:#d2a8ff22;color:#d2a8ff">정책, 비즈니스, lens</span><span class="hook-arrow">&rarr;</span><span class="hook-script">/lens</span></div>
   </div>
 
-  <!-- Config -->
+  <!-- Agents -->
+  <div class="card full">
+    <h2>Agents <span class="count">12</span></h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <h3>Team Agents (5) &mdash; TeamCreate + tmux pane</h3>
+        <div class="agent-group">
+          <div class="agent-item" data-agent="product-owner"><span class="agent-dot" style="background:#58a6ff"></span><span class="agent-name">product-owner</span><span class="agent-role">PRD 작성 + 인수 검증</span><span class="agent-model">sonnet</span></div>
+          <div class="agent-item" data-agent="architect"><span class="agent-dot" style="background:#7ee787"></span><span class="agent-name">architect</span><span class="agent-role">기술 설계</span><span class="agent-model">sonnet</span></div>
+          <div class="agent-item" data-agent="coder"><span class="agent-dot" style="background:#f0883e"></span><span class="agent-name">coder</span><span class="agent-role">구현 + 수정</span><span class="agent-model">inherit</span></div>
+          <div class="agent-item" data-agent="qa-manager"><span class="agent-dot" style="background:#3fb950"></span><span class="agent-name">qa-manager</span><span class="agent-role">코드 리뷰 + 스펙 검증</span><span class="agent-model">sonnet</span></div>
+          <div class="agent-item" data-agent="security-auditor"><span class="agent-dot" style="background:#d2a8ff"></span><span class="agent-name">security-auditor</span><span class="agent-role">보안/정책 감사</span><span class="agent-model">sonnet</span></div>
+        </div>
+      </div>
+      <div>
+        <h3>Utility Agents (7) &mdash; On-demand</h3>
+        <div class="agent-group">
+          <div class="agent-item" data-agent="web-test-qa"><span class="agent-dot" style="background:#7ee787"></span><span class="agent-name">web-test-qa</span><span class="agent-role">E2E 테스트 전체 사이클</span><span class="agent-model">sonnet</span></div>
+          <div class="agent-item" data-agent="design-critic"><span class="agent-dot" style="background:#f0883e"></span><span class="agent-name">design-critic</span><span class="agent-role">설계 가정 도전</span><span class="agent-model">opus</span></div>
+          <div class="agent-item" data-agent="todo-verifier"><span class="agent-dot" style="background:#8b949e"></span><span class="agent-name">todo-verifier</span><span class="agent-role">계획 완료 기준 검증</span><span class="agent-model">sonnet</span></div>
+          <div class="agent-item" data-agent="plan-visualizer"><span class="agent-dot" style="background:#8b949e"></span><span class="agent-name">plan-visualizer</span><span class="agent-role">계획 MD &rarr; HTML</span><span class="agent-model">sonnet</span></div>
+          <div class="agent-item" data-agent="researcher"><span class="agent-dot" style="background:#79c0ff"></span><span class="agent-name">researcher</span><span class="agent-role">코드 탐색 + 분석</span><span class="agent-model">sonnet</span></div>
+          <div class="agent-item" data-agent="hacker"><span class="agent-dot" style="background:#f778ba"></span><span class="agent-name">hacker</span><span class="agent-role">제약 우회 + 돌파구</span><span class="agent-model">sonnet</span></div>
+          <div class="agent-item" data-agent="simplifier"><span class="agent-dot" style="background:#f778ba"></span><span class="agent-name">simplifier</span><span class="agent-role">복잡도 제거</span><span class="agent-model">sonnet</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent-Skill Connections -->
   <div class="card">
-    <div class="card-header">
-      <div class="card-icon" style="background: #1a1a2d; color: #818cf8;">&#9881;</div>
-      <div><div class="card-title">config/ + root files</div><div class="card-desc">Configuration &amp; metadata</div></div>
+    <h2>Agent &rarr; Skill 연결</h2>
+    <div class="connections">
+      <div class="conn-row"><span class="conn-from">architect</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/design-critic</span><span class="conn-cond">설계 규모 중형/대형</span></div>
+      <div class="conn-row"><span class="conn-from">web-test-qa</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/test-plan</span><span class="conn-cond">1단계: 시나리오 설계</span></div>
+      <div class="conn-row"><span class="conn-from">web-test-qa</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/test-generate</span><span class="conn-cond">2단계: 코드 생성</span></div>
+      <div class="conn-row"><span class="conn-from">web-test-qa</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/test-heal</span><span class="conn-cond">3단계: 실행 + 디버깅</span></div>
     </div>
-    <ul class="file-list">
-      <li class="file-item"><span class="file-icon">&#128268;</span><span class="file-name">config/config.json</span><span class="file-badge badge-pcc">+verification/playwright/teamAgent</span><span class="file-lines">expanded</span></li>
-      <li class="file-item"><span class="file-icon">&#128230;</span><span class="file-name">.claude-plugin/plugin.json</span><span class="file-lines">20 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#128196;</span><span class="file-name">CLAUDE.md</span><span class="file-badge badge-new">scope</span><span class="file-lines">43 lines</span></li>
-      <li class="file-item"><span class="file-icon">&#128196;</span><span class="file-name">package.json</span><span class="file-lines">5 lines</span></li>
-    </ul>
+    <h3 style="margin-top:16px">Orchestrator &rarr; Skill 호출</h3>
+    <div class="connections">
+      <div class="conn-row"><span class="conn-from">/dev (complete)</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/commit</span><span class="conn-cond">Phase complete</span></div>
+      <div class="conn-row"><span class="conn-from">/dev (complete)</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/pull-request</span><span class="conn-cond">Phase complete</span></div>
+      <div class="conn-row"><span class="conn-from">/dev (setup)</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/tmux-team-agent</span><span class="conn-cond">TeamCreate 직후</span></div>
+    </div>
+    <h3 style="margin-top:16px">Escalation 경로</h3>
+    <div class="connections">
+      <div class="conn-row"><span class="conn-from" style="color:#f0883e">SPINNING</span><span class="conn-arrow">&rarr;</span><span class="esc-agent">hacker</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/research</span></div>
+      <div class="conn-row"><span class="conn-from" style="color:#f0883e">NO_DRIFT</span><span class="conn-arrow">&rarr;</span><span class="esc-agent">hacker</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/research</span></div>
+      <div class="conn-row"><span class="conn-from" style="color:#f0883e">OSCILLATION</span><span class="conn-arrow">&rarr;</span><span class="esc-agent">architect</span><span class="conn-arrow">&rarr;</span><span style="color:#8b949e">사용자</span></div>
+      <div class="conn-row"><span class="conn-from" style="color:#f0883e">DIMINISHING</span><span class="conn-arrow">&rarr;</span><span class="esc-agent">simplifier</span><span class="conn-arrow">&rarr;</span><span style="color:#8b949e">사용자</span></div>
+    </div>
   </div>
-</div>
 
-<!-- /dev Pipeline -->
-<div class="pipeline">
-  <div class="pipeline-title">/dev &mdash; Full Development Lifecycle Pipeline</div>
-  <div class="pipeline-row">
-    <div class="pipeline-node p-setup">Setup<div class="flow-sub">worktree 생성</div></div>
-    <span class="pipeline-arrow">&rarr;</span>
-    <div class="pipeline-node p-req">Requirements<div class="flow-sub">PRD + AC</div></div>
-    <span class="pipeline-arrow">&rarr;</span>
-    <div class="pipeline-node p-design">Design<div class="flow-sub">기술 설계</div></div>
-    <span class="pipeline-arrow">&rarr;</span>
-    <div class="pipeline-node p-impl">Implement<div class="flow-sub">코드 구현</div></div>
-    <span class="pipeline-arrow">&rarr;</span>
-    <div class="pipeline-node" style="background: #1a2d2d; border: 1px solid #0d9488; color: #5eead4;">Verification<div class="flow-sub">plan 기준 검증</div></div>
-    <span class="pipeline-arrow">&harr;</span>
-    <div class="pipeline-node p-review">Review<div class="flow-sub">리뷰 + 감사</div></div>
-    <span class="pipeline-arrow">&rarr;</span>
-    <div class="pipeline-node p-complete">Complete<div class="flow-sub">커밋 + PR</div></div>
+  <!-- Skills -->
+  <div class="card">
+    <h2>Skills <span class="count">18</span></h2>
+    <h3>개발 워크플로우</h3>
+    <div class="skill-grid">
+      <div class="skill-item"><span class="skill-cmd">/dev</span><span class="skill-desc">전체 개발 라이프사이클</span></div>
+      <div class="skill-item"><span class="skill-cmd">/commit</span><span class="skill-desc">스마트 커밋</span></div>
+      <div class="skill-item"><span class="skill-cmd">/pull-request</span><span class="skill-desc">PR 자동 생성</span></div>
+      <div class="skill-item"><span class="skill-cmd">/worktree</span><span class="skill-desc">Git worktree 자동화</span></div>
+    </div>
+    <h3>분석 + 계획</h3>
+    <div class="skill-grid">
+      <div class="skill-item"><span class="skill-cmd">/plan</span><span class="skill-desc">4-Mode 계획 전략</span></div>
+      <div class="skill-item"><span class="skill-cmd">/research</span><span class="skill-desc">리서치 파이프라인</span></div>
+      <div class="skill-item"><span class="skill-cmd">/lens</span><span class="skill-desc">비즈니스 정책 분석</span></div>
+      <div class="skill-item"><span class="skill-cmd">/persist</span><span class="skill-desc">끝까지 실행 모드</span></div>
+    </div>
+    <h3>에이전트 연동 스킬</h3>
+    <div class="skill-grid">
+      <div class="skill-item linked"><span class="skill-cmd">/design-critic</span><span class="skill-desc">설계 비판 검토</span></div>
+      <div class="skill-item chain"><span class="skill-cmd">/test-plan</span><span class="skill-desc">테스트 시나리오 설계</span></div>
+      <div class="skill-item chain"><span class="skill-cmd">/test-generate</span><span class="skill-desc">테스트 코드 생성</span></div>
+      <div class="skill-item chain"><span class="skill-cmd">/test-heal</span><span class="skill-desc">테스트 실행 + 디버깅</span></div>
+    </div>
+    <h3>유틸리티</h3>
+    <div class="skill-grid">
+      <div class="skill-item"><span class="skill-cmd">/humanizer</span><span class="skill-desc">AI 글쓰기 패턴 제거</span></div>
+      <div class="skill-item"><span class="skill-cmd">/hecto-setup</span><span class="skill-desc">HectoProject 설정</span></div>
+      <div class="skill-item"><span class="skill-cmd">/new-context</span><span class="skill-desc">도메인 컨텍스트 생성</span></div>
+      <div class="skill-item"><span class="skill-cmd">/tmux-team-agent</span><span class="skill-desc">팀 에이전트 tmux 복구</span></div>
+    </div>
+    <h3>외부 연동</h3>
+    <div class="skill-grid">
+      <div class="skill-item"><span class="skill-cmd">/fetch-jira-issue</span><span class="skill-desc">Jira 이슈 조회</span></div>
+      <div class="skill-item"><span class="skill-cmd">/fetch-jenkins</span><span class="skill-desc">Jenkins 빌드 관리</span></div>
+    </div>
+    <div class="legend" style="margin-top:12px">
+      <div class="legend-item"><span class="legend-line" style="background:#7ee787"></span>에이전트 직접 연결</div>
+      <div class="legend-item"><span class="legend-line" style="background:#f0883e"></span>스킬 체이닝</div>
+    </div>
   </div>
-  <div style="text-align: center; margin: 8px 0; font-size: 11px; color: #5eead4;">Hybrid Team Agent Model: coder, qa-manager, security-auditor, design-critic = Agent(teammate) | Others = Task(subagent)</div>
-  <div class="pipeline-agents">
-    <span class="pipeline-agent" style="border: 1px solid #9333ea;">product-owner</span>
-    <span class="pipeline-agent" style="border: 1px solid #0d9488;">architect <small>(opus)</small></span>
-    <span class="pipeline-agent" style="border: 1px solid #fb923c;">design-critic</span>
-    <span class="pipeline-agent" style="border: 1px solid #16a34a;">coder <small>(opus)</small></span>
-    <span class="pipeline-agent" style="border: 1px solid #ca8a04;">qa-manager <small>(opus)</small></span>
-    <span class="pipeline-agent" style="border: 1px solid #a78bfa;">security-auditor <small>(opus)</small></span>
-    <span class="pipeline-agent" style="border: 1px solid #2dd4bf;">todo-verifier</span>
-    <span class="pipeline-agent" style="border: 1px solid #5eead4;">plan-visualizer</span>
-    <span class="pipeline-agent" style="border: 1px solid #4ade80;">playwright-tester</span>
-  </div>
-</div>
 
-<!-- Prompt Router Keywords -->
-<div style="margin-top: 48px;">
-  <div class="flow-title">Prompt Router &mdash; Keyword Detection Map</div>
-  <div class="keyword-grid">
-    <div class="keyword-item">
-      <div class="keyword-trigger">계획 | plan | 설계</div>
-      <div class="keyword-target">&rarr; /plan (4-Mode Strategy)</div>
-    </div>
-    <div class="keyword-item">
-      <div class="keyword-trigger">분석 | 조사 | research</div>
-      <div class="keyword-target">&rarr; /research (3-Phase Pipeline)</div>
-    </div>
-    <div class="keyword-item">
-      <div class="keyword-trigger">개발 | dev | 구현</div>
-      <div class="keyword-target">&rarr; /dev (Full Lifecycle)</div>
-    </div>
-    <div class="keyword-item">
-      <div class="keyword-trigger">정책 | 비즈니스 | lens</div>
-      <div class="keyword-target">&rarr; /lens (Policy Detection)</div>
-    </div>
-    <div class="keyword-item">
-      <div class="keyword-trigger">끝까지 | 멈추지마 | persist</div>
-      <div class="keyword-target">&rarr; /persist (6-Phase Execution)</div>
-    </div>
-    <div class="keyword-item" style="border-color: #21262d; color: #484f58;">
-      <div style="color: #484f58;">no match</div>
-      <div>&rarr; passthrough (suppressOutput)</div>
+  <!-- Pipeline -->
+  <div class="card full">
+    <h2>/dev Pipeline</h2>
+    <p style="color:#8b949e;font-size:12px;margin-bottom:12px">자동 스킬 체이닝: /lens &rarr; /research &rarr; /plan &rarr; (확인) &rarr; /dev</p>
+    <div class="pipeline">
+      <div class="phase setup">
+        <div class="phase-name" style="color:#8b949e">setup</div>
+        <div class="phase-agents">
+          Git/프로젝트 감지<br>
+          브랜치 생성<br>
+          코드 맵 초기화<br>
+          <span class="ag">TeamCreate</span> (5명)<br>
+          <span class="sk">/tmux-team-agent</span>
+        </div>
+      </div>
+      <div class="phase-arrow">&rarr;</div>
+      <div class="phase req">
+        <div class="phase-name" style="color:#58a6ff">requirements</div>
+        <div class="phase-agents">
+          <span class="ag">product-owner</span><br>
+          PRD 작성 (Q&A 1회)<br>
+          .dev/prd.md 저장
+        </div>
+      </div>
+      <div class="phase-arrow">&rarr;</div>
+      <div class="phase design">
+        <div class="phase-name" style="color:#7ee787">design</div>
+        <div class="phase-agents">
+          <span class="ag">architect</span><br>
+          설계 (Q&A 2회)<br>
+          <span class="sk">/design-critic</span> (조건부)<br>
+          .dev/design.md 저장
+        </div>
+      </div>
+      <div class="phase-arrow">&rarr;</div>
+      <div class="phase impl">
+        <div class="phase-name" style="color:#f0883e">implement</div>
+        <div class="phase-agents">
+          <span class="ag">coder</span> 구현<br>
+          <span class="ag">qa-manager</span> 자기점검<br>
+          <span class="ag">todo-verifier</span> 검증<br>
+          정체 &rarr; <span class="ag">hacker</span>/<span class="ag">simplifier</span>
+        </div>
+      </div>
+      <div class="phase-arrow">&rarr;</div>
+      <div class="phase review">
+        <div class="phase-name" style="color:#d2a8ff">review</div>
+        <div class="phase-agents">
+          <span class="ag">qa-manager</span> +<br>
+          <span class="ag">security-auditor</span> (병렬)<br>
+          <span class="ag">web-test-qa</span> (조건부)<br>
+          Gate &rarr; <span class="ag">coder</span> 수정
+        </div>
+      </div>
+      <div class="phase-arrow">&rarr;</div>
+      <div class="phase complete">
+        <div class="phase-name" style="color:#f778ba">complete</div>
+        <div class="phase-agents">
+          <span class="ag">product-owner</span> 인수<br>
+          <span class="sk">/commit</span><br>
+          <span class="sk">/pull-request</span><br>
+          Trust Ledger 포함
+        </div>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- 4-Mode Plan -->
-<div style="margin-top: 48px;">
-  <div class="flow-title">/plan &mdash; 4-Mode Strategy (Toss Pattern)</div>
-  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 20px; background: #161b22; border-radius: 12px; border: 1px solid #30363d;">
-    <div style="padding: 16px; background: #0d1117; border-radius: 8px; border-left: 3px solid #4ade80;">
-      <div style="font-weight: 700; color: #4ade80; margin-bottom: 8px;">Direct</div>
-      <div style="font-size: 11px; color: #8b949e;">Explorer &rarr; Planner<br>빠른 계획 수립</div>
+  <!-- Skill Chaining -->
+  <div class="card full">
+    <h2>스킬 자동 체이닝 워크플로우</h2>
+    <div style="display:flex;gap:4px;align-items:center;justify-content:center;padding:16px 0;flex-wrap:wrap">
+      <div style="background:#1c2128;padding:12px 20px;border-radius:10px;border-top:3px solid #d2a8ff;text-align:center">
+        <div style="color:#d2a8ff;font-weight:700">/lens</div>
+        <div style="color:#8b949e;font-size:11px">정책 분석</div>
+      </div>
+      <div style="color:#484f58;font-size:20px">&rarr;</div>
+      <div style="background:#1c2128;padding:12px 20px;border-radius:10px;border-top:3px solid #79c0ff;text-align:center">
+        <div style="color:#79c0ff;font-weight:700">/research</div>
+        <div style="color:#8b949e;font-size:11px">코드 조사</div>
+      </div>
+      <div style="color:#484f58;font-size:20px">&rarr;</div>
+      <div style="background:#1c2128;padding:12px 20px;border-radius:10px;border-top:3px solid #7ee787;text-align:center">
+        <div style="color:#7ee787;font-weight:700">/plan</div>
+        <div style="color:#8b949e;font-size:11px">계획 수립</div>
+      </div>
+      <div style="color:#484f58;font-size:20px">&rarr; <span style="font-size:11px;color:#8b949e">(확인)</span> &rarr;</div>
+      <div style="background:#1c2128;padding:12px 20px;border-radius:10px;border-top:3px solid #f0883e;text-align:center">
+        <div style="color:#f0883e;font-weight:700">/dev</div>
+        <div style="color:#8b949e;font-size:11px">개발 파이프라인</div>
+      </div>
     </div>
-    <div style="padding: 16px; background: #0d1117; border-radius: 8px; border-left: 3px solid #60a5fa;">
-      <div style="font-weight: 700; color: #60a5fa; margin-bottom: 8px;">Interview</div>
-      <div style="font-size: 11px; color: #8b949e;">Q&amp;A 5회 &rarr; 분석<br>모호한 요구사항</div>
-    </div>
-    <div style="padding: 16px; background: #0d1117; border-radius: 8px; border-left: 3px solid #fbbf24;">
-      <div style="font-weight: 700; color: #fbbf24; margin-bottom: 8px;">Consensus</div>
-      <div style="font-size: 11px; color: #8b949e;">3 Agent &rarr; Critic<br>다관점 합의</div>
-    </div>
-    <div style="padding: 16px; background: #0d1117; border-radius: 8px; border-left: 3px solid #f87171;">
-      <div style="font-weight: 700; color: #f87171; margin-bottom: 8px;">Review</div>
-      <div style="font-size: 11px; color: #8b949e;">Critic 분석 &rarr; Loop<br>기존 계획 검증</div>
-    </div>
+    <p style="text-align:center;color:#8b949e;font-size:12px">각 스킬은 완료 후 자동으로 다음 단계 호출 &mdash; <code style="color:#f0883e">--only</code> 플래그로 단일 실행 가능</p>
   </div>
-</div>
 
-<div style="text-align: center; margin-top: 48px; color: #484f58; font-size: 12px;">
-  oh-my-beom v1.1.0 &mdash; 13 Agents &middot; 11 Skills &middot; 5 Hooks &middot; Hybrid Team Agent Model &mdash; Built with Claude Code
 </div>
 
 </body>
