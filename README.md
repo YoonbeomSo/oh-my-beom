@@ -34,11 +34,39 @@ claude plugin add --from-github YoonbeomSo/oh-my-beom
 
 main/master/develop 브랜치에서 직접 커밋을 차단합니다.
 
+### 작업 완료 검증 (TaskCompleted Hook)
+
+작업 완료 시 자동으로 검증을 수행합니다.
+
+### 유휴 팀원 감지 (TeammateIdle Hook)
+
+팀 에이전트의 유휴 상태를 감지합니다.
+
+### 자동 체이닝 워크플로우
+
+각 스킬은 완료 후 자동으로 다음 스킬을 호출합니다.
+
+```
+/lens → /research → /plan → (확인) → /dev
+```
+
+| 시작 스킬 | 자동 실행 흐름 | 상황 |
+|-----------|--------------|------|
+| `/lens` | → `/research` → `/plan` → `/dev` | 정책/비즈니스 영향 분석이 필요할 때 |
+| `/research` | → `/plan` → `/dev` | 코드베이스 파악이 필요할 때 |
+| `/plan` | → `/dev` | 요구사항이 명확할 때 |
+| `/dev` | (최종 스킬) | 간단한 버그 수정/핫픽스 |
+
+- `/plan` → `/dev` 전환 시에만 사용자 확인을 받습니다.
+- 단일 스킬만 실행하려면 `--only` 플래그를 사용하세요. (예: `/research --only`)
+
+세션 시작 시 워크플로우 가이드가 자동으로 표시됩니다.
+
 ---
 
-## 12개 에이전트
+## 13개 에이전트
 
-### 개발 파이프라인 에이전트 (9개)
+### 개발 파이프라인 에이전트 (11개)
 
 | Agent | 역할 | 모델 |
 |-------|------|------|
@@ -51,18 +79,19 @@ main/master/develop 브랜치에서 직접 커밋을 차단합니다.
 | **researcher** | 코드베이스 탐색 + 분석 | sonnet |
 | **hacker** | 제약 우회 + 돌파구 | sonnet |
 | **simplifier** | 복잡도 줄이기 | sonnet |
+| **plan-visualizer** | 계획 MD → 인터랙티브 HTML 대시보드 변환 | sonnet |
+| **todo-verifier** | 계획 완료 기준 vs 코드 상태 검증 | sonnet |
 
-### Playwright 테스트 에이전트 (3개)
+### Playwright 테스트 에이전트 (2개)
 
 | Agent | 역할 |
 |-------|------|
-| **playwright-test-planner** | 테스트 계획 생성 |
-| **playwright-test-generator** | 테스트 코드 작성 |
+| **playwright-tester** | 테스트 시나리오 설계 + 코드 생성 |
 | **playwright-test-healer** | 실패 테스트 디버깅/수정 |
 
 ---
 
-## 11개 Skills
+## 14개 Skills
 
 ### 개발 워크플로우
 
@@ -90,29 +119,40 @@ main/master/develop 브랜치에서 직접 커밋을 차단합니다.
 | `/new-context` | 도메인 컨텍스트 디렉토리 생성 |
 | `/humanizer` | AI 글쓰기 패턴 제거 (40+ 패턴 감지) |
 
+### 외부 연동
+
+| 명령어 | 설명 |
+|--------|------|
+| `/fetch-jira-issue` | Jira 이슈 조회 (MCP 우선, REST API fallback) |
+| `/fetch-jenkins` | Jenkins 빌드 상태 조회/트리거/로그 확인 |
+| `/tmux-team-agent` | TeamCreate 후 빈 tmux pane 감지 + CLI 자동 복구 |
+
 ---
 
 ## 디렉토리 구조
 
 ```
 oh-my-beom/
-├── .claude-plugin/plugin.json        # 플러그인 메타데이터
+├── .claude-plugin/
+│   ├── plugin.json                   # 플러그인 메타데이터
+│   └── marketplace.json              # 마켓플레이스 등록 정보
 ├── CLAUDE.md                         # 플러그인 스코프/제약사항
-├── guidelines/
-│   └── CLAUDE.md                     # 세션 시작 시 자동 주입
 ├── hooks/
-│   ├── hooks.json                    # 3개 hook 정의
+│   ├── hooks.json                    # 5개 hook 정의
 │   ├── session-start                 # 가이드라인 주입
 │   ├── prompt-router                 # 키워드 감지 → 스킬 라우팅
-│   └── pre-tool-guard                # protected branch 보호
+│   ├── pre-tool-guard                # protected branch 보호
+│   ├── task-verifier                 # 작업 완료 검증
+│   └── idle-checker                  # 유휴 팀원 감지
 ├── rules/
 │   ├── behavior.md                   # 코딩 원칙
 │   ├── git-workflow.md               # 브랜치/커밋 규칙
 │   └── workspace-structure.md        # 워크스페이스 구조
 ├── config/
 │   └── config.json                   # 이슈키, 프로젝트 타입, 타임아웃
-├── agents/                           # 12개 에이전트
-├── skills/                           # 11개 스킬
+├── agents/                           # 13개 에이전트
+├── skills/                           # 14개 스킬
+├── docs/                             # 시각화 산출물
 └── package.json
 ```
 
