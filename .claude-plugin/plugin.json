@@ -11,8 +11,9 @@
   "keywords": [
     "korean",
     "guidelines",
-    "requirements-analysis",
     "worktree",
+    "verification-loop",
+    "team-agent",
     "spring-boot",
     "playwright",
     "jpa"
