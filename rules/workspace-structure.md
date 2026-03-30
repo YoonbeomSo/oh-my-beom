@@ -11,7 +11,7 @@ oh-my-beom/                  <- 플러그인 루트
 ├── CLAUDE.md                   <- 플러그인 레벨 지침
 ├── hooks/
 │   ├── hooks.json              <- 훅 등록 (SessionStart, UserPromptSubmit, PreToolUse, TaskCompleted, TeammateIdle)
-│   ├── session-start           <- 세션 시작 시 가이드라인 주입
+│   ├── session-start           <- 세션 시작 시 활성 계획 감지
 │   ├── prompt-router           <- 사용자 프롬프트 키워드 매칭 -> 스킬 라우팅
 │   ├── pre-tool-guard          <- 보호 브랜치 커밋 차단
 │   ├── task-verifier           <- TaskCompleted 시 계획 완료 기준 자동 검증
@@ -32,8 +32,6 @@ oh-my-beom/                  <- 플러그인 루트
 │   ├── pull-request/           <- PR 생성
 │   ├── worktree/               <- Git worktree 관리
 │   └── ...                     <- 기타 스킬
-├── guidelines/
-│   └── CLAUDE.md               <- 행동 가이드라인 원본
 ├── agents/                     <- 에이전트 정의
 │   ├── ...                     <- 개발/리뷰/테스트 에이전트
 │   ├── todo-verifier.md        <- TODO 완료 기준 검증 (비기계적 항목)

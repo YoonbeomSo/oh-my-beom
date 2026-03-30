@@ -1,19 +1,76 @@
 #!/usr/bin/env bash
 # SessionStart hook for oh-my-beom plugin
-# Injects coding guidelines into every Claude Code session
+# Detects active (IN_PROGRESS) plans and injects context so the session
+# knows about ongoing work immediately.
 
 set -euo pipefail
 
-# Determine plugin root directory
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+CWD="${CLAUDE_CWD:-$(pwd)}"
+PLAN_DIR="${CWD}/docs/plan"
 
-# Read guidelines content
-guidelines_content=$(cat "${PLUGIN_ROOT}/guidelines/CLAUDE.md" 2>&1 || echo "Error reading guidelines")
+# No plan directory → nothing to inject
+if [ ! -d "$PLAN_DIR" ]; then
+  echo '{"continue": true, "suppressOutput": true}'
+  exit 0
+fi
 
-# Escape string for JSON embedding using bash parameter substitution.
-# Uses printf instead of heredoc to work around a bash 5.3+ bug
-# where heredoc variable expansion hangs when content exceeds ~512 bytes.
+# Find IN_PROGRESS plans and collect summary
+RESULT=$(python3 << 'PYEOF'
+import glob, re, sys, os
+
+plan_dir = sys.argv[1] if len(sys.argv) > 1 else "docs/plan"
+plans = glob.glob(os.path.join(plan_dir, "*-plan.md"))
+
+active_plans = []
+
+for plan in plans:
+    try:
+        with open(plan) as f:
+            content = f.read()
+        if not re.search(r'상태:\s*IN_PROGRESS', content):
+            continue
+
+        filename = os.path.basename(plan)
+        # Extract title from first # heading
+        title_match = re.search(r'^#\s+(.+)', content, re.MULTILINE)
+        title = title_match.group(1).strip() if title_match else filename
+
+        # Count TODOs
+        total = len(re.findall(r'- \[[ x]\] \[TODO-', content))
+        done = len(re.findall(r'- \[x\] \[TODO-', content))
+        remaining = total - done
+
+        active_plans.append({
+            "file": plan,
+            "title": title,
+            "total": total,
+            "done": done,
+            "remaining": remaining,
+        })
+    except:
+        continue
+
+if not active_plans:
+    print("NONE")
+    sys.exit(0)
+
+lines = ["[ACTIVE PLAN DETECTED]", ""]
+for p in active_plans:
+    progress = f"{p['done']}/{p['total']}" if p['total'] > 0 else "no TODOs"
+    lines.append(f"- {p['title']} ({progress} done, {p['remaining']} remaining)")
+    lines.append(f"  file: {p['file']}")
+lines.append("")
+lines.append("Continue from where the previous session left off.")
+print("\n".join(lines))
+PYEOF
+"$PLAN_DIR" 2>/dev/null || echo "NONE")
+
+if [ "$RESULT" = "NONE" ]; then
+  echo '{"continue": true, "suppressOutput": true}'
+  exit 0
+fi
+
+# Escape for JSON
 escape_for_json() {
     local s="$1"
     s="${s//\\/\\\\}"
@@ -24,18 +81,7 @@ escape_for_json() {
     printf '%s' "$s"
 }
 
-guidelines_escaped=$(escape_for_json "$guidelines_content")
-session_context="<oh-my-beom-guidelines>\n${guidelines_escaped}\n</oh-my-beom-guidelines>"
+CONTEXT=$(escape_for_json "$RESULT")
 
-# Output context injection as JSON.
-# Cursor hooks expect additional_context.
-# Claude Code hooks expect hookSpecificOutput.additionalContext.
-if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
-  printf '{\n  "additional_context": "%s"\n}\n' "$session_context"
-elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
-  printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$session_context"
-else
-  printf '{\n  "additional_context": "%s"\n}\n' "$session_context"
-fi
-
+printf '{"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": "%s"}}' "$CONTEXT"
 exit 0
