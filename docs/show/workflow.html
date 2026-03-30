@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>oh-my-beom — Workflow Guide</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 32px; min-height: 100vh; }
+  h1 { text-align: center; font-size: 26px; color: #f0f6fc; margin-bottom: 4px; }
+  .subtitle { text-align: center; color: #8b949e; font-size: 13px; margin-bottom: 40px; }
+  h2 { font-size: 18px; color: #f0f6fc; margin: 40px 0 16px; text-align: center; }
+
+  /* Main pipeline */
+  .pipeline { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; padding: 32px; background: #161b22; border-radius: 16px; border: 1px solid #30363d; margin-bottom: 40px; }
+  .pipe-node { padding: 20px 28px; border-radius: 12px; text-align: center; min-width: 160px; cursor: pointer; transition: all 0.3s; position: relative; }
+  .pipe-node:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .pipe-node.active { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .pipe-num { font-size: 11px; font-weight: 700; opacity: 0.6; margin-bottom: 4px; }
+  .pipe-name { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
+  .pipe-alias { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .pipe-desc { font-size: 11px; opacity: 0.7; }
+  .pipe-arrow { color: #484f58; font-size: 28px; margin: 0 8px; flex-shrink: 0; }
+
+  .n-lens { background: #2d1a2d; border: 2px solid #e879f9; color: #f0abfc; }
+  .n-research { background: #1a2332; border: 2px solid #3b82f6; color: #93c5fd; }
+  .n-plan { background: #2d2a1a; border: 2px solid #fbbf24; color: #fde68a; }
+  .n-dev { background: #1a2e1a; border: 2px solid #4ade80; color: #86efac; }
+
+  /* Detail panels */
+  .detail { display: none; background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 28px; margin-bottom: 24px; animation: fadeIn 0.3s; }
+  .detail.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .detail-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .detail-title { font-size: 20px; font-weight: 700; color: #f0f6fc; }
+  .detail-sub { font-size: 13px; color: #8b949e; }
+  .detail-body { font-size: 13px; color: #8b949e; line-height: 1.8; }
+  .detail-body strong { color: #c9d1d9; }
+  .detail-body code { background: #0d1117; padding: 2px 6px; border-radius: 4px; color: #e6edf3; font-family: 'SF Mono', monospace; font-size: 12px; }
+
+  .keyword-box { display: inline-block; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 4px 10px; font-family: monospace; font-size: 12px; margin: 2px; }
+  .output-box { background: #0d1117; border-left: 3px solid #4ade80; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 12px; }
+  .example-box { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 16px; margin: 12px 0; font-family: 'SF Mono', monospace; font-size: 13px; color: #e6edf3; }
+
+  /* Scenarios */
+  .scenarios { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 24px; }
+  .scenario { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 20px; transition: border-color 0.2s; }
+  .scenario:hover { border-color: #58a6ff; }
+  .scenario-title { font-size: 14px; font-weight: 700; color: #f0f6fc; margin-bottom: 8px; }
+  .scenario-flow { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+  .scenario-node { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+  .scenario-arrow { color: #484f58; font-size: 14px; }
+  .scenario-example { font-size: 12px; color: #8b949e; font-family: 'SF Mono', monospace; background: #0d1117; padding: 8px 12px; border-radius: 6px; }
+
+  .s-lens { background: #2d1a2d; color: #f0abfc; }
+  .s-research { background: #1a2332; color: #93c5fd; }
+  .s-plan { background: #2d2a1a; color: #fde68a; }
+  .s-dev { background: #1a2e1a; color: #86efac; }
+
+  /* Persist banner */
+  .persist-banner { background: #161b22; border: 1px dashed #6b7280; border-radius: 12px; padding: 16px 24px; text-align: center; margin-top: 32px; }
+  .persist-banner code { background: #0d1117; padding: 2px 8px; border-radius: 4px; color: #d4d4d4; font-size: 13px; }
+
+  .footer { text-align: center; margin-top: 48px; color: #484f58; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<h1>oh-my-beom</h1>
+<p class="subtitle">기본 워크플로우 가이드</p>
+
+<!-- Main Pipeline -->
+<div class="pipeline">
+  <div class="pipe-node n-lens" onclick="toggle('lens')">
+    <div class="pipe-num">STEP 1</div>
+    <div class="pipe-name">/lens</div>
+    <div class="pipe-alias">정책가</div>
+    <div class="pipe-desc">비즈니스 정책 분석</div>
+  </div>
+  <span class="pipe-arrow">&rarr;</span>
+  <div class="pipe-node n-research" onclick="toggle('research')">
+    <div class="pipe-num">STEP 2</div>
+    <div class="pipe-name">/research</div>
+    <div class="pipe-alias">조사관</div>
+    <div class="pipe-desc">코드베이스 탐색</div>
+  </div>
+  <span class="pipe-arrow">&rarr;</span>
+  <div class="pipe-node n-plan" onclick="toggle('plan')">
+    <div class="pipe-num">STEP 3</div>
+    <div class="pipe-name">/plan</div>
+    <div class="pipe-alias">계획자</div>
+    <div class="pipe-desc">계획서 + TODO 수립</div>
+  </div>
+  <span class="pipe-arrow">&rarr;</span>
+  <div class="pipe-node n-dev" onclick="toggle('dev')">
+    <div class="pipe-num">STEP 4</div>
+    <div class="pipe-name">/dev</div>
+    <div class="pipe-alias">개발자</div>
+    <div class="pipe-desc">구현 → 리뷰 → PR</div>
+  </div>
+</div>
+
+<!-- Detail Panels -->
+<div id="lens" class="detail">
+  <div class="detail-header">
+    <div class="detail-icon" style="background: #2d1a2d; color: #e879f9;">1</div>
+    <div>
+      <div class="detail-title">/lens — 정책가</div>
+      <div class="detail-sub">비즈니스 정책 영향도 분석</div>
+    </div>
+  </div>
+  <div class="detail-body">
+    <strong>언제 사용:</strong> 비즈니스 규칙, 정책, 법적 요구사항이 관련된 변경 시<br><br>
+    <strong>키워드:</strong>
+    <span class="keyword-box">정책</span>
+    <span class="keyword-box">비즈니스</span>
+    <span class="keyword-box">lens</span>
+    <span class="keyword-box">영향도</span>
+    <br><br>
+    <strong>내부 에이전트:</strong> architect (복잡도 분석)<br><br>
+    <div class="output-box">
+      <strong>산출물:</strong> 정책 영향 보고서 (기존 정책 매핑, 영향 범위, 리스크)
+    </div>
+    <div class="example-box">
+      결제 한도 변경이 기존 정책에 미치는 영향 분석해<br>
+      FDS 규정 변경 시 영향도 확인해줘
+    </div>
+  </div>
+</div>
+
+<div id="research" class="detail">
+  <div class="detail-header">
+    <div class="detail-icon" style="background: #1a2332; color: #3b82f6;">2</div>
+    <div>
+      <div class="detail-title">/research — 조사관</div>
+      <div class="detail-sub">코드베이스 탐색 + 기술 조사</div>
+    </div>
+  </div>
+  <div class="detail-body">
+    <strong>언제 사용:</strong> 코드 구조를 모르거나, 기술적 맥락 파악이 필요할 때<br><br>
+    <strong>키워드:</strong>
+    <span class="keyword-box">분석해</span>
+    <span class="keyword-box">조사해</span>
+    <span class="keyword-box">research</span>
+    <span class="keyword-box">리서치</span>
+    <br><br>
+    <strong>3-Phase:</strong> 탐색 → 패턴 수집 → 분석 보고<br><br>
+    <div class="output-box">
+      <strong>산출물:</strong> 조사 보고서 (코드 구조, 의존성, 기존 패턴, 기술적 제약)
+    </div>
+    <div class="example-box">
+      현재 인증 모듈 구조 분석해<br>
+      결제 서비스 의존성 조사해줘
+    </div>
+  </div>
+</div>
+
+<div id="plan" class="detail">
+  <div class="detail-header">
+    <div class="detail-icon" style="background: #2d2a1a; color: #fbbf24;">3</div>
+    <div>
+      <div class="detail-title">/plan — 계획자</div>
+      <div class="detail-sub">4-Mode 계획 수립 (Direct / Interview / Consensus / Review)</div>
+    </div>
+  </div>
+  <div class="detail-body">
+    <strong>언제 사용:</strong> 큰 기능, 여러 선택지 비교, 팀과 공유할 계획이 필요할 때<br><br>
+    <strong>키워드:</strong>
+    <span class="keyword-box">계획</span>
+    <span class="keyword-box">plan</span>
+    <span class="keyword-box">설계해</span>
+    <span class="keyword-box">플랜</span>
+    <br><br>
+    <strong>4가지 모드:</strong><br>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 8px 0;">
+      <div style="padding: 8px; background: #0d1117; border-radius: 6px; border-left: 3px solid #4ade80; font-size: 11px;">
+        <div style="color: #4ade80; font-weight: 700;">Direct</div>
+        <div style="color: #8b949e;">명확한 요구사항</div>
+      </div>
+      <div style="padding: 8px; background: #0d1117; border-radius: 6px; border-left: 3px solid #60a5fa; font-size: 11px;">
+        <div style="color: #60a5fa; font-weight: 700;">Interview</div>
+        <div style="color: #8b949e;">애매한 요구사항</div>
+      </div>
+      <div style="padding: 8px; background: #0d1117; border-radius: 6px; border-left: 3px solid #fbbf24; font-size: 11px;">
+        <div style="color: #fbbf24; font-weight: 700;">Consensus</div>
+        <div style="color: #8b949e;">다관점 합의</div>
+      </div>
+      <div style="padding: 8px; background: #0d1117; border-radius: 6px; border-left: 3px solid #f87171; font-size: 11px;">
+        <div style="color: #f87171; font-weight: 700;">Review</div>
+        <div style="color: #8b949e;">기존 계획 검토</div>
+      </div>
+    </div>
+    <div class="output-box">
+      <strong>산출물:</strong> <code>docs/plan/{이슈키}-plan.md</code> (TODO + 완료 기준 + 검증 태그)
+    </div>
+    <div class="example-box">
+      [JIRA-789] 인증 시스템 JWT 전환 계획 세워줘<br>
+      결제 리팩토링 설계해
+    </div>
+  </div>
+</div>
+
+<div id="dev" class="detail">
+  <div class="detail-header">
+    <div class="detail-icon" style="background: #1a2e1a; color: #4ade80;">4</div>
+    <div>
+      <div class="detail-title">/dev — 개발자</div>
+      <div class="detail-sub">전체 개발 사이클 (PRD → 설계 → 구현 → 리뷰 → PR)</div>
+    </div>
+  </div>
+  <div class="detail-body">
+    <strong>언제 사용:</strong> 실제 코드를 작성/수정하고 PR을 만들 때<br><br>
+    <strong>키워드:</strong>
+    <span class="keyword-box">개발해</span>
+    <span class="keyword-box">dev</span>
+    <span class="keyword-box">구현해</span>
+    <span class="keyword-box">만들어줘</span>
+    <br><br>
+    <strong>6 Phase:</strong> Setup → Requirements → Design → Implement → Review → Complete<br>
+    <strong>13 에이전트:</strong> 하이브리드 모델 (Task + Agent teammate)<br>
+    <strong>검증 루프:</strong> TeammateIdle + TaskCompleted 훅으로 자동 품질 게이트<br><br>
+    <div class="output-box">
+      <strong>산출물:</strong> 코드 + .dev/ 문서 + docs/plan/ 업데이트 + PR
+    </div>
+    <div class="example-box">
+      /dev [JIRA-123] 재고 차감 음수 버그 수정<br>
+      /dev --hotfix [JIRA-999] 결제 오류 긴급 수정<br>
+      로그인 기능 개발해
+    </div>
+  </div>
+</div>
+
+<!-- Scenarios -->
+<h2>상황별 시작점</h2>
+<div class="scenarios">
+  <div class="scenario">
+    <div class="scenario-title">간단한 버그 수정</div>
+    <div class="scenario-flow">
+      <span class="scenario-node s-dev">/dev</span>
+    </div>
+    <div class="scenario-example">/dev [JIRA-123] 재고 차감 버그 수정</div>
+  </div>
+
+  <div class="scenario">
+    <div class="scenario-title">긴급 핫픽스</div>
+    <div class="scenario-flow">
+      <span class="scenario-node s-dev">/dev --hotfix</span>
+    </div>
+    <div class="scenario-example">/dev --hotfix [JIRA-999] 결제 오류 긴급</div>
+  </div>
+
+  <div class="scenario">
+    <div class="scenario-title">코드 파악 후 개발</div>
+    <div class="scenario-flow">
+      <span class="scenario-node s-research">/research</span>
+      <span class="scenario-arrow">&rarr;</span>
+      <span class="scenario-node s-dev">/dev</span>
+    </div>
+    <div class="scenario-example">인증 모듈 구조 분석해 → /dev 인증 기능 추가</div>
+  </div>
+
+  <div class="scenario">
+    <div class="scenario-title">큰 기능 개발</div>
+    <div class="scenario-flow">
+      <span class="scenario-node s-research">/research</span>
+      <span class="scenario-arrow">&rarr;</span>
+      <span class="scenario-node s-plan">/plan</span>
+      <span class="scenario-arrow">&rarr;</span>
+      <span class="scenario-node s-dev">/dev</span>
+    </div>
+    <div class="scenario-example">결제 모듈 조사해 → 결제 리팩토링 계획 → /dev 구현</div>
+  </div>
+
+  <div class="scenario">
+    <div class="scenario-title">정책 관련 변경</div>
+    <div class="scenario-flow">
+      <span class="scenario-node s-lens">/lens</span>
+      <span class="scenario-arrow">&rarr;</span>
+      <span class="scenario-node s-plan">/plan</span>
+      <span class="scenario-arrow">&rarr;</span>
+      <span class="scenario-node s-dev">/dev</span>
+    </div>
+    <div class="scenario-example">결제 한도 정책 영향 분석 → 계획 → /dev 구현</div>
+  </div>
+
+  <div class="scenario">
+    <div class="scenario-title">풀코스 (대규모)</div>
+    <div class="scenario-flow">
+      <span class="scenario-node s-lens">/lens</span>
+      <span class="scenario-arrow">&rarr;</span>
+      <span class="scenario-node s-research">/research</span>
+      <span class="scenario-arrow">&rarr;</span>
+      <span class="scenario-node s-plan">/plan</span>
+      <span class="scenario-arrow">&rarr;</span>
+      <span class="scenario-node s-dev">/dev</span>
+    </div>
+    <div class="scenario-example">정책 분석 → 코드 조사 → 계획 수립 → 개발</div>
+  </div>
+</div>
+
+<!-- Persist banner -->
+<div class="persist-banner">
+  <code>/persist</code> — 순서 무관. 어떤 작업이든 <strong>"끝까지 멈추지 말고 해"</strong>라고 할 때 사용.
+</div>
+
+<div class="footer">
+  oh-my-beom v1.1.0 — Workflow Guide<br>
+  Last updated: 2026-03-30
+</div>
+
+<script>
+function toggle(id) {
+  const el = document.getElementById(id);
+  const nodes = document.querySelectorAll('.pipe-node');
+  const details = document.querySelectorAll('.detail');
+
+  if (el.classList.contains('active')) {
+    el.classList.remove('active');
+    nodes.forEach(n => n.classList.remove('active'));
+    return;
+  }
+
+  details.forEach(d => d.classList.remove('active'));
+  nodes.forEach(n => n.classList.remove('active'));
+
+  el.classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+</script>
+
+</body>
+</html>
