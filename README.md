@@ -64,34 +64,37 @@ main/master/develop 브랜치에서 직접 커밋을 차단합니다.
 
 ---
 
-## 13개 에이전트
+## 에이전트
 
-### 개발 파이프라인 에이전트 (11개)
+### 팀 에이전트 (5개, TeamCreate + tmux pane)
+
+`/dev` 실행 시 tmux 환경이면 TeamCreate로 생성되어 파이프라인 전체에 걸쳐 상시 실행됩니다.
 
 | Agent | 역할 | 모델 |
 |-------|------|------|
-| **product-owner** | PRD 작성 + AC 검증 (요구사항 분석 7단계 포함) | sonnet |
-| **architect** | 기술 설계 (API/JPA 설계 원칙 내장) | sonnet |
-| **design-critic** | 설계 가정 도전 (CHALLENGE/SIMPLIFY/ROOT-CAUSE) | opus |
-| **coder** | 코드 구현 (Spring Boot/JPA/QueryDSL 컨벤션 내장) | inherit |
-| **qa-manager** | 코드 리뷰 (25조항 코딩 컨벤션 + 20조항 추상화 원칙) | sonnet |
-| **security-auditor** | 보안/정책 감사 (Zero Trust) | sonnet |
-| **researcher** | 코드베이스 탐색 + 분석 | sonnet |
-| **hacker** | 제약 우회 + 돌파구 | sonnet |
-| **simplifier** | 복잡도 줄이기 | sonnet |
-| **plan-visualizer** | 계획 MD → 인터랙티브 HTML 대시보드 변환 | sonnet |
-| **todo-verifier** | 계획 완료 기준 vs 코드 상태 검증 | sonnet |
+| **product-owner** | PRD 작성 + AC 검증 | sonnet |
+| **architect** | 기술 설계 | sonnet |
+| **coder** | 코드 구현 + 수정 | inherit |
+| **qa-manager** | 코드 리뷰 + 스펙 검증 | sonnet |
+| **security-auditor** | 보안/정책 감사 | sonnet |
 
-### Playwright 테스트 에이전트 (2개)
+### 유틸리티 에이전트 (7개, on-demand)
+
+필요할 때만 Agent tool로 개별 호출됩니다.
 
 | Agent | 역할 |
 |-------|------|
-| **playwright-tester** | 테스트 시나리오 설계 + 코드 생성 |
-| **playwright-test-healer** | 실패 테스트 디버깅/수정 |
+| **researcher** | 코드베이스 탐색 + 분석 |
+| **hacker** | 제약 우회 + 돌파구 (정체 감지 시) |
+| **simplifier** | 복잡도 줄이기 (정체 감지 시) |
+| **plan-visualizer** | 계획 MD → HTML 대시보드 변환 |
+| **todo-verifier** | 계획 완료 기준 vs 코드 상태 검증 |
+| **web-test-qa** | E2E 테스트 전체 사이클 (계획+생성+디버깅) |
+| **design-critic** | 설계 가정 도전 (에이전트 정의, 스킬로도 호출 가능) |
 
 ---
 
-## 14개 Skills
+## 18개 Skills
 
 ### 개발 워크플로우
 
@@ -118,6 +121,10 @@ main/master/develop 브랜치에서 직접 커밋을 차단합니다.
 | `/hecto-setup` | HectoProject용 CLAUDE.md를 프로젝트에 설정 |
 | `/new-context` | 도메인 컨텍스트 디렉토리 생성 |
 | `/humanizer` | AI 글쓰기 패턴 제거 (40+ 패턴 감지) |
+| `/design-critic` | 설계 비판 검토 (CHALLENGE/SIMPLIFY/ROOT-CAUSE) |
+| `/test-plan` | E2E 테스트 계획 (인증 분석 + 시나리오 설계) |
+| `/test-generate` | E2E 테스트 코드 생성 (.spec.ts) |
+| `/test-heal` | E2E 테스트 실행 + 실패 디버깅/수정 |
 
 ### 외부 연동
 
@@ -150,8 +157,8 @@ oh-my-beom/
 │   └── workspace-structure.md        # 워크스페이스 구조
 ├── config/
 │   └── config.json                   # 이슈키, 프로젝트 타입, 타임아웃
-├── agents/                           # 13개 에이전트
-├── skills/                           # 14개 스킬
+├── agents/                           # 12개 에이전트
+├── skills/                           # 18개 스킬
 ├── docs/                             # 시각화 산출물
 └── package.json
 ```
