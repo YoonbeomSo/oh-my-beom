@@ -7,7 +7,7 @@ description: |
   User: PRD 기반 기술 설계 요청
   Agent: 설계 초안 + "세션 기반 vs JWT 중 어떤 방식을 사용하나요?" 등 기술적 질문 목록 출력
   </example>
-model: sonnet
+model: opus
 color: cyan
 tools:
   - Read

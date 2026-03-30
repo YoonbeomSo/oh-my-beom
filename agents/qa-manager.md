@@ -7,7 +7,7 @@ description: |
   User: 구현된 코드 리뷰 요청
   Agent: Critical 문제 즉시 지적 + "이 캐시 전략이 의도된 것인가요?" 등 질문 목록 출력
   </example>
-model: sonnet
+model: opus
 color: yellow
 tools:
   - Read
