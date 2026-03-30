@@ -60,8 +60,7 @@
     "critic": { "maxInputLines": 800, "note": "계획서 + 기준 문서" },
     "todo-verifier": { "maxInputLines": 1000, "note": "계획 파일 + 코드 검증 결과" },
     "plan-visualizer": { "maxInputLines": 500, "note": "계획 MD 파싱" },
-    "playwright-planner": { "maxInputLines": 800, "note": "PRD 수용기준 + diff + 코드맵" },
-    "playwright-generator": { "maxInputLines": 600, "note": "테스트 계획 + 프로젝트 컨벤션" },
+    "playwright-tester": { "maxInputLines": 1000, "note": "PRD 수용기준 + diff + 코드맵 + 프로젝트 컨벤션" },
     "playwright-healer": { "maxInputLines": 1000, "note": "테스트 코드 + 에러 로그" }
   },
   "verification": {
