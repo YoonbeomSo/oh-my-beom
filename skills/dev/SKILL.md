@@ -255,9 +255,9 @@ execution-log:
 
 ### Context Slicing 규칙
 설계서와 PRD를 Agent에게 전달할 때, 역할에 따라 필요한 섹션만 전달하여 컨텍스트 효율을 높인다:
-- **product-owner (PRD 작성)**: ARGS[0] + 코드 맵 + 프로젝트 타입/구조 + 프로젝트 루트 경로 + DOMAIN_CONTEXT (있으면)
+- **product-owner (PRD 작성)**: ARGS[0] + 코드 맵 + 프로젝트 타입/구조 + 프로젝트 루트 경로 + DOMAIN_CONTEXT (있으면) + LENS_REPORT (있으면) + RESEARCH_REPORT (있으면)
 - **product-owner (인수 검증)**: PRD의 "요구사항" + "수용 기준" + diff 파일 경로 (`DIFF_FILE`) + 코드 맵
-- **architect (설계)**: PRD 전체 + 코드 맵 + 프로젝트 타입/구조/컨벤션 + 프로젝트 루트 경로 + DOMAIN_CONTEXT (있으면)
+- **architect (설계)**: PRD 전체 + 코드 맵 + 프로젝트 타입/구조/컨벤션 + 프로젝트 루트 경로 + DOMAIN_CONTEXT (있으면) + RESEARCH_REPORT (있으면, 기술 조사 결과)
 - **coder (구현)**: 설계서 전체 + 코드 맵 + 프로젝트 루트 경로. `--hotfix`이면 설계서 대신 PRD + 코드 맵.
 - **coder (수정)**: 수정 항목 목록 + 수정 방안 + 코드 맵 + 프로젝트 루트 경로
 - **qa-manager**: PRD의 "요구사항" + "수용 기준" + 설계서의 "변경 범위" 섹션 + 코드 맵
@@ -463,6 +463,15 @@ config.json의 `verification.enabled`가 `true`이면:
    - 나머지 섹션은 빈 상태
 3. `state.md`에 `plan-file` 경로 기록.
 
+## 0.8. 이전 스킬 산출물 감지
+다음 파일의 존재를 확인하고, 있으면 경로를 기록한다:
+1. `${PROJECT_ROOT}/.dev/lens-report.md` → `LENS_REPORT` 변수에 저장
+2. `${PROJECT_ROOT}/.dev/research-report.md` → `RESEARCH_REPORT` 변수에 저장
+3. `docs/plan/` 디렉토리에 현재 이슈키와 매칭되는 계획 파일 → `PLAN_FILE` 변수에 저장 (기존 로직)
+
+감지된 파일이 있으면 사용자에게 알린다:
+"이전 스킬 산출물을 감지했습니다: {파일 목록}. PRD 작성 시 자동으로 반영됩니다."
+
 ---
 
 # Phase: requirements (PRD Q&A 사이클)
@@ -488,6 +497,9 @@ hotfix가 아닌 경우 아래 정상 플로우를 따른다.
 - 코드 맵 (phase-setup에서 생성한 초기 맵)
 - 프로젝트 타입, 디렉토리 구조
 - 프로젝트 루트 경로
+- `LENS_REPORT` 파일이 있으면: 정책 분석 보고서 내용 (요약 또는 전문)
+- `RESEARCH_REPORT` 파일이 있으면: 조사 보고서 내용 (요약 또는 전문)
+- "이전 스킬의 분석 결과를 PRD의 배경, 요구사항, 제약사항에 반영하라"
 - "PRD 작성"으로 동작할 것
 - 이전 Q&A 히스토리 (사용자 수정 요청이 있었으면: 이전 PRD 초안 + 사용자 답변)
 - PRD 품질 자가 검증 3관점:
