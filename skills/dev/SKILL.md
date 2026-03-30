@@ -66,6 +66,9 @@ ARGS[0]이 없고 `--status`도 `--resume`도 없으면 다음을 응답:
 | researcher | ANALYSIS | 코드베이스 조사 + 기술 비교 | "이해한다" (독립 호출 전용) | sonnet |
 | hacker | RECOVERY | 제약 우회 + 정체 탈출 | "다른 길이 있다" (정체 감지 시 호출) | sonnet |
 | simplifier | RECOVERY | 복잡도 제거 + 범위 축소 | "더 작게 만들자" (정체 감지 시 호출) | sonnet |
+| playwright-test-planner | TESTING | E2E 테스트 계획 | "어떤 유저 플로우를 검증할지" | sonnet |
+| playwright-test-generator | TESTING | E2E 테스트 코드 생성 | "테스트 코드를 만든다" | sonnet |
+| playwright-test-healer | TESTING | 실패 테스트 수정 | "테스트를 고친다" | sonnet |
 | todo-verifier | VERIFICATION | TODO 완료 기준 검증 | "기준대로 됐나" | sonnet |
 | plan-visualizer | VISUALIZATION | 계획 MD → HTML | "보여준다" | sonnet |
 
@@ -74,6 +77,7 @@ ARGS[0]이 없고 `--status`도 `--resume`도 없으면 다음을 응답:
 - 비판적 분석 (가정 도전, 설계 비판): opus — 추론 깊이 우선
 - 산출물 생성 (PRD, 설계, 코드, 리뷰): sonnet — 비용 효율 우선
 - 정체 탈출 (제약 우회, 복잡도 제거): sonnet — 빠른 판단 우선
+- E2E 테스트 (계획, 생성, 수정): sonnet — 브라우저 상호작용 중심, 빠른 실행 우선
 - 단순 검증 (Mechanical Gate 결과 판단): 오케스트레이터가 직접 수행 — 에이전트 불필요
 - 검증/시각화 (TODO 검증, HTML 생성): sonnet — 경량 분석 작업
 
@@ -264,6 +268,9 @@ execution-log:
 - **researcher (독립 조사)**: 조사 요청 + 코드 맵 (있으면) + 프로젝트 루트 경로
 - **hacker (제약 우회)**: 정체 상황 설명 (에러 메시지, 시도한 접근) + 코드 맵 + 프로젝트 루트 경로
 - **simplifier (복잡도 제거)**: 정체 상황 설명 + 설계서 + PRD + 코드 맵
+- **playwright-test-planner**: PRD의 "요구사항" + "수용 기준" + diff 파일 경로 (`DIFF_FILE`) + 코드 맵 + 개발 서버 URL
+- **playwright-test-generator**: 테스트 계획 파일 경로 + 프로젝트 루트 경로 + 개발 서버 URL
+- **playwright-test-healer**: 테스트 파일 경로 목록 + 프로젝트 루트 경로 + 개발 서버 URL + 최대 재시도 횟수
 - **todo-verifier**: 계획 파일 경로 + 코드 맵 + 프로젝트 루트 경로
 - **plan-visualizer**: 계획 파일 경로
 
@@ -684,10 +691,77 @@ Mechanical Gate 결과를 계획 파일에 반영:
 **Task B**: security-auditor 통합 감사.
 - PRD 전체 + 설계서 전체 + diff 파일 경로 + 코드 맵
 
-**Step 3**: 결과를 합산한다. Trust Ledger를 저장한다. 사용자에게 **요약만** 표시.
+**Step 2.5: Playwright E2E 테스트 (조건부)**
+
+프론트엔드 변경이 감지된 경우에만 실행. 백엔드 전용이면 건너뛴다.
+
+#### 2.5-0. 프론트엔드 변경 감지
+1. config.json의 `playwrightTesting.enabled`가 `false`면 건너뛴다.
+2. `DIFF_FILE`에서 변경 파일 목록 추출 → `playwrightTesting.frontendFilePatterns`과 매칭.
+3. 매칭 없으면 `PROJECT_ROOT`에서 `playwrightTesting.devServerConfigFiles` 존재 여부 확인.
+4. 둘 다 해당 없으면: `execution-log`에 `"playwright: 건너뜀 (프론트엔드 변경 없음)"` 기록, Step 3으로 진행.
+5. `package.json`에 `@playwright/test` 의존성이 없으면: `"Playwright 미설치 — E2E 건너뜀"` 기록, Step 3으로 진행.
+
+#### 2.5-1. 개발 서버 시작
+1. `playwrightTesting.devServerCommand`가 있으면 해당 명령 사용. 없으면 프로젝트 런타임에서 추론: `bun dev` 또는 `npm run dev`.
+2. 백그라운드 실행, PID 캡처: `DEV_SERVER_PID=$!`
+3. `playwrightTesting.devServerUrl`(기본 `http://localhost:3000`)에 `playwrightTesting.devServerStartTimeout`(기본 30초) 내 응답 확인.
+4. 타임아웃 시: 서버 프로세스 정리 후 경고 표시, Step 3으로 진행.
+
+#### 2.5-2. 인증 전략 수립 (planner 내 선행 단계)
+planner가 테스트 계획 수립 시 **인증 요구사항을 먼저 분석**하여 테스트 중단을 방지한다.
+
+1. 코드 맵 + diff에서 인증/로그인 관련 코드 탐색 (미들웨어, 토큰 검증, 세션 체크 등).
+2. 테스트 대상 페이지가 인증을 요구하는지 판단.
+3. 인증이 필요하면 사용자에게 AskUserQuestion으로 전략을 확인:
+   - **A. 테스트용 토큰/계정 제공** — 사용자가 토큰 또는 로그인 정보를 제공. planner가 테스트 계획에 인증 선행 단계를 포함.
+   - **B. 인증 로직 임시 우회** — 테스트 동안 인증 미들웨어/가드를 주석 처리. coder에게 위임하여 임시 비활성화 → 테스트 완료 후 원복.
+   - **C. 인증 불필요** — 공개 페이지만 테스트. 그대로 진행.
+4. 선택된 전략을 테스트 계획에 `## 인증 전략` 섹션으로 기록.
+
+**B 선택 시 흐름:** planner 완료 후 coder에게 인증 우회 코드 수정 위임 → generator → healer 실행 → Step 2.5-6에서 coder에게 인증 코드 원복 위임.
+
+#### 2.5-3. 테스트 계획 (playwright-test-planner)
+`Task(subagent_type="playwright-test-planner")` — prompt에 다음 포함:
+- 개발 서버 URL + PRD의 "요구사항" + "수용 기준" + diff 파일 경로 + 코드 맵
+- "변경된 기능에 집중하여 테스트 시나리오를 설계하라"
+- 인증 전략 (있으면)
+
+planner 출력의 테스트 계획 저장 경로를 `PLAYWRIGHT_PLAN_PATH`에 보관.
+
+#### 2.5-4. 테스트 생성 (playwright-test-generator)
+`Task(subagent_type="playwright-test-generator")` — prompt에 다음 포함:
+- 테스트 계획 경로 (`PLAYWRIGHT_PLAN_PATH`) + Read 지시
+- 개발 서버 URL + 프로젝트 루트 경로
+- "프로젝트의 기존 테스트 컨벤션을 따르라"
+- 인증 전략이 A(토큰 제공)인 경우: 테스트 코드에 인증 선행 단계 포함
+
+생성된 테스트 파일 경로를 `PLAYWRIGHT_TEST_FILES`에 보관.
+
+#### 2.5-5. 테스트 실행 및 수정 (playwright-test-healer)
+`Task(subagent_type="playwright-test-healer")` — prompt에 다음 포함:
+- 테스트 파일 경로 목록 (`PLAYWRIGHT_TEST_FILES`) + 프로젝트 루트 경로 + 개발 서버 URL
+- 최대 재시도: `playwrightTesting.maxHealerRetries` (기본 2)
+- "테스트 코드 문제는 직접 수정. 앱 코드 문제는 수정 없이 보고 반환."
+
+healer 출력: 테스트 결과 요약 (통과/수정 후 통과/fixme/미해결 실패).
+
+#### 2.5-6. 인증 원복 + 개발 서버 종료
+1. 인증 전략 B(임시 우회)였으면: coder에게 인증 코드 원복 위임 → 원복 확인.
+2. `kill ${DEV_SERVER_PID}`로 서버 종료. 포트 해제 확인.
+
+#### 2.5-7. 결과 기록
+- `execution-log`에 `{ phase: review, step: playwright-e2e, result: "N개 pass, M개 fail, K개 fixme" }` 기록.
+- Trust Ledger에 `### E2E 테스트 (review)` 섹션을 append.
+
+**Step 3**: qa-manager + security-auditor + Playwright E2E 결과(있으면)를 합산한다. Trust Ledger를 저장한다. 사용자에게 **요약만** 표시.
+- Playwright fixme → Warning (비블로킹).
+- Playwright 미해결 실패 → Critical.
 
 **Step 4: 결과 처리**
-- Critical 자동 수정 → QUESTION 사용자 확인 → 반복 판단
+- QA/ZT Critical → coder로 자동 수정 (기존)
+- Playwright 미해결 실패 (앱 코드 문제) → coder에 UI 코드 수정 위임 → 1회 재시도
+- QUESTION → 사용자 확인 → 반복 판단
 - 2회 반복 후 미해결 Critical이 있으면 사용자에게 진행 여부 확인.
 
 ---

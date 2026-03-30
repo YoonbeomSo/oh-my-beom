@@ -59,7 +59,10 @@
     "reviewer": { "maxInputLines": 1500, "note": "diff + 설계서" },
     "critic": { "maxInputLines": 800, "note": "계획서 + 기준 문서" },
     "todo-verifier": { "maxInputLines": 1000, "note": "계획 파일 + 코드 검증 결과" },
-    "plan-visualizer": { "maxInputLines": 500, "note": "계획 MD 파싱" }
+    "plan-visualizer": { "maxInputLines": 500, "note": "계획 MD 파싱" },
+    "playwright-planner": { "maxInputLines": 800, "note": "PRD 수용기준 + diff + 코드맵" },
+    "playwright-generator": { "maxInputLines": 600, "note": "테스트 계획 + 프로젝트 컨벤션" },
+    "playwright-healer": { "maxInputLines": 1000, "note": "테스트 코드 + 에러 로그" }
   },
   "verification": {
     "enabled": true,
@@ -76,5 +79,20 @@
       "idleChecker": 10
     },
     "maxVerificationRetries": 2
+  },
+  "playwrightTesting": {
+    "enabled": true,
+    "frontendFilePatterns": [
+      "*.html", "*.htm", "*.jsx", "*.tsx", "*.vue", "*.svelte",
+      "*.css", "*.scss", "*.less", "*.astro"
+    ],
+    "devServerConfigFiles": [
+      "vite.config.*", "next.config.*", "nuxt.config.*",
+      "svelte.config.*", "webpack.config.*", "astro.config.*"
+    ],
+    "devServerCommand": null,
+    "devServerUrl": "http://localhost:3000",
+    "devServerStartTimeout": 30000,
+    "maxHealerRetries": 2
   }
 }

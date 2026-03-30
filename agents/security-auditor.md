@@ -7,7 +7,7 @@ description: |
   User: 통합 감사 요청
   Agent: [RISK] SQL 인젝션 취약점, [GAP] PRD에 정의된 롤백 시나리오가 코드에 미구현, [POLICY] FDS 연동 규정 미준수, [ASSUMPTION] 설계서의 "모든 사용자" 범위가 코드에서 법인 미포함
   </example>
-model: sonnet
+model: opus
 color: purple
 tools:
   - Read
