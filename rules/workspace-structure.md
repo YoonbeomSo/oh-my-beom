@@ -49,6 +49,7 @@ oh-my-beom/                  <- 플러그인 루트
 - `config/config.json`은 스킬과 훅에서 공통으로 참조하는 설정값이다.
 - `hooks/`는 세션 시작, 프롬프트 제출, 도구 사용 전, 태스크 완료 시, 팀메이트 유휴 시에 자동 실행된다.
 - 새 스킬을 추가할 때는 `skills/{name}/SKILL.md` 형식을 따른다.
+- `teamAgent` 설정으로 특정 에이전트를 Team Agent(teammate)로 전환 가능하다. `fallbackToTask`로 폴백 보장.
 
 ## 참조 관계
 
@@ -60,3 +61,5 @@ oh-my-beom/                  <- 플러그인 루트
 | `hooks/hooks.json` | Claude Code 플러그인 시스템 |
 | `docs/plan/*.md` | /dev 스킬, todo-verifier, plan-visualizer, 훅 스크립트 |
 | `docs/show/*.html` | plan-visualizer가 자동 생성 |
+| `config.json > teamAgent` | /dev 스킬 (Agent/Task dispatch 결정) |
+| `~/.claude/settings.json > env` | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` 플래그 |

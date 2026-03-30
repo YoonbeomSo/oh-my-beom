@@ -40,4 +40,15 @@ oh-my-beom 플러그인의 최상위 지침.
 | `rules/behavior.md` | 행동 원칙 상세 |
 | `rules/git-workflow.md` | Git 브랜치/커밋/PR 규칙 |
 | `rules/workspace-structure.md` | 플러그인 구조 설명 |
-| `config/config.json` | 이슈 키, 민감 파일, 프로젝트 타입, 타임아웃 설정 |
+| `config/config.json` | 이슈 키, 민감 파일, 프로젝트 타입, 타임아웃, teamAgent 설정 |
+
+## Team Agent 설정
+
+| 설정 | 위치 | 설명 |
+|------|------|------|
+| `teamAgent.enabled` | `config/config.json` | Team Agent 사용 여부 (기본: true) |
+| `teamAgent.mode` | `config/config.json` | 표시 모드: tmux / background |
+| `teamAgent.fallbackToTask` | `config/config.json` | Agent 실패 시 Task로 폴백 |
+| `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | `~/.claude/settings.json` (env) | 실험 기능 활성화 필수 |
+| `TeammateIdle` hook | `hooks/idle-checker` | Teammate 유휴 시 미완료 작업 자동 할당 |
+| `TaskCompleted` hook | `hooks/task-verifier` | Task 완료 시 품질 게이트 검증 |

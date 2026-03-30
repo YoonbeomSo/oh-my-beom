@@ -81,6 +81,19 @@ except:
 project_types = config.get("projectTypes", {})
 mechanical = config.get("verification", {}).get("mechanicalChecks", {})
 
+# .dev/state.md에서 현재 페이즈 감지
+current_phase = None
+state_path = os.path.join(cwd, ".dev", "state.md")
+if os.path.isfile(state_path):
+    try:
+        with open(state_path) as f:
+            state_content = f.read()
+        phase_match = re.search(r'^phase:\s*(.+)', state_content, re.MULTILINE)
+        if phase_match:
+            current_phase = phase_match.group(1).strip()
+    except:
+        pass
+
 # 프로젝트 타입 감지
 detected_type = None
 for ptype, pconfig in project_types.items():
@@ -97,33 +110,41 @@ with open(plan_path) as f:
 
 failures = []
 
-# 미완료 TODO 항목 수집
-unchecked_todos = re.findall(r'- \[ \] \[TODO-[\d.]+\]\s*(.+)', content)
-for todo in unchecked_todos:
-    failures.append(f"[TODO] 미완료: {todo.strip()}")
+# review 페이즈: 리뷰 파일 존재 여부 검증
+if current_phase == "review":
+    for review_file in ["qa-review.md", "security-audit.md"]:
+        if not os.path.isfile(os.path.join(cwd, ".dev", review_file)):
+            failures.append(f"[REVIEW] 리뷰 미완료: {review_file} 미생성")
 
-# FAILED 상태 항목 수집
-failed_items = re.findall(r'검증 상태:\s*FAILED', content)
-if failed_items:
-    failures.append(f"[VERIFICATION] 검증 실패 항목 {len(failed_items)}건")
+# implement 페이즈 또는 state.md 없는 경우: 기존 동작 (계획 파일 TODO 확인)
+if current_phase is None or current_phase == "implement":
+    # 미완료 TODO 항목 수집
+    unchecked_todos = re.findall(r'- \[ \] \[TODO-[\d.]+\]\s*(.+)', content)
+    for todo in unchecked_todos:
+        failures.append(f"[TODO] 미완료: {todo.strip()}")
 
-# 최종 완료 기준 중 미체크 항목
-final_criteria = re.findall(r'- \[ \] \[(LINT|TEST|BUILD|FILE_EXISTS|GREP_MATCH|CRITERIA)\]\s*(.+)', content)
-for tag, desc in final_criteria:
-    if tag == "LINT" and mechanical.get("lint", True) and detected_type:
-        lint_cmd = project_types.get(detected_type, {}).get("lint", "")
-        if lint_cmd:
-            failures.append(f"[LINT] 린트 미통과 (명령: {lint_cmd.split('|')[0].strip()})")
-    elif tag == "TEST" and mechanical.get("test", True) and detected_type:
-        failures.append("[TEST] 테스트 미통과")
-    elif tag == "BUILD" and mechanical.get("build", True) and detected_type:
-        failures.append("[BUILD] 빌드 미통과")
-    elif tag == "FILE_EXISTS":
-        path = desc.strip()
-        if not os.path.exists(os.path.join(cwd, path)):
-            failures.append(f"[FILE_EXISTS] 파일 없음: {path}")
-    elif tag == "CRITERIA":
-        failures.append(f"[CRITERIA] 미검증 (에이전트 확인 필요): {desc.strip()}")
+    # FAILED 상태 항목 수집
+    failed_items = re.findall(r'검증 상태:\s*FAILED', content)
+    if failed_items:
+        failures.append(f"[VERIFICATION] 검증 실패 항목 {len(failed_items)}건")
+
+    # 최종 완료 기준 중 미체크 항목
+    final_criteria = re.findall(r'- \[ \] \[(LINT|TEST|BUILD|FILE_EXISTS|GREP_MATCH|CRITERIA)\]\s*(.+)', content)
+    for tag, desc in final_criteria:
+        if tag == "LINT" and mechanical.get("lint", True) and detected_type:
+            lint_cmd = project_types.get(detected_type, {}).get("lint", "")
+            if lint_cmd:
+                failures.append(f"[LINT] 린트 미통과 (명령: {lint_cmd.split('|')[0].strip()})")
+        elif tag == "TEST" and mechanical.get("test", True) and detected_type:
+            failures.append("[TEST] 테스트 미통과")
+        elif tag == "BUILD" and mechanical.get("build", True) and detected_type:
+            failures.append("[BUILD] 빌드 미통과")
+        elif tag == "FILE_EXISTS":
+            path = desc.strip()
+            if not os.path.exists(os.path.join(cwd, path)):
+                failures.append(f"[FILE_EXISTS] 파일 없음: {path}")
+        elif tag == "CRITERIA":
+            failures.append(f"[CRITERIA] 미검증 (에이전트 확인 필요): {desc.strip()}")
 
 if not failures:
     print("PASS")

@@ -38,6 +38,39 @@ RESULT=$(python3 << 'PYEOF'
 import glob, re, sys, os
 
 cwd = sys.argv[1] if len(sys.argv) > 1 else "."
+
+# .dev/state.md에서 현재 페이즈 감지
+current_phase = None
+state_path = os.path.join(cwd, ".dev", "state.md")
+if os.path.isfile(state_path):
+    try:
+        with open(state_path) as f:
+            state_content = f.read()
+        phase_match = re.search(r'^phase:\s*(.+)', state_content, re.MULTILINE)
+        if phase_match:
+            current_phase = phase_match.group(1).strip()
+    except:
+        pass
+
+# review 페이즈: 리뷰 파일 존재 여부 확인
+if current_phase == "review":
+    missing = []
+    for review_file in ["qa-review.md", "security-audit.md"]:
+        if not os.path.isfile(os.path.join(cwd, ".dev", review_file)):
+            missing.append(review_file)
+    if missing:
+        print("리뷰 작업이 아직 완료되지 않았습니다. 리뷰를 계속 진행하세요.")
+        sys.exit(0)
+    else:
+        print("IDLE_OK")
+        sys.exit(0)
+
+# implement 페이즈 또는 state.md 없는 경우: 기존 동작 (계획 파일 TODO 확인)
+# 그 외 페이즈: 유휴 허용
+if current_phase is not None and current_phase != "implement":
+    print("IDLE_OK")
+    sys.exit(0)
+
 plan_dir = os.path.join(cwd, "docs", "plan")
 
 if not os.path.isdir(plan_dir):

@@ -94,5 +94,15 @@
     "devServerUrl": "http://localhost:3000",
     "devServerStartTimeout": 30000,
     "maxHealerRetries": 2
+  },
+  "teamAgent": {
+    "enabled": true,
+    "mode": "tmux",
+    "phases": {
+      "implement": { "coder": "teammate" },
+      "design": { "design-critic": "teammate" },
+      "review": { "qa-manager": "teammate", "security-auditor": "teammate" }
+    },
+    "fallbackToTask": true
   }
 }

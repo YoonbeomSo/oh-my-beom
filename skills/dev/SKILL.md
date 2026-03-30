@@ -3,7 +3,7 @@ name: dev
 version: 1.0.0
 description: "PRD → 설계 → 구현 → 리뷰 → 커밋/PR까지 전체 개발 사이클을 에이전트 팀이 Q&A 루프로 수행"
 argument-hint: "<기능/버그 설명> [--phase requirements|design|implement|review|complete] [--hotfix] [--base <branch>] [--status] [--resume]"
-allowed-tools: ["Bash(git *)", "Bash(test *)", "Bash(mkdir *)", "Bash(cp *)", "Bash(mv *)", "Bash(ls *)", "Bash(find *)", "Bash(pwd *)", "Bash(basename *)", "Bash(dirname *)", "Bash(which *)", "Bash(./gradlew *)", "Bash(npm *)", "Bash(npx *)", "Bash(bun *)", "Bash(bunx *)", "Bash(yarn *)", "Bash(pnpm *)", "Bash(pip *)", "Bash(poetry *)", "Bash(pytest *)", "Bash(ruff *)", "Bash(black *)", "Bash(gh *)", "Bash(GH_HOST= *)", "Bash(brew install *)", "Read", "Edit", "Write", "Glob", "Grep", "Task", "AskUserQuestion"]
+allowed-tools: ["Bash(git *)", "Bash(test *)", "Bash(mkdir *)", "Bash(cp *)", "Bash(mv *)", "Bash(ls *)", "Bash(find *)", "Bash(pwd *)", "Bash(basename *)", "Bash(dirname *)", "Bash(which *)", "Bash(./gradlew *)", "Bash(npm *)", "Bash(npx *)", "Bash(bun *)", "Bash(bunx *)", "Bash(yarn *)", "Bash(pnpm *)", "Bash(pip *)", "Bash(poetry *)", "Bash(pytest *)", "Bash(ruff *)", "Bash(black *)", "Bash(gh *)", "Bash(GH_HOST= *)", "Bash(brew install *)", "Read", "Edit", "Write", "Glob", "Grep", "Task", "Agent", "AskUserQuestion"]
 ---
 
 오케스트레이터. 직무 기반 Agent 팀과 Q&A 피드백 루프로 전체 개발 사이클을 관리한다.
@@ -80,6 +80,23 @@ ARGS[0]이 없고 `--status`도 `--resume`도 없으면 다음을 응답:
 - E2E 테스트 (계획, 생성, 수정): sonnet — 브라우저 상호작용 중심, 빠른 실행 우선
 - 단순 검증 (Mechanical Gate 결과 판단): 오케스트레이터가 직접 수행 — 에이전트 불필요
 - 검증/시각화 (TODO 검증, HTML 생성): sonnet — 경량 분석 작업
+
+### Agent Dispatch Mode
+
+config.json의 `teamAgent.enabled`가 `true`이고 해당 Phase에서 에이전트가 `teammate`로 설정되어 있으면 `Agent` tool로 teammate를 생성한다. 그 외에는 `Task(subagent_type=...)` 서브에이전트를 사용한다. `teamAgent.fallbackToTask`가 `true`이면 Agent 호출 실패 시 자동으로 Task로 폴백한다.
+
+| Agent | Phase | Dispatch | 조건 |
+|-------|-------|----------|------|
+| product-owner | requirements | Task | Q&A 중개 필요 |
+| architect | design | Task | Q&A 중개 필요 |
+| design-critic | design | Agent (teammate) | 리드가 사용자에게 설계 표시 중 병렬 비판 |
+| coder | implement | Agent (teammate) | TeammateIdle → TODO 자동 계속 |
+| qa-manager (자기점검) | implement | Task | 단발성, 유휴 이점 없음 |
+| qa-manager (리뷰) | review | Agent (teammate) | security-auditor와 진짜 병렬 |
+| security-auditor | review | Agent (teammate) | qa-manager와 진짜 병렬 |
+| todo-verifier | implement/review | Task | 단발성 검증 |
+| plan-visualizer | 각 Phase 후 | Task | 경량 작업 |
+| researcher/hacker/simplifier | 정체 시 | Task | 에스컬레이션 전용 |
 
 ## Phase 개요
 
@@ -280,6 +297,33 @@ execution-log:
 2. 모든 병렬 Task가 완료된 후 결과를 합산한다 (Gate 로직).
 3. 쓰기 Agent(coder)는 다른 쓰기 Agent와 병렬 실행하지 않는다.
 4. coder와 읽기 전용 Agent의 병렬은 **읽기 Agent가 이전 Phase의 산출물(설계서 등)만 참조하는 경우** 허용한다.
+
+### Teammate 통신 프로토콜
+
+#### Lead → Teammate (초기 작업 지시)
+Agent tool의 prompt에 다음을 포함한다:
+- 역할 지시 (에이전트 정의 파일 참조 경로)
+- 작업 컨텍스트 (PRD, 설계서, 코드맵 등의 **파일 경로**)
+- PROJECT_ROOT 경로
+- "완료 시 SendMessage로 결과 요약을 리드에게 전송할 것"
+
+#### Teammate → Lead (결과 전달)
+Teammate는 작업 완료 시:
+1. 산출물을 지정된 파일에 직접 Write한다.
+2. SendMessage로 리드에게 완료 상태 + 요약을 전달한다.
+
+#### Lead ↔ Teammate (후속 소통)
+리드가 사용자 피드백을 전달해야 할 때:
+1. SendMessage로 피드백 내용 + 수정 지시를 전달한다.
+2. Teammate가 수정 후 SendMessage로 결과를 반환한다.
+
+#### 파일 충돌 방지
+- `.dev/diff.txt`: 리드(오케스트레이터)만 Write
+- `.dev/qa-review.md`: qa-manager teammate만 Write
+- `.dev/security-audit.md`: security-auditor teammate만 Write
+- 코드 파일: coder teammate만 Write
+- 쓰기 Teammate(coder)가 활성인 동안 다른 쓰기 Teammate를 생성하지 않는다.
+- 읽기 Teammate(qa-manager, security-auditor)는 동시에 활성 가능하다.
 
 ### 정체 감지 + 에스컬레이션
 
@@ -546,7 +590,9 @@ hotfix가 아닌 경우 아래 정상 플로우를 따른다.
 architect 출력의 "설계 규모" 필드가 **소형**이면 이 단계를 건너뛴다. 중형/대형인 경우에만 수행한다.
 
 design-critic agent를 호출한다.
-`Task(subagent_type="design-critic")` — prompt에 다음을 포함:
+config.json의 `teamAgent.phases.design.design-critic`이 `teammate`이면 **Agent(teammate)**로, 아니면 `Task(subagent_type="design-critic")`로 호출한다. Teammate인 경우 리드가 architect 출력을 사용자에게 표시하는 동안 **병렬로** 비판 검토를 수행한다.
+
+prompt에 다음을 포함:
 - architect의 설계 초안
 - PRD
 - 코드 맵
@@ -593,7 +639,9 @@ design-critic 결과 처리:
 - `${PROJECT_ROOT}/.dev/design.md`를 Read하여 설계서를 로드한다.
 - `${PROJECT_ROOT}/.dev/prd.md`를 Read하여 PRD를 로드한다.
 
-`Task(subagent_type="coder")` — prompt에 다음을 포함:
+config.json의 `teamAgent.phases.implement.coder`가 `teammate`이면 **Agent(teammate)**로, 아니면 `Task(subagent_type="coder")`로 호출한다.
+
+**Agent 모드 prompt**에 다음을 포함:
 - 확정된 설계서
 - 코드 맵
 - 프로젝트 타입 및 구조
@@ -602,6 +650,8 @@ design-critic 결과 처리:
 - 계획 파일 경로 (`plan-file` from state.md)
 - "각 TODO 완료 시 계획 파일의 해당 항목을 체크(- [x])하고 검증 상태를 갱신하라"
 - "구현 중 발견한 버그/변경사항을 변경 이력 섹션에 기록하라"
+- "구현 완료 시 SendMessage로 결과 요약을 전달하라"
+- **TeammateIdle 동작**: coder가 유휴 시 `idle-checker` 훅이 계획 파일의 미완료 TODO를 확인. 미완료 있으면 자동으로 계속 구현. 전부 완료 시 유휴 허용.
 
 ## Task 완료 후
 
@@ -683,13 +733,23 @@ Mechanical Gate 결과를 계획 파일에 반영:
 
 **Step 1**: 변경사항 수집. `${GIT_PREFIX} add -A` 후 **Diff 수집 규칙**에 따라 diff를 `DIFF_FILE`에 저장.
 
-**Step 2**: qa-manager와 security-auditor를 **병렬로** 호출한다.
+**Step 2**: config.json의 `teamAgent.phases.review`에 따라 qa-manager와 security-auditor를 호출한다.
 
-**Task A**: qa-manager agent.
-- 변경사항 diff 파일 경로 + PRD/설계서의 관련 섹션 + 코드 맵
+**teamAgent 모드 (teammate)**:
+두 에이전트를 **Agent(teammate)**로 동시에 생성한다.
 
-**Task B**: security-auditor 통합 감사.
-- PRD 전체 + 설계서 전체 + diff 파일 경로 + 코드 맵
+**Agent A**: qa-manager agent (teammate).
+- diff 파일 경로 + PRD/설계서 파일 경로 + 코드 맵 파일 경로
+- "리뷰 결과를 `${PROJECT_ROOT}/.dev/qa-review.md`에 Write하라"
+- "완료 시 SendMessage로 결과 요약을 전달하라"
+
+**Agent B**: security-auditor 통합 감사 (teammate).
+- PRD/설계서/diff 파일 경로 + 코드 맵 파일 경로
+- "감사 결과를 `${PROJECT_ROOT}/.dev/security-audit.md`에 Write하라"
+- "완료 시 SendMessage로 결과 요약을 전달하라"
+
+**폴백 모드 (Task)**:
+`Task(subagent_type="qa-manager")`와 `Task(subagent_type="security-auditor")`를 기존과 동일하게 병렬 호출한다.
 
 **Step 2.5: Playwright E2E 테스트 (조건부)**
 
@@ -754,7 +814,7 @@ healer 출력: 테스트 결과 요약 (통과/수정 후 통과/fixme/미해결
 - `execution-log`에 `{ phase: review, step: playwright-e2e, result: "N개 pass, M개 fail, K개 fixme" }` 기록.
 - Trust Ledger에 `### E2E 테스트 (review)` 섹션을 append.
 
-**Step 3**: qa-manager + security-auditor + Playwright E2E 결과(있으면)를 합산한다. Trust Ledger를 저장한다. 사용자에게 **요약만** 표시.
+**Step 3**: qa-manager + security-auditor + Playwright E2E 결과(있으면)를 합산한다. teammate 모드인 경우 `.dev/qa-review.md`와 `.dev/security-audit.md`를 Read하여 결과를 수집한다. Trust Ledger를 저장한다. 사용자에게 **요약만** 표시.
 - Playwright fixme → Warning (비블로킹).
 - Playwright 미해결 실패 → Critical.
 

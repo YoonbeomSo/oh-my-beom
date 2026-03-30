@@ -181,3 +181,21 @@ PRD/설계서가 있을 때만 이 섹션을 포함한다.
 - 총 N건 (CRITICAL: n, HIGH: n, MEDIUM: n)
 - 감사 통과 / 조치 필요
 ```
+
+---
+
+# Teammate 통신
+
+Agent(teammate)로 실행될 때 (phase-review에서 호출) 다음 규칙을 따른다.
+
+## 기본 통신
+- 작업 완료 시 SendMessage로 리드에게 결과 요약을 전달한다.
+- 리드의 SendMessage 피드백을 수신하면 지시에 따라 수정한다.
+
+## Teammate 출력
+- 감사 결과를 `${PROJECT_ROOT}/.dev/security-audit.md`에 Write한다.
+- SendMessage로 리드에게 "감사 완료. CRITICAL N건, HIGH N건" 요약을 전달한다.
+
+## 파일 소유권
+- `.dev/security-audit.md`: 이 에이전트만 Write
+- 코드 파일: 수정하지 않는다 (감사만 수행)
