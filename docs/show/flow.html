@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>oh-my-beom &mdash; User Request Flow</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 32px; }
+  h1 { text-align: center; font-size: 24px; color: #f0f6fc; margin-bottom: 4px; }
+  .subtitle { text-align: center; color: #8b949e; font-size: 13px; margin-bottom: 32px; }
+
+  /* Scenario Tabs */
+  .tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 32px; flex-wrap: wrap; }
+  .tab { padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1.5px solid #30363d; background: #161b22; color: #8b949e; transition: all 0.2s; }
+  .tab:hover { border-color: #58a6ff; color: #c9d1d9; }
+  .tab.active { border-color: #58a6ff; background: #1a2332; color: #58a6ff; }
+  .tab .tab-emoji { margin-right: 4px; }
+
+  /* Scenario container */
+  .scenario { display: none; }
+  .scenario.active { display: block; }
+  .scenario-header { text-align: center; margin-bottom: 24px; }
+  .scenario-prompt { display: inline-block; background: #1f2937; border: 2px solid #3b82f6; color: #93c5fd; padding: 12px 24px; border-radius: 12px; font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .scenario-desc { color: #6e7681; font-size: 12px; }
+
+  /* Timeline */
+  .timeline { position: relative; max-width: 900px; margin: 0 auto; padding-left: 60px; }
+  .timeline::before { content: ''; position: absolute; left: 30px; top: 0; bottom: 0; width: 2px; background: #21262d; }
+
+  .step { position: relative; margin-bottom: 24px; }
+  .step-marker { position: absolute; left: -42px; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; z-index: 1; }
+  .step-marker.hook { background: #7c3aed; }
+  .step-marker.skill { background: #16a34a; }
+  .step-marker.agent { background: #dc2626; }
+  .step-marker.system { background: #2563eb; }
+  .step-marker.output { background: #d97706; }
+  .step-marker.guard { background: #6b7280; }
+  .step-marker.loop { background: #0d9488; }
+
+  .step-content { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 16px 20px; }
+  .step-content:hover { border-color: #484f58; }
+  .step-title { font-size: 14px; font-weight: 600; color: #f0f6fc; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .step-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .badge-hook { background: #2d1a3a; color: #a78bfa; }
+  .badge-skill { background: #1a2e1a; color: #4ade80; }
+  .badge-agent { background: #2e1a1a; color: #fca5a5; }
+  .badge-system { background: #1a2332; color: #93c5fd; }
+  .badge-output { background: #2e2a1a; color: #fde68a; }
+  .badge-guard { background: #1f2937; color: #9ca3af; }
+  .badge-loop { background: #1a2e2e; color: #5eead4; }
+
+  .step-body { font-size: 12px; color: #8b949e; line-height: 1.7; }
+  .step-body code { background: #0d1117; padding: 2px 6px; border-radius: 4px; color: #e6edf3; font-family: 'SF Mono', monospace; font-size: 11px; }
+  .step-body strong { color: #c9d1d9; font-weight: 600; }
+
+  /* IO Box */
+  .io-box { margin: 8px 0; padding: 10px 14px; border-radius: 6px; font-size: 11px; font-family: 'SF Mono', monospace; }
+  .io-in { background: #0d1117; border-left: 3px solid #3b82f6; color: #93c5fd; }
+  .io-out { background: #0d1117; border-left: 3px solid #f59e0b; color: #fde68a; }
+  .io-artifact { background: #0d1117; border-left: 3px solid #4ade80; color: #86efac; }
+  .io-deny { background: #1a0d0d; border-left: 3px solid #f87171; color: #fca5a5; }
+  .io-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #6e7681; margin-bottom: 4px; display: block; font-family: -apple-system, sans-serif; }
+
+  /* Sub-steps */
+  .substeps { margin: 10px 0 4px; padding: 10px 14px; background: #0d1117; border-radius: 6px; }
+  .substep { display: flex; align-items: flex-start; gap: 8px; margin: 6px 0; font-size: 12px; }
+  .substep-num { color: #484f58; font-weight: 700; font-size: 11px; min-width: 18px; }
+  .substep-text { color: #8b949e; }
+  .substep-text strong { color: #c9d1d9; }
+
+  /* Agent card in step */
+  .agent-cards { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+  .agent-card { padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1px solid #30363d; }
+  .ac-po { color: #f0abfc; border-color: #9333ea; }
+  .ac-arch { color: #22d3ee; border-color: #0891b2; }
+  .ac-critic { color: #fb923c; border-color: #ea580c; }
+  .ac-coder { color: #4ade80; border-color: #16a34a; }
+  .ac-qa { color: #facc15; border-color: #ca8a04; }
+  .ac-sec { color: #a78bfa; border-color: #7c3aed; }
+  .ac-hack { color: #f87171; border-color: #dc2626; }
+  .ac-simp { color: #e2e8f0; border-color: #94a3b8; }
+  .ac-res { color: #60a5fa; border-color: #2563eb; }
+
+  /* Connector line between steps */
+  .connector { text-align: center; color: #484f58; font-size: 12px; margin: -8px 0 -8px 0; position: relative; z-index: 0; padding-left: 60px; }
+  .connector .conn-label { font-size: 10px; color: #6e7681; background: #0d1117; padding: 0 8px; }
+
+  /* Passthrough special */
+  .passthrough { opacity: 0.5; }
+
+  /* No keyword box */
+  .no-match { padding: 12px 16px; border: 1px dashed #30363d; border-radius: 8px; text-align: center; color: #484f58; font-size: 12px; margin: 8px 0; }
+</style>
+</head>
+<body>
+
+<h1>oh-my-beom &mdash; Request Flow</h1>
+<p class="subtitle">사용자 요청이 들어왔을 때 시스템이 어떤 순서로 동작하는지 보여줍니다</p>
+
+<div class="tabs">
+  <div class="tab active" onclick="showScenario('dev')"><span class="tab-emoji">🔨</span> "로그인 기능 개발해줘"</div>
+  <div class="tab" onclick="showScenario('plan')"><span class="tab-emoji">📋</span> "API 설계 계획 세워줘"</div>
+  <div class="tab" onclick="showScenario('research')"><span class="tab-emoji">🔍</span> "이 코드 구조 분석해줘"</div>
+  <div class="tab" onclick="showScenario('persist')"><span class="tab-emoji">♻️</span> "끝까지 완성해줘"</div>
+  <div class="tab" onclick="showScenario('normal')"><span class="tab-emoji">💬</span> "이 함수 고쳐줘"</div>
+</div>
+
+<!-- ==================== SCENARIO: /dev ==================== -->
+<div class="scenario active" id="scenario-dev">
+  <div class="scenario-header">
+    <div class="scenario-prompt">🧑‍💻 "로그인 기능 개발해줘"</div>
+    <div class="scenario-desc">keyword "개발" 감지 → /dev skill 자동 라우팅 → 에이전트 팀이 전체 개발 사이클 수행</div>
+  </div>
+
+  <div class="timeline">
+
+    <!-- Step 0: Session Context -->
+    <div class="step">
+      <div class="step-marker system">0</div>
+      <div class="step-content">
+        <div class="step-title">세션 컨텍스트 (이미 주입됨) <span class="step-badge badge-system">SessionStart</span></div>
+        <div class="step-body">
+          세션 시작 시 <code>session-start</code> hook이 이미 실행되어
+          <strong>LOOPERS 가이드라인 §0~§7</strong>이 컨텍스트에 상주 중.
+          Claude는 이미 한국어 응답, 읽기 우선, 단순함 우선 원칙을 따르고 있음.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 1: prompt-router -->
+    <div class="step">
+      <div class="step-marker hook">1</div>
+      <div class="step-content">
+        <div class="step-title">prompt-router 키워드 감지 <span class="step-badge badge-hook">UserPromptSubmit Hook</span></div>
+        <div class="step-body">
+          사용자 메시지가 Claude에 도달하기 전에 <code>prompt-router</code> hook이 먼저 실행됩니다.
+          <div class="io-box io-in">
+            <span class="io-label">stdin (JSON)</span>
+            {"prompt": "로그인 기능 <strong>개발</strong>해줘"}
+          </div>
+          <div class="substeps">
+            <div class="substep"><span class="substep-num">1.</span><span class="substep-text"><code>python3 -c</code>로 prompt 필드 추출</span></div>
+            <div class="substep"><span class="substep-num">2.</span><span class="substep-text"><code>grep -qi "개발해\|dev \|구현해\|만들어줘"</code> → <strong>"개발" 매칭!</strong></span></div>
+            <div class="substep"><span class="substep-num">3.</span><span class="substep-text">매칭된 스킬: <strong>oh-my-beom:dev</strong></span></div>
+          </div>
+          <div class="io-box io-out">
+            <span class="io-label">stdout (JSON)</span>
+            {"hookSpecificOutput": {"additionalContext": "[KEYWORD DETECTED: dev] You MUST invoke Skill: oh-my-beom:dev ..."}}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Claude receives context -->
+    <div class="step">
+      <div class="step-marker system">2</div>
+      <div class="step-content">
+        <div class="step-title">Claude가 스킬 호출 지시를 수신 <span class="step-badge badge-system">Context Injection</span></div>
+        <div class="step-body">
+          Claude는 사용자 메시지 + <code>additionalContext</code>를 함께 받습니다.
+          Context에 <strong>"You MUST invoke Skill: oh-my-beom:dev"</strong>라는 지시가 있으므로
+          Claude는 자동으로 <code>Skill</code> tool을 호출합니다.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: /dev skill activated -->
+    <div class="step">
+      <div class="step-marker skill">3</div>
+      <div class="step-content">
+        <div class="step-title">/dev 스킬 활성화 <span class="step-badge badge-skill">Skill Tool</span></div>
+        <div class="step-body">
+          <code>/dev</code> SKILL.md (680줄)의 전체 워크플로우가 Claude의 지시사항으로 로드됩니다.
+          Claude는 이제 6-Phase 파이프라인을 순서대로 실행합니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="connector">── <span class="conn-label">Phase 1: Setup</span> ──</div>
+
+    <!-- Step 4: Setup -->
+    <div class="step">
+      <div class="step-marker agent">4</div>
+      <div class="step-content">
+        <div class="step-title">워크트리 생성 + 코드맵 초기화 <span class="step-badge badge-agent">Setup Phase</span></div>
+        <div class="step-body">
+          <div class="substeps">
+            <div class="substep"><span class="substep-num">1.</span><span class="substep-text"><code>config/config.json</code>에서 프로젝트 타입 감지 (build.gradle.kts → <strong>kotlin-java</strong>)</span></div>
+            <div class="substep"><span class="substep-num">2.</span><span class="substep-text"><code>/worktree create login-feature</code> 실행 → <code>../worktrees-{project}/login-feature</code> 생성</span></div>
+            <div class="substep"><span class="substep-num">3.</span><span class="substep-text"><code>.dev/codemap.md</code> 초기화 — 관련 파일 목록 수집 시작</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector">── <span class="conn-label">Phase 2: Requirements</span> ──</div>
+
+    <!-- Step 5: Product Owner -->
+    <div class="step">
+      <div class="step-marker agent">5</div>
+      <div class="step-content">
+        <div class="step-title">product-owner 에이전트 <span class="step-badge badge-agent">Agent</span></div>
+        <div class="step-body">
+          <div class="agent-cards"><span class="agent-card ac-po">product-owner (sonnet)</span></div>
+          PRD(Product Requirements Document)를 작성합니다.
+          <div class="substeps">
+            <div class="substep"><span class="substep-num">1.</span><span class="substep-text"><strong>문제 재해석</strong>: "로그인 기능 추가" → "인증되지 않은 사용자의 서비스 접근을 제어하는 문제" (사용자/비즈니스/시스템 관점)</span></div>
+            <div class="substep"><span class="substep-num">2.</span><span class="substep-text"><strong>애매함 도출</strong>: "JWT vs 세션?", "소셜 로그인 포함?", "실패 횟수 제한?" 등 정책/경계/확장 질문</span></div>
+            <div class="substep"><span class="substep-num">3.</span><span class="substep-text"><strong>Q&A 루프</strong>: 사용자에게 선택지 + 영향도를 함께 제시하여 확인</span></div>
+            <div class="substep"><span class="substep-num">4.</span><span class="substep-text"><strong>PRD 작성</strong>: Acceptance Criteria 포함</span></div>
+          </div>
+          <div class="io-box io-artifact">
+            <span class="io-label">출력 artifact</span>
+            .dev/prd.md → 다음 Phase의 architect에게 전달
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector">── <span class="conn-label">Phase 3: Design</span> ──</div>
+
+    <!-- Step 6: Architect -->
+    <div class="step">
+      <div class="step-marker agent">6</div>
+      <div class="step-content">
+        <div class="step-title">architect 에이전트 <span class="step-badge badge-agent">Agent</span></div>
+        <div class="step-body">
+          <div class="agent-cards"><span class="agent-card ac-arch">architect (opus)</span></div>
+          PRD를 기반으로 기술 설계를 작성합니다.
+          <div class="substeps">
+            <div class="substep"><span class="substep-num">1.</span><span class="substep-text"><code>.dev/prd.md</code> + <code>.dev/codemap.md</code> 읽기</span></div>
+            <div class="substep"><span class="substep-num">2.</span><span class="substep-text"><strong>API 설계</strong>: <code>POST /api/v1/auth/login</code>, Request/Response DTO, 에러 코드 (내장된 api-design 원칙 적용)</span></div>
+            <div class="substep"><span class="substep-num">3.</span><span class="substep-text"><strong>엔티티 설계</strong>: User 엔티티, 연관관계, @ManyToOne LAZY (내장된 jpa-entity-design 원칙 적용)</span></div>
+            <div class="substep"><span class="substep-num">4.</span><span class="substep-text"><strong>구현 단계</strong>를 순서대로 나열</span></div>
+          </div>
+          <div class="io-box io-artifact">
+            <span class="io-label">출력 artifact</span>
+            .dev/design.md → design-critic에게 전달
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 7: Design Critic -->
+    <div class="step">
+      <div class="step-marker agent">7</div>
+      <div class="step-content">
+        <div class="step-title">design-critic 에이전트 <span class="step-badge badge-loop">Review Loop</span></div>
+        <div class="step-body">
+          <div class="agent-cards"><span class="agent-card ac-critic">design-critic (opus)</span></div>
+          설계의 가정을 도전합니다.
+          <div class="substeps">
+            <div class="substep"><span class="substep-num">1.</span><span class="substep-text"><strong>CHALLENGE</strong>: "JWT 토큰 탈취 시 세션 무효화 전략이 없음"</span></div>
+            <div class="substep"><span class="substep-num">2.</span><span class="substep-text"><strong>SIMPLIFY</strong>: "Spring Security 전체 도입보다 필터 하나로 충분"</span></div>
+            <div class="substep"><span class="substep-num">3.</span><span class="substep-text"><strong>ROOT-CAUSE</strong>: "인증이 필요한 진짜 이유가 API 보호인지 사용자 식별인지 구분 필요"</span></div>
+          </div>
+          <div class="io-box io-out">
+            <span class="io-label">판정</span>
+            APPROVED → Phase 4로 진행&ensp;|&ensp;REVISE → architect가 수정 후 재제출&ensp;|&ensp;REJECT → 설계 재시작
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector">── <span class="conn-label">Phase 4: Implement</span> ──</div>
+
+    <!-- Step 8: Coder -->
+    <div class="step">
+      <div class="step-marker agent">8</div>
+      <div class="step-content">
+        <div class="step-title">coder 에이전트 <span class="step-badge badge-agent">Agent (유일한 코드 수정자)</span></div>
+        <div class="step-body">
+          <div class="agent-cards"><span class="agent-card ac-coder">coder (opus) &mdash; Agent(teammate)</span></div>
+          확정된 설계에 따라 코드를 구현합니다.
+          <div class="substeps">
+            <div class="substep"><span class="substep-num">1.</span><span class="substep-text"><code>.dev/design.md</code> + <code>.dev/codemap.md</code> 기반으로 구현</span></div>
+            <div class="substep"><span class="substep-num">2.</span><span class="substep-text">Spring Boot 컨벤션 적용: <strong>AuthReadService</strong> (조회) + <strong>AuthService</strong> (인증)</span></div>
+            <div class="substep"><span class="substep-num">3.</span><span class="substep-text">DTO/Entity 분리, <code>@Transactional(readOnly=true)</code>, LAZY fetch</span></div>
+            <div class="substep"><span class="substep-num">4.</span><span class="substep-text">자체 검토: <code>.dev/self-check.md</code> 작성</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 8.5: PreToolUse Guard -->
+    <div class="step">
+      <div class="step-marker guard">⚡</div>
+      <div class="step-content">
+        <div class="step-title">pre-tool-guard 브랜치 보호 <span class="step-badge badge-guard">PreToolUse Hook</span></div>
+        <div class="step-body">
+          coder가 <code>git commit</code>을 시도할 때마다 이 hook이 개입합니다.
+          <div class="io-box io-in">
+            <span class="io-label">체크</span>
+            현재 브랜치 = login-feature (feature branch) → ✅ ALLOW
+          </div>
+          <div class="io-box io-deny">
+            <span class="io-label">만약 main 브랜치였다면</span>
+            ❌ DENY — "Protected branch: main 브랜치에서는 직접 커밋할 수 없습니다"
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector">── <span class="conn-label">Verification Loop</span> ──</div>
+
+    <!-- Step 8.7: Verification Loop -->
+    <div class="step">
+      <div class="step-marker loop">V</div>
+      <div class="step-content" style="border-color: #0d9488;">
+        <div class="step-title">Verification Loop <span class="step-badge badge-loop">TaskCompleted + TeammateIdle Hooks</span></div>
+        <div class="step-body">
+          Plan-driven Development: <code>docs/plan/</code>에 저장된 계획의 TODO 기준으로 완료를 검증합니다.
+          <div class="substeps">
+            <div class="substep"><span class="substep-num">1.</span><span class="substep-text"><strong>TaskCompleted hook</strong> (task-verifier): 작업 완료 시 plan의 completion criteria 체크 ([LINT], [TEST], [FILE_EXISTS], [CRITERIA]). 미충족 시 block</span></div>
+            <div class="substep"><span class="substep-num">2.</span><span class="substep-text"><strong>TeammateIdle hook</strong> (idle-checker): teammate가 idle 상태일 때 남은 TODO 확인 → 자동 재개</span></div>
+            <div class="substep"><span class="substep-num">3.</span><span class="substep-text"><strong>todo-verifier</strong> agent: plan 파일의 machine-parseable TODO 포맷 검증</span></div>
+            <div class="substep"><span class="substep-num">4.</span><span class="substep-text"><strong>plan-visualizer</strong> agent: 진행 상황 시각화 → <code>docs/show/</code>에 HTML 생성</span></div>
+          </div>
+          <div class="io-box io-out">
+            <span class="io-label">판정</span>
+            모든 criteria 충족 → Review Phase 진행 | 미충족 → Implement로 되돌림
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector">── <span class="conn-label">Phase 5: Review</span> ──</div>
+
+    <!-- Step 9: QA + Security -->
+    <div class="step">
+      <div class="step-marker agent">9</div>
+      <div class="step-content">
+        <div class="step-title">qa-manager + security-auditor (병렬) <span class="step-badge badge-loop">Review Loop</span></div>
+        <div class="step-body">
+          <div class="agent-cards">
+            <span class="agent-card ac-qa">qa-manager (opus) &mdash; Agent(teammate)</span>
+            <span class="agent-card ac-sec">security-auditor (opus) &mdash; Agent(teammate)</span>
+          </div>
+          두 에이전트가 <strong>병렬</strong>로 리뷰합니다. 둘 다 읽기 전용.
+          <div class="substeps">
+            <div class="substep"><span class="substep-num">QA</span><span class="substep-text">45조항 체크리스트 적용: Service Read/Write 분리 ✅, 삼항 연산자 ✅, indent 2단계 ✅, null 반환 ❌ ...</span></div>
+            <div class="substep"><span class="substep-num">SEC</span><span class="substep-text">Zero Trust 감사: SQL Injection ✅, 비밀번호 평문 저장 ❌, CSRF 보호 ✅ ...</span></div>
+          </div>
+          <div class="io-box io-out">
+            <span class="io-label">결과</span>
+            CRITICAL 이슈 발견 → coder에게 수정 요청 → 수정 후 재리뷰 (max 2회 반복)
+          </div>
+          <div class="io-box io-artifact">
+            <span class="io-label">출력 artifact</span>
+            .dev/trust-ledger.md — 보안 감사 결과 기록
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector">── <span class="conn-label">Phase 6: Complete</span> ──</div>
+
+    <!-- Step 10: Commit -->
+    <div class="step">
+      <div class="step-marker skill">10</div>
+      <div class="step-content">
+        <div class="step-title">/commit 스킬 호출 <span class="step-badge badge-skill">Skill</span></div>
+        <div class="step-body">
+          <div class="substeps">
+            <div class="substep"><span class="substep-num">1.</span><span class="substep-text">브랜치명 <code>login-feature</code>에서 이슈키 파싱 시도 (<code>config.json</code>의 issueKeyPattern)</span></div>
+            <div class="substep"><span class="substep-num">2.</span><span class="substep-text">민감 파일 체크 (<code>.env</code>, <code>*.key</code> 등)</span></div>
+            <div class="substep"><span class="substep-num">3.</span><span class="substep-text">lint + test pre-check 실행</span></div>
+            <div class="substep"><span class="substep-num">4.</span><span class="substep-text">한국어 커밋 메시지 생성 (Co-Authored-By 없음 — <code>rules/git-workflow.md</code>)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 11: PR -->
+    <div class="step">
+      <div class="step-marker skill">11</div>
+      <div class="step-content">
+        <div class="step-title">/pull-request 스킬 호출 <span class="step-badge badge-skill">Skill</span></div>
+        <div class="step-body">
+          커밋 히스토리에서 PR 제목 + 본문 자동 생성 → <code>gh pr create</code> 실행
+          <div class="io-box io-out">
+            <span class="io-label">최종 결과</span>
+            ✅ PR 생성 완료. 사용자가 GitHub에서 리뷰 후 수동 머지. (Claude는 머지하지 않음)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 12: Done -->
+    <div class="step">
+      <div class="step-marker output">✓</div>
+      <div class="step-content">
+        <div class="step-title">완료 보고 <span class="step-badge badge-output">Result</span></div>
+        <div class="step-body">
+          사용자에게 최종 보고:
+          <div class="io-box io-artifact">
+            <span class="io-label">생성된 Artifacts</span>
+            .dev/prd.md — 요구사항 문서<br>
+            .dev/design.md — 기술 설계<br>
+            .dev/codemap.md — 파일 참조 목록<br>
+            .dev/diff.txt — 변경 사항<br>
+            .dev/trust-ledger.md — 보안 감사 결과<br>
+            .dev/self-check.md — 자체 검토<br>
+            docs/plan/*.md — Plan 파일 (TODO + completion criteria)
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== SCENARIO: /plan ==================== -->
+<div class="scenario" id="scenario-plan">
+  <div class="scenario-header">
+    <div class="scenario-prompt">🧑‍💻 "API 설계 계획 세워줘"</div>
+    <div class="scenario-desc">keyword "계획" 감지 → /plan skill 자동 라우팅 → 4-Mode 중 하나 자동 선택</div>
+  </div>
+
+  <div class="timeline">
+    <div class="step">
+      <div class="step-marker system">0</div>
+      <div class="step-content">
+        <div class="step-title">세션 컨텍스트 상주 중 <span class="step-badge badge-system">SessionStart</span></div>
+        <div class="step-body">LOOPERS 가이드라인 §0~§7 이미 주입됨</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker hook">1</div>
+      <div class="step-content">
+        <div class="step-title">prompt-router 키워드 감지 <span class="step-badge badge-hook">UserPromptSubmit</span></div>
+        <div class="step-body">
+          <div class="io-box io-in"><span class="io-label">매칭</span>"<strong>계획</strong> 세워줘" → <code>grep -qi "계획\|plan\|설계해\|플랜"</code> → ✅</div>
+          <div class="io-box io-out"><span class="io-label">라우팅</span>oh-my-beom:plan 스킬 호출 지시</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker skill">2</div>
+      <div class="step-content">
+        <div class="step-title">/plan 스킬 활성화 — Mode Detection <span class="step-badge badge-skill">Skill</span></div>
+        <div class="step-body">
+          사용자 입력을 분석하여 4가지 모드 중 하나를 선택합니다.
+          <div class="substeps">
+            <div class="substep"><span class="substep-num">→</span><span class="substep-text">"API 설계 계획 세워줘" = 구체적 주제 + 단순 요청 → <strong>Direct 모드</strong> 선택</span></div>
+          </div>
+          <div style="margin: 12px 0; padding: 12px; background:#0d1117; border-radius: 8px; font-size: 11px; color: #6e7681;">
+            다른 상황이었다면:<br>
+            "인터뷰해서 계획 세워줘" → <strong>Interview</strong> (Q&A 5회)<br>
+            "여러 관점에서 합의해서 계획 세워줘" → <strong>Consensus</strong> (3 Agent + Critic)<br>
+            "기존 설계 문서 검토해줘" → <strong>Review</strong> (Critic 분석)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker agent">3</div>
+      <div class="step-content">
+        <div class="step-title">Direct 모드 실행 <span class="step-badge badge-agent">Explore Agent</span></div>
+        <div class="step-body">
+          <div class="substeps">
+            <div class="substep"><span class="substep-num">1.</span><span class="substep-text"><strong>Explorer (haiku)</strong>: 코드베이스 탐색 — 기존 API 패턴, 컨트롤러 구조, DTO 패턴 파악</span></div>
+            <div class="substep"><span class="substep-num">2.</span><span class="substep-text"><strong>계획 작성</strong>: 탐색 결과 기반으로 API 설계 계획 수립 — URL 구조, 엔드포인트 목록, DTO 설계, 에러 코드 정의</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker output">✓</div>
+      <div class="step-content">
+        <div class="step-title">계획 제시 <span class="step-badge badge-output">Result</span></div>
+        <div class="step-body">사용자에게 구조화된 계획을 제시. 승인 후 <code>/dev</code>로 이어서 구현 가능.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENARIO: /research ==================== -->
+<div class="scenario" id="scenario-research">
+  <div class="scenario-header">
+    <div class="scenario-prompt">🧑‍💻 "이 코드 구조 분석해줘"</div>
+    <div class="scenario-desc">keyword "분석" 감지 → /research skill 자동 라우팅 → 3-Phase 리서치 파이프라인</div>
+  </div>
+
+  <div class="timeline">
+    <div class="step">
+      <div class="step-marker system">0</div>
+      <div class="step-content">
+        <div class="step-title">세션 컨텍스트 상주 중 <span class="step-badge badge-system">SessionStart</span></div>
+        <div class="step-body">LOOPERS 가이드라인 이미 주입됨</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker hook">1</div>
+      <div class="step-content">
+        <div class="step-title">prompt-router 키워드 감지 <span class="step-badge badge-hook">UserPromptSubmit</span></div>
+        <div class="step-body">
+          <div class="io-box io-in"><span class="io-label">매칭</span>"<strong>분석</strong>해줘" → <code>grep -qi "분석해\|조사해\|research\|리서치"</code> → ✅</div>
+          <div class="io-box io-out"><span class="io-label">라우팅</span>oh-my-beom:research 스킬 호출 지시</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker skill">2</div>
+      <div class="step-content">
+        <div class="step-title">/research 스킬 — Type Detection <span class="step-badge badge-skill">Skill</span></div>
+        <div class="step-body">
+          입력 유형을 분류: "코드 <strong>구조</strong>" → <strong>architecture</strong> 유형 선택.
+          <div style="margin: 8px 0; padding: 8px 12px; background:#0d1117; border-radius: 6px; font-size: 11px; color: #6e7681;">
+            architecture → 구조/의존성/패턴 중심 | performance → 병목/최적화 중심 | bug → 원인 추적 중심 | general → 종합 조사
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker agent">3</div>
+      <div class="step-content">
+        <div class="step-title">Phase 1: Explorer <span class="step-badge badge-agent">Explore Agent (haiku)</span></div>
+        <div class="step-body">프로젝트 스캔, 디렉토리 구조 파악, 핵심 파일/모듈 식별, 패턴 요약</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker agent">4</div>
+      <div class="step-content">
+        <div class="step-title">Phase 2: Researcher <span class="step-badge badge-agent">Explore Agent (sonnet)</span></div>
+        <div class="step-body">Explorer 결과 기반으로 코드 패턴 수집, 의존성 추적, 아키텍처 규칙 분석</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker agent">5</div>
+      <div class="step-content">
+        <div class="step-title">Phase 3: Analyzer <span class="step-badge badge-agent">분석 + 보고서 (opus)</span></div>
+        <div class="step-body">Explorer + Researcher 결과를 병합하여 구조화된 보고서 작성</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker output">✓</div>
+      <div class="step-content">
+        <div class="step-title">보고서 출력 <span class="step-badge badge-output">Result</span></div>
+        <div class="step-body">
+          <div class="io-box io-artifact">
+            <span class="io-label">보고서 구조</span>
+            1. 현황 — 프로젝트 구조, 기술 스택, 핵심 모듈<br>
+            2. 문제점 — 발견된 아키텍처 이슈, 안티패턴<br>
+            3. 개선 제안 — 선택지 + 영향도 함께 제시<br>
+            4. 실행 방안 — 단계별 개선 로드맵
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENARIO: /persist ==================== -->
+<div class="scenario" id="scenario-persist">
+  <div class="scenario-header">
+    <div class="scenario-prompt">🧑‍💻 "이 버그 끝까지 잡아줘"</div>
+    <div class="scenario-desc">keyword "끝까지" 감지 → /persist skill 자동 라우팅 → 6-Phase 반복 실행</div>
+  </div>
+
+  <div class="timeline">
+    <div class="step">
+      <div class="step-marker hook">1</div>
+      <div class="step-content">
+        <div class="step-title">prompt-router 키워드 감지 <span class="step-badge badge-hook">UserPromptSubmit</span></div>
+        <div class="step-body">
+          <div class="io-box io-in"><span class="io-label">매칭</span>"<strong>끝까지</strong> 잡아줘" → <code>grep -qi "끝까지\|멈추지마\|완료할때까지\|persist"</code> → ✅</div>
+          <div class="io-box io-out"><span class="io-label">라우팅</span>oh-my-beom:persist 스킬 호출 지시</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker skill">2</div>
+      <div class="step-content">
+        <div class="step-title">/persist 스킬 활성화 <span class="step-badge badge-skill">Skill</span></div>
+        <div class="step-body">6-Phase 파이프라인 시작. <strong>성공 기준 달성까지 절대 멈추지 않음.</strong></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker system">3</div>
+      <div class="step-content">
+        <div class="step-title">Phase 1: 작업 분석 <span class="step-badge badge-system">분석</span></div>
+        <div class="step-body">
+          <div class="substeps">
+            <div class="substep"><span class="substep-num">→</span><span class="substep-text"><strong>성공 기준 정의</strong>: "해당 버그가 재현되지 않고, 관련 테스트가 통과한다"</span></div>
+            <div class="substep"><span class="substep-num">→</span><span class="substep-text"><strong>실행 계획</strong>: 재현 → 원인 분석 → 수정 → 테스트 작성 → 검증</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker agent">4</div>
+      <div class="step-content">
+        <div class="step-title">Phase 2: 실행 <span class="step-badge badge-agent">구현</span></div>
+        <div class="step-body">계획에 따라 단계별 구현. Agent tool 병렬 활용 가능.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker loop">5</div>
+      <div class="step-content" style="border-color: #0d9488;">
+        <div class="step-title">Phase 3→4→5 반복 루프 <span class="step-badge badge-loop">Loop (max 3회)</span></div>
+        <div class="step-body">
+          <div class="substeps">
+            <div class="substep"><span class="substep-num">P3</span><span class="substep-text"><strong>자체 리뷰</strong>: 코딩 컨벤션 충족? 변경이 올바른가?</span></div>
+            <div class="substep"><span class="substep-num">P4</span><span class="substep-text"><strong>검증</strong>: 테스트 실행, 빌드 확인 (config.json의 타임아웃 적용)</span></div>
+            <div class="substep"><span class="substep-num">P5</span><span class="substep-text"><strong>보완</strong>: 이슈 발견 시 수정 → P3로 돌아가 재검증</span></div>
+          </div>
+          <div style="margin-top: 8px; padding: 8px 12px; background: #0d1117; border-radius: 6px; border-left: 3px solid #0d9488; font-size: 11px; color: #5eead4;">
+            이슈 없으면 루프 탈출 → Phase 6으로 진행
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker output">✓</div>
+      <div class="step-content">
+        <div class="step-title">Phase 6: 완료 보고 <span class="step-badge badge-output">Result</span></div>
+        <div class="step-body">성공 기준 달성 확인 + 변경 사항 + 테스트 결과 보고</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENARIO: normal ==================== -->
+<div class="scenario" id="scenario-normal">
+  <div class="scenario-header">
+    <div class="scenario-prompt">🧑‍💻 "이 함수 고쳐줘"</div>
+    <div class="scenario-desc">키워드 매칭 없음 → 일반 모드로 동작 (가이드라인은 유지)</div>
+  </div>
+
+  <div class="timeline">
+    <div class="step">
+      <div class="step-marker system">0</div>
+      <div class="step-content">
+        <div class="step-title">세션 컨텍스트 상주 중 <span class="step-badge badge-system">SessionStart</span></div>
+        <div class="step-body">LOOPERS 가이드라인 §0~§7 이미 주입됨. 한국어 응답, 읽기 우선 원칙이 적용됨.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker hook">1</div>
+      <div class="step-content" style="opacity: 0.6;">
+        <div class="step-title">prompt-router 키워드 감지 <span class="step-badge badge-hook">UserPromptSubmit</span></div>
+        <div class="step-body">
+          <div class="io-box io-in"><span class="io-label">매칭 시도</span>"이 함수 고쳐줘" → 5개 키워드 그룹 모두 불일치</div>
+          <div class="no-match">
+            ❌ 계획/plan &ensp; ❌ 분석/research &ensp; ❌ 개발/dev &ensp; ❌ 정책/lens &ensp; ❌ 끝까지/persist
+          </div>
+          <div class="io-box io-out"><span class="io-label">출력</span>{"continue": true, "suppressOutput": true} → 아무것도 주입하지 않음</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker system">2</div>
+      <div class="step-content">
+        <div class="step-title">Claude 기본 동작 <span class="step-badge badge-system">Normal Mode</span></div>
+        <div class="step-body">
+          스킬 라우팅 없이 Claude가 직접 응답합니다. 하지만 세션에 주입된 가이드라인에 의해:
+          <div class="substeps">
+            <div class="substep"><span class="substep-num">§1</span><span class="substep-text"><strong>읽기 우선</strong>: 함수를 먼저 읽고 이해한 후 수정</span></div>
+            <div class="substep"><span class="substep-num">§2</span><span class="substep-text"><strong>단순함 우선</strong>: 최소한의 변경으로 수정</span></div>
+            <div class="substep"><span class="substep-num">§3</span><span class="substep-text"><strong>외과적 변경</strong>: 해당 함수만 수정, 주변 코드 "개선" 금지</span></div>
+            <div class="substep"><span class="substep-num">§0</span><span class="substep-text"><strong>한국어 응답</strong>: 설명은 한국어, 코드는 영어</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker guard">⚡</div>
+      <div class="step-content">
+        <div class="step-title">pre-tool-guard (도구 사용 시) <span class="step-badge badge-guard">PreToolUse</span></div>
+        <div class="step-body">
+          Claude가 코드를 수정하고 커밋할 때 <code>pre-tool-guard</code>가 브랜치를 체크합니다.
+          feature 브랜치면 허용, protected 브랜치면 차단.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker output">✓</div>
+      <div class="step-content">
+        <div class="step-title">결과 <span class="step-badge badge-output">Result</span></div>
+        <div class="step-body">가이드라인 원칙에 따라 최소한의 외과적 수정을 적용한 결과를 제시합니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showScenario(id) {
+  document.querySelectorAll('.scenario').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('scenario-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+</script>
+
+<div style="text-align: center; margin-top: 48px; padding: 24px; color: #484f58; font-size: 12px; border-top: 1px solid #21262d;">
+  oh-my-beom v1.1.0 &mdash; 13 Agents &middot; 5 Hooks &middot; Hybrid Team Agent + Verification Loop &mdash; Click tabs above to see different request flows
+</div>
+
+</body>
+</html>
