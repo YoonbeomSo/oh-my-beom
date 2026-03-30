@@ -1,7 +1,7 @@
 {
   "name": "oh-my-beom",
   "description": "Korean developer toolkit for Claude Code: coding guidelines, requirements analysis, git worktree automation, Spring Boot review, and Playwright testing agents",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": {
     "name": "YoonbeomSo"
   },
