@@ -158,7 +158,7 @@
         <h3>Team Agents (5) &mdash; TeamCreate + tmux pane</h3>
         <div class="agent-group">
           <div class="agent-item" data-agent="product-owner"><span class="agent-dot" style="background:#58a6ff"></span><span class="agent-name">product-owner</span><span class="agent-role">PRD 작성 + 인수 검증</span><span class="agent-model">sonnet</span></div>
-          <div class="agent-item" data-agent="architect"><span class="agent-dot" style="background:#7ee787"></span><span class="agent-name">architect</span><span class="agent-role">기술 설계</span><span class="agent-model">sonnet</span></div>
+          <div class="agent-item" data-agent="architect"><span class="agent-dot" style="background:#7ee787"></span><span class="agent-name">architect</span><span class="agent-role">기술 설계</span><span class="agent-model">opus</span></div>
           <div class="agent-item" data-agent="coder"><span class="agent-dot" style="background:#f0883e"></span><span class="agent-name">coder</span><span class="agent-role">구현 + 수정</span><span class="agent-model">inherit</span></div>
           <div class="agent-item" data-agent="qa-manager"><span class="agent-dot" style="background:#3fb950"></span><span class="agent-name">qa-manager</span><span class="agent-role">코드 리뷰 + 스펙 검증</span><span class="agent-model">sonnet</span></div>
           <div class="agent-item" data-agent="security-auditor"><span class="agent-dot" style="background:#d2a8ff"></span><span class="agent-name">security-auditor</span><span class="agent-role">보안/정책 감사</span><span class="agent-model">sonnet</span></div>
@@ -167,7 +167,7 @@
       <div>
         <h3>Utility Agents (7) &mdash; On-demand</h3>
         <div class="agent-group">
-          <div class="agent-item" data-agent="web-test-qa"><span class="agent-dot" style="background:#7ee787"></span><span class="agent-name">web-test-qa</span><span class="agent-role">E2E 테스트 전체 사이클</span><span class="agent-model">sonnet</span></div>
+          <div class="agent-item" data-agent="web-test-qa"><span class="agent-dot" style="background:#7ee787"></span><span class="agent-name">web-test-qa</span><span class="agent-role">브라우저 UI 테스트</span><span class="agent-model">sonnet</span></div>
           <div class="agent-item" data-agent="design-critic"><span class="agent-dot" style="background:#f0883e"></span><span class="agent-name">design-critic</span><span class="agent-role">설계 가정 도전</span><span class="agent-model">opus</span></div>
           <div class="agent-item" data-agent="todo-verifier"><span class="agent-dot" style="background:#8b949e"></span><span class="agent-name">todo-verifier</span><span class="agent-role">계획 완료 기준 검증</span><span class="agent-model">sonnet</span></div>
           <div class="agent-item" data-agent="plan-visualizer"><span class="agent-dot" style="background:#8b949e"></span><span class="agent-name">plan-visualizer</span><span class="agent-role">계획 MD &rarr; HTML</span><span class="agent-model">sonnet</span></div>
@@ -242,6 +242,59 @@
     <div class="legend" style="margin-top:12px">
       <div class="legend-item"><span class="legend-line" style="background:#7ee787"></span>에이전트 직접 연결</div>
       <div class="legend-item"><span class="legend-line" style="background:#f0883e"></span>스킬 체이닝</div>
+    </div>
+  </div>
+
+  <!-- Simple Flow -->
+  <div class="card full">
+    <h2>한눈에 보는 흐름</h2>
+    <div style="display:flex;flex-direction:column;gap:16px;padding:16px 0;max-width:900px;margin:0 auto">
+      <!-- Row 1: 요구사항 → 설계 → 구현 -->
+      <div style="display:flex;align-items:center;gap:12px;justify-content:center">
+        <div style="background:#1c2128;border:1px solid #58a6ff;border-radius:10px;padding:14px 20px;text-align:center;min-width:160px">
+          <div style="color:#58a6ff;font-weight:700;font-size:14px">product-owner</div>
+          <div style="color:#8b949e;font-size:11px;margin-top:4px">요구사항 정의</div>
+          <div style="color:#58a6ff;font-size:11px;margin-top:2px">PRD 작성</div>
+        </div>
+        <div style="color:#484f58;font-size:20px">&rarr;</div>
+        <div style="background:#1c2128;border:1px solid #7ee787;border-radius:10px;padding:14px 20px;text-align:center;min-width:160px">
+          <div style="color:#7ee787;font-weight:700;font-size:14px">architect</div>
+          <div style="color:#8b949e;font-size:11px;margin-top:4px">기술 설계</div>
+          <div style="color:#7ee787;font-size:11px;margin-top:2px">설계서 + 테스트 전략</div>
+        </div>
+        <div style="color:#484f58;font-size:20px">&rarr;</div>
+        <div style="background:#1c2128;border:1px solid #f0883e;border-radius:10px;padding:14px 20px;text-align:center;min-width:160px">
+          <div style="color:#f0883e;font-weight:700;font-size:14px">coder</div>
+          <div style="color:#8b949e;font-size:11px;margin-top:4px">TDD 구현</div>
+          <div style="color:#f0883e;font-size:11px;margin-top:2px">코드 + 단위/통합/E2E 테스트</div>
+        </div>
+      </div>
+      <!-- Row 2: 리뷰 라인 -->
+      <div style="display:flex;align-items:center;gap:12px;justify-content:center">
+        <div style="background:#1c2128;border:1px solid #3fb950;border-radius:10px;padding:12px 18px;text-align:center;min-width:140px">
+          <div style="color:#3fb950;font-weight:700;font-size:13px">qa-manager</div>
+          <div style="color:#8b949e;font-size:11px;margin-top:4px">코드 리뷰</div>
+        </div>
+        <div style="background:#1c2128;border:1px solid #d2a8ff;border-radius:10px;padding:12px 18px;text-align:center;min-width:140px">
+          <div style="color:#d2a8ff;font-weight:700;font-size:13px">security-auditor</div>
+          <div style="color:#8b949e;font-size:11px;margin-top:4px">보안/정책 감사</div>
+        </div>
+        <div style="background:#1c2128;border:1px solid #7ee787;border-radius:10px;padding:12px 18px;text-align:center;min-width:140px">
+          <div style="color:#7ee787;font-weight:700;font-size:13px">web-test-qa</div>
+          <div style="color:#8b949e;font-size:11px;margin-top:4px">브라우저 UI 테스트</div>
+        </div>
+        <div style="color:#484f58;font-size:14px;padding:0 8px">문제 발견 &rarr;</div>
+        <div style="background:#1c2128;border:1px dashed #f0883e;border-radius:10px;padding:12px 18px;text-align:center;min-width:100px">
+          <div style="color:#f0883e;font-weight:700;font-size:13px">coder</div>
+          <div style="color:#8b949e;font-size:11px;margin-top:4px">수정</div>
+        </div>
+      </div>
+      <!-- Annotation -->
+      <div style="display:flex;gap:24px;justify-content:center;color:#8b949e;font-size:11px">
+        <span><span style="color:#f0883e">coder</span> = 구현 + 테스트 코드 작성 + 검증</span>
+        <span><span style="color:#7ee787">web-test-qa</span> = 화면 직접 클릭/검증 (Playwright)</span>
+        <span><span style="color:#3fb950">qa-manager</span> = 코드 읽기 전용 리뷰</span>
+      </div>
     </div>
   </div>
 

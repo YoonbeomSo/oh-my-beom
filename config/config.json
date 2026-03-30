@@ -78,7 +78,7 @@
     },
     "maxVerificationRetries": 2
   },
-  "playwrightTesting": {
+  "uiTesting": {
     "enabled": true,
     "frontendFilePatterns": [
       "*.html", "*.htm", "*.jsx", "*.tsx", "*.vue", "*.svelte",
