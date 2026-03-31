@@ -28,6 +28,24 @@
           "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-guard\"",
           "timeout": 2
         }]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [{
+          "type": "command",
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/code-quality-gate\"",
+          "timeout": 3
+        }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{
+          "type": "command",
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/error-learner\"",
+          "timeout": 3
+        }]
       }
     ],
     "TaskCompleted": [

@@ -2,7 +2,7 @@
 
 ## 브랜치 규칙
 
-보호 브랜치(`main`, `master`, `develop`)에서 직접 커밋하지 마라.
+보호 브랜치(`main`, `master`, `develop`, `test`, `dev`)에서 직접 커밋하지 마라. 보호 브랜치 목록은 `config/config.json`의 `protectedBranches`를 참조한다.
 
 1. **파일을 수정하기 전에** 작업 브랜치를 먼저 생성하라. 수정 후에 브랜치를 만드는 것이 아니라, 브랜치를 만든 뒤 수정을 시작하라.
 2. 브랜치명에 이슈 키를 포함하라 (예: `feat/JIRA-123/login`). 이슈 키 패턴은 `config/config.json`의 `issueKey` 필드를 참조한다.

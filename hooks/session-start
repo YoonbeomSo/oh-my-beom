@@ -10,7 +10,7 @@ PLAN_DIR="${CWD}/docs/plan"
 
 # Helper: output workflow guide context
 print_workflow_guide() {
-  local GUIDE="[SESSION START - WORKFLOW GUIDE]\\n\\n어떤 작업을 하시겠습니까? 상황에 맞는 시작 스킬을 추천합니다:\\n\\n| 상황 | 추천 | 명령어 |\\n|------|------|--------|\\n| 정책/비즈니스 영향 분석 | 풀코스 | /lens |\\n| 코드베이스 파악/기술 조사 | 조사부터 | /research |\\n| 요구사항이 명확한 개발 | 계획부터 | /plan |\\n| 간단한 버그 수정/핫픽스 | 바로 개발 | /dev |\\n\\n> 각 스킬은 완료 후 자동으로 다음 단계로 이어집니다 (lens → research → plan → dev).\\n> 단일 실행이 필요하면 --only 플래그를 사용하세요."
+  local GUIDE="[SESSION START - WORKFLOW GUIDE]\\n\\n어떤 작업을 하시겠습니까? 상황에 맞는 시작점을 추천합니다:\\n\\n| 상황 | 명령어 | 설명 |\\n|------|--------|------|\\n| 간단한 버그 수정 | /beom [설명] | Light 팀 (3명) 추천 |\\n| 신규 기능 개발 | /beom [설명] | Full 팀 (5명) 추천 |\\n| 긴급 핫픽스 | /beom --hotfix [설명] | coder 1명 즉시 수정 |\\n| 코드 파악이 먼저 | /research → /beom | 조사 후 개발 |\\n| 정책 분석이 먼저 | /lens → /beom | 정책 분석 후 개발 |\\n\\n> /beom이 유일한 개발 진입점입니다. /lens, /research는 사전 분석이 필요할 때 먼저 실행하세요."
   printf '{"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": "%s"}}' "$GUIDE"
 }
 
