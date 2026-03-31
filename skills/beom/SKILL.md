@@ -101,7 +101,13 @@ Hotfix:      setup → 구현 → 커밋
    - 이전 메트릭이 있으면 평균 review_rounds, critical_count로 effort 보정.
    - `--hotfix` 시 건너뜀 (coder 1명, effort=low 고정).
    - AskUserQuestion으로 팀 + effort 추천 표시, 사용자 선택.
-11. **팀 생성**: TeamCreate 호출. tmux 환경이면 `Skill("oh-my-beom:tmux-team-agent")`.
+11. **팀 생성 + 에이전트 활성화**:
+   - TeamCreate 호출.
+   - Agent tool로 각 에이전트 spawn (team_name, name, subagent_type 지정).
+   - **tmux 환경 감지**: `tmux list-panes -a -F "#{pane_id} #{pane_current_command}"` 실행.
+   - 에이전트 pane에서 `pane_current_command`가 `zsh`/`bash`면 (Claude 미실행):
+     - `Skill("oh-my-beom:tmux-team-agent")` 호출하여 복구 시도.
+   - **tmux 복구 실패 시 fallback**: SendMessage 대신 Agent tool로 직접 에이전트를 호출한다 (non-team 모드). 이 경우 각 Phase에서 `SendMessage(to=...)` 대신 `Agent(subagent_type=...)` 사용.
 12. **상태 + plan 파일 초기화**: `.dev/state.md` + `docs/plan/{이슈키}-plan.md` 생성. (포맷은 reference.md 참조)
 
 ---
