@@ -38,17 +38,17 @@ escape_for_json() {
 PROMPT_LOWER=$(echo "$PROMPT" | python3 -c "import sys; print(sys.stdin.read().lower())" 2>/dev/null || echo "$PROMPT")
 
 # Keyword matching (Korean + English)
-# NOTE: "mac" must be checked FIRST to avoid "mac 개발해" matching "dev"
+# NOTE: "beom" must be checked FIRST to avoid "beom 개발해" matching "dev"
 MATCHED_SKILL=""
 
 if echo "$PROMPT_LOWER" | python3 -c "
 import sys, re
 text = sys.stdin.read()
-if re.search(r'^mac\b', text):
+if re.search(r'^beom\b', text):
     sys.exit(0)
 sys.exit(1)
 " 2>/dev/null; then
-  MATCHED_SKILL="mac"
+  MATCHED_SKILL="beom"
 elif echo "$PROMPT_LOWER" | python3 -c "
 import sys, re
 text = sys.stdin.read()

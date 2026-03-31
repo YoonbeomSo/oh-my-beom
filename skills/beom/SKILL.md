@@ -1,5 +1,5 @@
 ---
-name: mac
+name: beom
 description: "풀사이클 비서. 정책 분석 → 코드 조사 → 계획 수립 → 구현까지 4단계 스킬을 순서대로 호출하여 전체 개발 사이클을 관리한다."
 argument-hint: "<기능/버그 설명> [--skip-lens] [--skip-research]"
 ---
@@ -21,7 +21,7 @@ argument-hint: "<기능/버그 설명> [--skip-lens] [--skip-research]"
 - `--skip-research`: 코드 조사 단계를 건너뛴다
 
 ARGS[0]이 없으면 다음을 응답:
-"개발할 기능이나 수정할 버그를 설명해주세요. 예: `mac 로그인 기능 개발해`"
+"개발할 기능이나 수정할 버그를 설명해주세요. 예: `beom 로그인 기능 개발해`"
 
 ## 실행 순서
 
