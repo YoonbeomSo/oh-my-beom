@@ -24,11 +24,10 @@ oh-my-beom/                  <- 플러그인 루트
 ├── config/
 │   └── config.json             <- 이슈 키, 민감 파일, 프로젝트 타입, 타임아웃 등
 ├── skills/
-│   ├── plan/SKILL.md           <- 4-Mode 계획 수립
+│   ├── beom/SKILL.md           <- 개발 오케스트레이터 (팀 추천 → 에이전트 작업 → 커밋)
 │   ├── research/SKILL.md       <- 조사 파이프라인
-│   ├── persist/SKILL.md        <- 끝까지 실행 모드
-│   ├── dev/                    <- 개발 사이클 (PCC 포팅)
 │   ├── lens/                   <- 비즈니스 정책 분석
+│   ├── persist/SKILL.md        <- 끝까지 실행 모드
 │   ├── commit/                 <- 커밋 자동화
 │   ├── pull-request/           <- PR 생성
 │   ├── worktree/               <- Git worktree 관리

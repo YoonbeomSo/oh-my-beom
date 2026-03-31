@@ -62,9 +62,9 @@ description: |
 2. FAILED 항목: `검증 상태: PENDING` → `검증 상태: FAILED`, `비고:` 에 사유 추가
 3. `변경 이력` 섹션에 검증 일시와 결과 요약 append
 
-## /dev 파이프라인 연동
+## /beom 파이프라인 연동
 
-/dev 스킬에서 `Skill("oh-my-beom:todo-verifier")`로 호출된다.
+/beom 스킬에서 `Skill("oh-my-beom:todo-verifier")`로 호출된다.
 
 | 입력 | 용도 |
 |------|------|
@@ -93,6 +93,6 @@ description: |
 
 ## 독립 호출
 
-/dev 파이프라인 외에서 독립적으로 호출된 경우:
+/beom 파이프라인 외에서 독립적으로 호출된 경우:
 - `docs/plan/`에서 `상태: IN_PROGRESS`인 계획 파일을 자동 탐색한다.
 - 위 워크플로우를 동일하게 수행한다.

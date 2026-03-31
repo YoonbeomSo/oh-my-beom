@@ -69,9 +69,9 @@ description: |
 `docs/show/{이슈키}-plan.html` 또는 `docs/show/{slug}-plan.html`에 Write한다.
 기존 파일이 있으면 덮어쓴다.
 
-## /dev 파이프라인 연동
+## /beom 파이프라인 연동
 
-/dev 스킬에서 `Skill("oh-my-beom:plan-visualizer")`로 호출된다.
+/beom 스킬에서 `Skill("oh-my-beom:plan-visualizer")`로 호출된다.
 
 | 입력 | 용도 |
 |------|------|
@@ -81,6 +81,6 @@ description: |
 
 ## 독립 호출
 
-/dev 파이프라인 외에서 독립적으로 호출된 경우:
+/beom 파이프라인 외에서 독립적으로 호출된 경우:
 - `docs/plan/`에서 Glob으로 계획 파일을 탐색한다.
 - 여러 파일이 있으면 각각에 대해 HTML을 생성한다.
