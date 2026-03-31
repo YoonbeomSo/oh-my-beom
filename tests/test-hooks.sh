@@ -97,6 +97,15 @@ assert_contains "개발해 → beom 스킬" "oh-my-beom:beom" "$RESULT"
 RESULT=$(test_router "로그인 페이지 만들어줘")
 assert_contains "만들어줘 → beom 스킬" "oh-my-beom:beom" "$RESULT"
 
+RESULT=$(test_router "JIRA-123 이슈 해결해줘")
+assert_contains "해결해 → beom 스킬" "oh-my-beom:beom" "$RESULT"
+
+RESULT=$(test_router "이 버그 수정해줘")
+assert_contains "수정해 → beom 스킬" "oh-my-beom:beom" "$RESULT"
+
+RESULT=$(test_router "로그인 에러 고쳐줘")
+assert_contains "고쳐줘 → beom 스킬" "oh-my-beom:beom" "$RESULT"
+
 # 매칭 안 되는 케이스
 RESULT=$(test_router "안녕하세요")
 assert_contains "일반 인사 → 매칭 없음" "suppressOutput" "$RESULT"

@@ -76,7 +76,7 @@ sys.exit(1)
 elif echo "$PROMPT_LOWER" | python3 -c "
 import sys, re
 text = sys.stdin.read()
-if re.search(r'개발해|구현해|만들어줘', text):
+if re.search(r'개발해|구현해|만들어줘|해결해|수정해|고쳐줘|처리해', text):
     sys.exit(0)
 sys.exit(1)
 " 2>/dev/null; then
