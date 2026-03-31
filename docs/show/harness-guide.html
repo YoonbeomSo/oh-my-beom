@@ -5,118 +5,106 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>oh-my-beom 하네스 가이드</title>
 <style>
-:root {
-  --bg: #0d1117; --surface: #161b22; --border: #30363d;
-  --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff;
-  --green: #3fb950; --red: #f85149; --yellow: #d29922;
-  --purple: #bc8cff; --cyan: #39d2c0; --orange: #f0883e;
-  --magenta: #db61a2; --pink: #f778ba;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-h1 { font-size: 2em; margin-bottom: 8px; }
-h2 { font-size: 1.5em; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-h3 { font-size: 1.15em; margin: 20px 0 10px; color: var(--accent); }
-a { color: var(--accent); text-decoration: none; }
-.nav { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 0; margin-bottom: 24px; }
-.nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; flex-wrap: wrap; gap: 8px; }
-.nav a { padding: 4px 12px; border-radius: 16px; font-size: 0.85em; background: var(--bg); border: 1px solid var(--border); transition: all 0.2s; }
-.nav a:hover, .nav a.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; margin: 16px 0; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; transition: border-color 0.2s; }
-.card:hover { border-color: var(--accent); }
-.card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75em; font-weight: 600; }
-.badge-agent { background: #1f6feb33; color: var(--accent); border: 1px solid #1f6feb55; }
-.badge-skill { background: #3fb95033; color: var(--green); border: 1px solid #3fb95055; }
-.badge-hook { background: #d2992233; color: var(--yellow); border: 1px solid #d2992255; }
-.badge-model { background: #bc8cff22; color: var(--purple); border: 1px solid #bc8cff44; font-size: 0.7em; }
-.card-title { font-weight: 700; font-size: 1.05em; }
-.card-desc { color: var(--muted); font-size: 0.9em; margin-bottom: 8px; }
-.card-section { margin-top: 8px; }
-.card-section h4 { font-size: 0.8em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-.tool-tag { display: inline-block; padding: 1px 6px; margin: 2px; border-radius: 4px; font-size: 0.75em; background: var(--bg); border: 1px solid var(--border); }
-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9em; }
-th, td { padding: 8px 12px; text-align: left; border: 1px solid var(--border); }
-th { background: var(--surface); font-weight: 600; white-space: nowrap; }
-td { background: var(--bg); }
-tr:hover td { background: var(--surface); }
-.flow { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 16px 0; overflow-x: auto; }
-.flow pre { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85em; line-height: 1.5; color: var(--text); white-space: pre; }
-.flow .hl-agent { color: var(--accent); font-weight: 700; }
-.flow .hl-skill { color: var(--green); font-weight: 700; }
-.flow .hl-hook { color: var(--yellow); font-weight: 700; }
-.flow .hl-phase { color: var(--purple); font-weight: 700; }
-.flow .hl-stall { color: var(--red); font-weight: 700; }
-details { margin: 8px 0; }
-summary { cursor: pointer; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; font-weight: 600; user-select: none; }
-summary:hover { border-color: var(--accent); }
-details[open] summary { border-radius: 6px 6px 0 0; border-bottom: none; }
-details .detail-content { padding: 12px; border: 1px solid var(--border); border-top: none; border-radius: 0 0 6px 6px; background: var(--surface); }
-.matrix { font-size: 0.8em; }
-.matrix th, .matrix td { padding: 4px 6px; text-align: center; min-width: 36px; }
-.matrix td.yes { background: #3fb95022; color: var(--green); font-weight: 700; }
-.matrix td.cond { background: #d2992222; color: var(--yellow); }
-.matrix th.rotate { writing-mode: vertical-rl; text-orientation: mixed; max-height: 120px; }
-.legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 12px 0; padding: 12px; background: var(--surface); border-radius: 6px; font-size: 0.85em; }
-.legend-item { display: flex; align-items: center; gap: 4px; }
-.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
-section { scroll-margin-top: 60px; }
-.stats { display: flex; gap: 16px; flex-wrap: wrap; margin: 16px 0; }
-.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 20px; text-align: center; min-width: 100px; }
-.stat-num { font-size: 1.8em; font-weight: 800; color: var(--accent); }
-.stat-label { font-size: 0.8em; color: var(--muted); }
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--yellow:#d29922;--purple:#bc8cff;--cyan:#39d2c0;--orange:#f0883e;--magenta:#db61a2}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+h1{font-size:2em;margin-bottom:8px} h2{font-size:1.5em;margin:32px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border)} h3{font-size:1.15em;margin:20px 0 10px;color:var(--accent)}
+a{color:var(--accent);text-decoration:none}
+.nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);padding:10px 0;margin-bottom:24px}
+.nav-inner{max-width:1200px;margin:0 auto;padding:0 20px;display:flex;flex-wrap:wrap;gap:8px}
+.nav a{padding:4px 12px;border-radius:16px;font-size:.85em;background:var(--bg);border:1px solid var(--border);transition:all .2s}
+.nav a:hover,.nav a.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin:16px 0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;transition:border-color .2s}
+.card:hover{border-color:var(--accent)}
+.card-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.75em;font-weight:600}
+.badge-agent{background:#1f6feb33;color:var(--accent);border:1px solid #1f6feb55}
+.badge-skill{background:#3fb95033;color:var(--green);border:1px solid #3fb95055}
+.badge-hook{background:#d2992233;color:var(--yellow);border:1px solid #d2992255}
+.badge-model{background:#bc8cff22;color:var(--purple);border:1px solid #bc8cff44;font-size:.7em}
+.card-title{font-weight:700;font-size:1.05em}
+.card-desc{color:var(--muted);font-size:.9em;margin-bottom:8px}
+.card-section{margin-top:8px}
+.card-section h4{font-size:.8em;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.tool-tag{display:inline-block;padding:1px 6px;margin:2px;border-radius:4px;font-size:.75em;background:var(--bg);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.9em}
+th,td{padding:8px 12px;text-align:left;border:1px solid var(--border)}
+th{background:var(--surface);font-weight:600;white-space:nowrap}
+td{background:var(--bg)} tr:hover td{background:var(--surface)}
+.flow{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;margin:16px 0;overflow-x:auto}
+.flow pre{font-family:'SF Mono','Fira Code',monospace;font-size:.85em;line-height:1.5;color:var(--text);white-space:pre}
+.flow .hl-agent{color:var(--accent);font-weight:700} .flow .hl-skill{color:var(--green);font-weight:700} .flow .hl-hook{color:var(--yellow);font-weight:700} .flow .hl-phase{color:var(--purple);font-weight:700} .flow .hl-stall{color:var(--red);font-weight:700}
+details{margin:8px 0}
+summary{cursor:pointer;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-weight:600;user-select:none}
+summary:hover{border-color:var(--accent)}
+details[open] summary{border-radius:6px 6px 0 0;border-bottom:none}
+details .detail-content{padding:12px;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;background:var(--surface)}
+.matrix{font-size:.8em} .matrix th,.matrix td{padding:4px 6px;text-align:center;min-width:36px}
+.matrix td.yes{background:#3fb95022;color:var(--green);font-weight:700} .matrix td.cond{background:#d2992222;color:var(--yellow)}
+.matrix th.rotate{writing-mode:vertical-rl;text-orientation:mixed;max-height:120px}
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin:12px 0;padding:12px;background:var(--surface);border-radius:6px;font-size:.85em}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+section{scroll-margin-top:60px}
+.stats{display:flex;gap:16px;flex-wrap:wrap;margin:16px 0}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 20px;text-align:center;min-width:100px}
+.stat-num{font-size:1.8em;font-weight:800;color:var(--accent)} .stat-label{font-size:.8em;color:var(--muted)}
 </style>
 </head>
 <body>
 
-<nav class="nav">
-<div class="nav-inner">
+<nav class="nav"><div class="nav-inner">
   <a href="#overview">개요</a>
   <a href="#hooks">훅</a>
   <a href="#agents">에이전트</a>
   <a href="#skills">스킬</a>
-  <a href="#pipeline">/dev 파이프라인</a>
+  <a href="#pipeline">/beom 파이프라인</a>
+  <a href="#plan">Plan 형상관리</a>
   <a href="#stall">정체 에스컬레이션</a>
   <a href="#matrix">호출 관계</a>
   <a href="#config">설정</a>
   <a href="#workflow">워크플로우 예시</a>
-</div>
-</nav>
+</div></nav>
 
 <div class="container">
 
-<!-- ==================== 개요 ==================== -->
+<!-- ===== 개요 ===== -->
 <section id="overview">
 <h1>oh-my-beom 하네스 가이드</h1>
-<p style="color:var(--muted)">Claude Code 플러그인 v1.1.0 &mdash; 한국어 개발자 도구 모음</p>
+<p style="color:var(--muted)">Claude Code 플러그인 v2.0 &mdash; /beom 중심 구조</p>
 
 <div class="stats">
   <div class="stat"><div class="stat-num">6</div><div class="stat-label">훅</div></div>
   <div class="stat"><div class="stat-num">5</div><div class="stat-label">에이전트</div></div>
-  <div class="stat"><div class="stat-num">25</div><div class="stat-label">스킬</div></div>
-  <div class="stat"><div class="stat-num">3</div><div class="stat-label">규칙</div></div>
-  <div class="stat"><div class="stat-num">6</div><div class="stat-label">Phase</div></div>
+  <div class="stat"><div class="stat-num">23</div><div class="stat-label">스킬</div></div>
+  <div class="stat"><div class="stat-num">3</div><div class="stat-label">팀 조합</div></div>
 </div>
+
+<h3>핵심 변경 (v2.0)</h3>
+<table>
+<tr><th>이전</th><th>현재</th></tr>
+<tr><td>/beom &rarr; /lens &rarr; /research &rarr; /plan &rarr; /dev (4단계 체이닝)</td><td><strong>/beom이 유일한 개발 진입점</strong>. /dev, /plan 흡수</td></tr>
+<tr><td>항상 5개 에이전트 생성</td><td><strong>사용자가 팀 조합 선택</strong> (Light 3명 / Full 5명 / Hotfix 1명)</td></tr>
+<tr><td>/dev 내부 6 Phase 고정</td><td><strong>팀 크기에 따라 Phase 달라짐</strong></td></tr>
+<tr><td>.dev/ 파일 + docs/plan/ 분리</td><td><strong>docs/plan/ 에 전 과정 형상관리</strong></td></tr>
+</table>
 
 <h3>아키텍처 레이어</h3>
 <div class="flow"><pre>
 <span class="hl-hook">[ 훅 ]</span>              이벤트 기반 자동화 (6종)
-     |                 SessionStart, UserPromptSubmit, PreToolUse,
-     |                 TaskCompleted, TeammateIdle, Stop
-     v
-<span class="hl-skill">[ 스킬 ]</span>            사용자/파이프라인이 호출하는 슬래시 커맨드 (25종)
-     |                 /beom, /dev, /plan, /research, /lens, /commit...
      |
-     |--- 오케스트레이션 ---+
-     v                      v
-<span class="hl-agent">[ 에이전트 ]</span>         Q&A 루프를 도는 팀 멤버 (5종)
-     |                 product-owner, architect, coder,
-     |                 qa-manager, security-auditor
      v
-[ 규칙 + 설정 ]      행동 지침 + 프로젝트별 설정
-                       rules/*.md, config/config.json
+<span class="hl-skill">[ /beom ]</span>           개발 오케스트레이터 (유일한 진입점)
+     |
+     |--- 팀 추천 → 사용자 선택
+     v
+<span class="hl-agent">[ 에이전트 팀 ]</span>     선택된 조합으로 작업
+     |                Light: architect + coder + qa-manager
+     |                Full:  + product-owner + security-auditor
+     v
+[ plan 파일 ]       전 과정 형상관리 (docs/plan/{이슈키}-plan.md)
 </pre></div>
 
 <h3>디렉토리 구조</h3>
@@ -125,810 +113,458 @@ oh-my-beom/
 ├── CLAUDE.md                   최상위 지침
 ├── config/config.json          공통 설정
 ├── rules/                      항상 적용되는 행동 규칙
-│   ├── behavior.md             코딩 원칙 (7개 섹션)
-│   ├── git-workflow.md         Git 브랜치/커밋/PR 규칙
-│   └── workspace-structure.md  플러그인 구조 문서
-├── <span class="hl-hook">hooks/</span>                      이벤트 핸들러
-│   ├── hooks.json              훅 등록부
-│   ├── session-start           세션 시작
-│   ├── prompt-router           사용자 입력 라우팅
-│   ├── pre-tool-guard          보호 브랜치 차단
-│   ├── task-verifier           태스크 완료 검증
-│   ├── idle-checker            유휴 에이전트 감지
-│   └── stop-report             종료 시 보고서 생성
-├── <span class="hl-agent">agents/</span>                     팀 에이전트 정의
-│   ├── product-owner.md
-│   ├── architect.md
-│   ├── coder.md
-│   ├── qa-manager.md
-│   └── security-auditor.md
-├── <span class="hl-skill">skills/</span>                     슬래시 커맨드 스킬 (25종)
-│   ├── beom/ dev/ plan/ research/ lens/ persist/
-│   ├── commit/ pull-request/ worktree/
-│   ├── hacker/ simplifier/ design-critic/
-│   ├── todo-verifier/ plan-visualizer/ report/
-│   ├── web-test-qa/ test-plan/ test-generate/ test-heal/
-│   ├── fetch-jenkins/ fetch-jira-issue/ hecto-setup/
-│   └── new-context/ humanizer/ tmux-team-agent/
+├── <span class="hl-hook">hooks/</span> (6종)                이벤트 핸들러
+├── <span class="hl-agent">agents/</span> (5종)               팀 에이전트 정의
+├── <span class="hl-skill">skills/</span> (23종)
+│   ├── <strong>beom/</strong>                   개발 오케스트레이터 (핵심)
+│   ├── lens/ research/         독립 조사 스킬
+│   ├── commit/ pull-request/ worktree/  Git 스킬
+│   ├── hacker/ simplifier/ design-critic/  유틸리티
+│   ├── todo-verifier/ plan-visualizer/ report/  검증/시각화
+│   ├── web-test-qa/ test-plan/ test-generate/ test-heal/  E2E
+│   └── fetch-jenkins/ fetch-jira-issue/ ...  외부 연동
 └── docs/
-    ├── plan/                   계획 파일 저장소
-    └── show/                   시각화 산출물 (HTML)
+    ├── plan/                   plan 파일 (형상관리)
+    └── show/                   시각화 HTML
 </pre></div>
 </section>
 
-<!-- ==================== 훅 ==================== -->
+<!-- ===== 훅 ===== -->
 <section id="hooks">
 <h2>훅 (6종)</h2>
-<p>훅은 Claude Code 이벤트에 반응하여 자동 실행되는 셸 스크립트다. 동작을 차단하거나, 컨텍스트를 주입하거나, 정책을 강제할 수 있다.</p>
-
 <div class="card-grid">
-
 <div class="card">
   <div class="card-header"><span class="badge badge-hook">SessionStart</span><span class="card-title">session-start</span></div>
-  <div class="card-desc">진행 중인 계획(IN_PROGRESS)을 감지하고 워크플로우 가이드를 표시한다.</div>
+  <div class="card-desc">진행 중인 계획 감지 + 워크플로우 가이드 표시</div>
   <div class="card-section"><h4>트리거</h4>세션 시작, /clear, /compact</div>
-  <div class="card-section"><h4>동작</h4>
-    <ul style="padding-left:16px;font-size:0.9em">
-      <li><code>docs/plan/</code>에서 IN_PROGRESS 계획 파일 탐색</li>
-      <li>있으면: 계획 요약 + 재개 안내 표시</li>
-      <li>없으면: 워크플로우 가이드 테이블 표시</li>
-    </ul>
-  </div>
 </div>
-
 <div class="card">
   <div class="card-header"><span class="badge badge-hook">UserPromptSubmit</span><span class="card-title">prompt-router</span></div>
-  <div class="card-desc">사용자 입력에서 키워드를 감지하여 적절한 스킬로 자동 라우팅한다.</div>
-  <div class="card-section"><h4>트리거</h4>모든 사용자 메시지 (*)</div>
-  <div class="card-section"><h4>라우팅 테이블</h4>
-    <table style="font-size:0.8em">
-      <tr><th>키워드</th><th>스킬</th></tr>
-      <tr><td>beom, 비서</td><td>/beom</td></tr>
-      <tr><td>plan, 계획</td><td>/plan</td></tr>
-      <tr><td>lens, 정책</td><td>/lens</td></tr>
-      <tr><td>research, 분석해</td><td>/research</td></tr>
-      <tr><td>persist, 끝까지</td><td>/persist</td></tr>
-      <tr><td>dev, 개발</td><td>/dev</td></tr>
+  <div class="card-desc">키워드 감지 → 스킬 자동 라우팅</div>
+  <div class="card-section"><h4>라우팅</h4>
+    <table style="font-size:.8em">
+      <tr><td>beom, 비서</td><td>&rarr; /beom</td></tr>
+      <tr><td>개발해, 구현해, 만들어줘</td><td>&rarr; /beom</td></tr>
+      <tr><td>정책, lens</td><td>&rarr; /lens</td></tr>
+      <tr><td>분석해, research</td><td>&rarr; /research</td></tr>
+      <tr><td>끝까지, persist</td><td>&rarr; /persist</td></tr>
     </table>
   </div>
 </div>
-
 <div class="card">
   <div class="card-header"><span class="badge badge-hook">PreToolUse</span><span class="card-title">pre-tool-guard</span></div>
-  <div class="card-desc">보호 브랜치(main, master, develop, test, dev)에서의 직접 커밋을 차단한다.</div>
-  <div class="card-section"><h4>트리거</h4>Bash 도구 실행 직전</div>
-  <div class="card-section"><h4>동작</h4>
-    <code>git commit</code>을 보호 브랜치에서 감지 &rarr; DENY + "작업 브랜치를 먼저 생성하세요" 메시지
-  </div>
+  <div class="card-desc">보호 브랜치 직접 커밋 차단</div>
 </div>
-
 <div class="card">
   <div class="card-header"><span class="badge badge-hook">TaskCompleted</span><span class="card-title">task-verifier</span></div>
-  <div class="card-desc">품질 게이트: 계획 파일의 TODO 완료 기준을 검증한 후에만 태스크 닫기를 허용한다.</div>
-  <div class="card-section"><h4>트리거</h4>태스크가 완료로 마크될 때</div>
-  <div class="card-section"><h4>동작</h4>
-    미완료 TODO, FAILED 항목, lint/test/build 상태 확인. 기준 미충족 시 완료 차단 (exit 2).
-  </div>
+  <div class="card-desc">계획 TODO 미완료 시 태스크 닫기 차단</div>
 </div>
-
 <div class="card">
   <div class="card-header"><span class="badge badge-hook">TeammateIdle</span><span class="card-title">idle-checker</span></div>
-  <div class="card-desc">유휴 상태인 팀 에이전트에게 남은 작업 항목을 상기시킨다.</div>
-  <div class="card-section"><h4>트리거</h4>팀 에이전트가 유휴 상태가 될 때</div>
-  <div class="card-section"><h4>동작</h4>
-    계획 파일에서 미완료 TODO 항목 최대 5개 수집. 유휴 차단 (exit 2) 후 작업 재개 강제.
-  </div>
+  <div class="card-desc">유휴 에이전트에게 남은 TODO 상기</div>
 </div>
-
 <div class="card">
   <div class="card-header"><span class="badge badge-hook">Stop</span><span class="card-title">stop-report</span></div>
-  <div class="card-desc">/dev 세션 종료 전에 결과 보고서 생성을 강제한다.</div>
-  <div class="card-section"><h4>트리거</h4>Claude 응답 종료 직전</div>
-  <div class="card-section"><h4>조건</h4>
-    <ul style="padding-left:16px;font-size:0.9em">
-      <li><code>.dev/state.md</code> 존재 (/dev 세션)</li>
-      <li><code>.dev/report.md</code> 미존재 (보고서 아직 없음)</li>
-      <li>Phase가 setup이 아님 (의미 있는 산출물 있음)</li>
-    </ul>
-  </div>
-  <div class="card-section"><h4>동작</h4>종료 차단 &rarr; Claude에게 <code>/report</code> 스킬 실행 지시</div>
+  <div class="card-desc">/beom 세션 종료 전 결과 보고서 강제 생성</div>
 </div>
-
 </div>
-
-<h3>훅 실행 흐름</h3>
-<div class="flow"><pre>
-사용자가 메시지 입력
-    |
-    v
-<span class="hl-hook">[prompt-router]</span> ---- 키워드 매칭? ---------> 스킬 라우팅 힌트 주입
-    |
-    v
-Claude가 Bash 도구 사용 결정
-    |
-    v
-<span class="hl-hook">[pre-tool-guard]</span> --- 보호 브랜치 커밋? -----> DENY (커밋 차단)
-    |
-    v
-Bash 실행...
-    |
-    v
-태스크 완료 마크
-    |
-    v
-<span class="hl-hook">[task-verifier]</span> ---- TODO 미완료? ---------> BLOCK (exit 2)
-    |
-    v
-팀 에이전트 유휴 상태
-    |
-    v
-<span class="hl-hook">[idle-checker]</span> ----- 남은 작업? -----------> BLOCK + TODO 목록 표시
-    |
-    v
-Claude 응답 종료 시도
-    |
-    v
-<span class="hl-hook">[stop-report]</span> ----- 보고서 미생성? --------> BLOCK + /report 실행
-    |
-    v
-세션 정상 종료
-</pre></div>
 </section>
 
-<!-- ==================== 에이전트 ==================== -->
+<!-- ===== 에이전트 ===== -->
 <section id="agents">
 <h2>에이전트 (5종)</h2>
-<p>에이전트는 <code>/dev</code> 파이프라인에서 <code>TeamCreate</code>로 생성되는 팀 멤버다. <code>SendMessage</code>로 Q&A 루프를 돌며 병렬 실행도 가능하다.</p>
-
-<div class="legend">
-  <div class="legend-item"><span class="legend-dot" style="background:var(--magenta)"></span> product-owner</div>
-  <div class="legend-item"><span class="legend-dot" style="background:var(--cyan)"></span> architect</div>
-  <div class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> coder</div>
-  <div class="legend-item"><span class="legend-dot" style="background:var(--yellow)"></span> qa-manager</div>
-  <div class="legend-item"><span class="legend-dot" style="background:var(--purple)"></span> security-auditor</div>
-</div>
+<p><code>/beom</code>이 <code>TeamCreate</code>로 선택된 조합만 생성한다. Light는 3명, Full은 5명.</p>
 
 <div class="card-grid">
-
-<div class="card" style="border-left: 3px solid var(--magenta)">
-  <div class="card-header">
-    <span class="badge badge-agent">에이전트</span>
-    <span class="card-title">product-owner</span>
-    <span class="badge badge-model">sonnet</span>
-  </div>
-  <div class="card-desc">PRD 작성자 + 인수 검증자. 모호한 요청을 명확한 요구사항으로 변환한다.</div>
+<div class="card" style="border-left:3px solid var(--magenta)">
+  <div class="card-header"><span class="badge badge-agent">Full 전용</span><span class="card-title">product-owner</span><span class="badge badge-model">sonnet</span></div>
+  <div class="card-desc">PRD 작성 + 인수 검증. 모호한 요청을 명확한 요구사항으로 변환.</div>
   <div class="card-section"><h4>도구</h4><span class="tool-tag">Read</span><span class="tool-tag">Glob</span><span class="tool-tag">Grep</span></div>
-  <div class="card-section"><h4>한다</h4>
-    <ul style="padding-left:16px;font-size:0.85em">
-      <li>코드베이스 학습 (비즈니스 컨텍스트 파악)</li>
-      <li>모호한 요청 &rarr; 구조화된 PRD 변환</li>
-      <li>수용 기준 + 엣지 케이스 정의</li>
-      <li>완료 단계에서 인수 검증</li>
-    </ul>
-  </div>
-  <div class="card-section"><h4>하지 않는다</h4>
-    <ul style="padding-left:16px;font-size:0.85em;color:var(--muted)">
-      <li>기술 아키텍처 설계</li>
-      <li>코드 품질/패턴 판단</li>
-    </ul>
-  </div>
-  <div class="card-section"><h4>활성 Phase</h4>
-    <span class="badge badge-skill" style="font-size:0.75em">requirements</span>
-    <span class="badge badge-skill" style="font-size:0.75em">complete</span>
-  </div>
+  <div class="card-section"><h4>활성 Phase</h4><span class="badge badge-skill" style="font-size:.75em">PRD</span><span class="badge badge-skill" style="font-size:.75em">커밋 (인수)</span></div>
 </div>
-
-<div class="card" style="border-left: 3px solid var(--cyan)">
-  <div class="card-header">
-    <span class="badge badge-agent">에이전트</span>
-    <span class="card-title">architect</span>
-    <span class="badge badge-model">opus</span>
-  </div>
-  <div class="card-desc">기술 설계자. PRD + 코드 맵을 기반으로 아키텍처를 설계한다.</div>
+<div class="card" style="border-left:3px solid var(--cyan)">
+  <div class="card-header"><span class="badge badge-agent">공통</span><span class="card-title">architect</span><span class="badge badge-model">sonnet</span></div>
+  <div class="card-desc">기술 설계. PRD/요청 + 코드 맵 기반 아키텍처 설계.</div>
   <div class="card-section"><h4>도구</h4><span class="tool-tag">Read</span><span class="tool-tag">Glob</span><span class="tool-tag">Grep</span></div>
-  <div class="card-section"><h4>한다</h4>
-    <ul style="padding-left:16px;font-size:0.85em">
-      <li>기술 아키텍처 설계 (패턴, 레이어, 인터페이스)</li>
-      <li>구현 방법 결정 + 변경 범위 식별</li>
-      <li>테스트 전략 수립</li>
-      <li>중형/대형 설계 시 <code>/design-critic</code> 호출</li>
-    </ul>
-  </div>
-  <div class="card-section"><h4>하지 않는다</h4>
-    <ul style="padding-left:16px;font-size:0.85em;color:var(--muted)">
-      <li>비즈니스 요구사항 재정의</li>
-      <li>코드 정확성/버그 검증</li>
-    </ul>
-  </div>
-  <div class="card-section"><h4>활성 Phase</h4>
-    <span class="badge badge-skill" style="font-size:0.75em">design</span>
-  </div>
+  <div class="card-section"><h4>활성 Phase</h4><span class="badge badge-skill" style="font-size:.75em">설계</span></div>
 </div>
-
-<div class="card" style="border-left: 3px solid var(--green)">
-  <div class="card-header">
-    <span class="badge badge-agent">에이전트</span>
-    <span class="card-title">coder</span>
-    <span class="badge badge-model">opus</span>
-  </div>
-  <div class="card-desc">구현 전문가. 승인된 설계를 기반으로 코드를 작성한다.</div>
+<div class="card" style="border-left:3px solid var(--green)">
+  <div class="card-header"><span class="badge badge-agent">공통</span><span class="card-title">coder</span><span class="badge badge-model">inherit</span></div>
+  <div class="card-desc">코드 구현 + 리뷰 피드백 수정.</div>
   <div class="card-section"><h4>도구</h4><span class="tool-tag">Read</span><span class="tool-tag">Write</span><span class="tool-tag">Edit</span><span class="tool-tag">Glob</span><span class="tool-tag">Grep</span><span class="tool-tag">Bash</span></div>
-  <div class="card-section"><h4>한다</h4>
-    <ul style="padding-left:16px;font-size:0.85em">
-      <li>승인된 설계 기반 코드 구현</li>
-      <li>프로젝트 컨벤션 분석 및 준수</li>
-      <li>리뷰 피드백에 따른 자동 수정</li>
-      <li>설계 불일치 발견 시 보고</li>
-    </ul>
-  </div>
-  <div class="card-section"><h4>하지 않는다</h4>
-    <ul style="padding-left:16px;font-size:0.85em;color:var(--muted)">
-      <li>설계에 없는 기능 추가</li>
-      <li>아키텍처 결정</li>
-    </ul>
-  </div>
-  <div class="card-section"><h4>활성 Phase</h4>
-    <span class="badge badge-skill" style="font-size:0.75em">implement</span>
-    <span class="badge badge-skill" style="font-size:0.75em">review (수정)</span>
-    <span class="badge badge-skill" style="font-size:0.75em">complete</span>
-  </div>
+  <div class="card-section"><h4>활성 Phase</h4><span class="badge badge-skill" style="font-size:.75em">구현</span><span class="badge badge-skill" style="font-size:.75em">리뷰 (수정)</span><span class="badge badge-skill" style="font-size:.75em">커밋</span></div>
 </div>
-
-<div class="card" style="border-left: 3px solid var(--yellow)">
-  <div class="card-header">
-    <span class="badge badge-agent">에이전트</span>
-    <span class="card-title">qa-manager</span>
-    <span class="badge badge-model">sonnet</span>
-  </div>
-  <div class="card-desc">코드 리뷰어 + 스펙 검증자. 발견 사항을 CERTAIN/QUESTION으로 분류한다.</div>
+<div class="card" style="border-left:3px solid var(--yellow)">
+  <div class="card-header"><span class="badge badge-agent">공통</span><span class="card-title">qa-manager</span><span class="badge badge-model">sonnet</span></div>
+  <div class="card-desc">코드 리뷰 + 스펙 검증. CERTAIN/QUESTION 분류.</div>
   <div class="card-section"><h4>도구</h4><span class="tool-tag">Read</span><span class="tool-tag">Glob</span><span class="tool-tag">Grep</span></div>
-  <div class="card-section"><h4>심각도 분류</h4>
-    <span class="badge" style="background:#f8514922;color:var(--red);border:1px solid #f8514944">Critical</span>
-    <span class="badge" style="background:#d2992222;color:var(--yellow);border:1px solid #d2992244">Warning</span>
-    <span class="badge" style="background:#8b949e22;color:var(--muted);border:1px solid #8b949e44">Info</span>
-  </div>
-  <div class="card-section"><h4>활성 Phase</h4>
-    <span class="badge badge-skill" style="font-size:0.75em">implement (자기점검)</span>
-    <span class="badge badge-skill" style="font-size:0.75em">review (병렬)</span>
-  </div>
+  <div class="card-section"><h4>활성 Phase</h4><span class="badge badge-skill" style="font-size:.75em">구현 (자기점검)</span><span class="badge badge-skill" style="font-size:.75em">리뷰</span></div>
 </div>
-
-<div class="card" style="border-left: 3px solid var(--purple)">
-  <div class="card-header">
-    <span class="badge badge-agent">에이전트</span>
-    <span class="card-title">security-auditor</span>
-    <span class="badge badge-model">sonnet</span>
-  </div>
-  <div class="card-desc">PRD, 설계서, 코드를 교차 검증하여 정책 위반과 보안 취약점을 식별한다.</div>
+<div class="card" style="border-left:3px solid var(--purple)">
+  <div class="card-header"><span class="badge badge-agent">Full 전용</span><span class="card-title">security-auditor</span><span class="badge badge-model">sonnet</span></div>
+  <div class="card-desc">PRD/설계/코드 교차 검증. RISK/POLICY/GAP/ASSUMPTION 분류.</div>
   <div class="card-section"><h4>도구</h4><span class="tool-tag">Read</span><span class="tool-tag">Glob</span><span class="tool-tag">Grep</span></div>
-  <div class="card-section"><h4>발견 유형</h4>
-    <span class="badge" style="background:#f8514922;color:var(--red);border:1px solid #f8514944">RISK</span>
-    <span class="badge" style="background:#d2992222;color:var(--yellow);border:1px solid #d2992244">POLICY</span>
-    <span class="badge" style="background:#58a6ff22;color:var(--accent);border:1px solid #58a6ff44">GAP</span>
-    <span class="badge" style="background:#bc8cff22;color:var(--purple);border:1px solid #bc8cff44">ASSUMPTION</span>
-  </div>
-  <div class="card-section"><h4>활성 Phase</h4>
-    <span class="badge badge-skill" style="font-size:0.75em">review (qa-manager와 병렬)</span>
-  </div>
+  <div class="card-section"><h4>활성 Phase</h4><span class="badge badge-skill" style="font-size:.75em">리뷰 (qa-manager와 병렬)</span></div>
 </div>
-
 </div>
-
-<h3>병렬 실행 규칙</h3>
-<table>
-<tr><th>규칙</th><th>설명</th></tr>
-<tr><td>읽기 전용 에이전트는 병렬 가능</td><td>product-owner, architect, qa-manager, security-auditor</td></tr>
-<tr><td>쓰기 에이전트(coder)는 다른 쓰기 에이전트와 병렬 불가</td><td>동시에 하나의 coder만 실행</td></tr>
-<tr><td>대표적 병렬 조합</td><td>review Phase에서 qa-manager + security-auditor 동시 호출</td></tr>
-</table>
 </section>
 
-<!-- ==================== 스킬 ==================== -->
+<!-- ===== 스킬 ===== -->
 <section id="skills">
-<h2>스킬 (25종)</h2>
-<p>스킬은 사용자 또는 다른 스킬이 호출하는 슬래시 커맨드다. 메인 대화 컨텍스트에서 실행된다.</p>
+<h2>스킬 (23종)</h2>
 
-<h3>메인 워크플로우 스킬</h3>
+<h3>핵심 오케스트레이터</h3>
 <table>
-<tr><th>스킬</th><th>역할</th><th>자동 체이닝</th><th>호출 주체</th></tr>
-<tr><td><strong>/beom</strong></td><td>풀사이클 비서</td><td>/lens &rarr; /research &rarr; /plan &rarr; /dev</td><td>사용자</td></tr>
-<tr><td><strong>/lens</strong></td><td>비즈니스 정책 분석</td><td>/research (자동)</td><td>/beom, 사용자</td></tr>
-<tr><td><strong>/research</strong></td><td>코드베이스 조사</td><td>/plan (자동)</td><td>/beom, /lens, 사용자</td></tr>
-<tr><td><strong>/plan</strong></td><td>4-Mode 계획 수립</td><td>/plan-visualizer (autoVisualize 시)</td><td>/beom, /research, 사용자</td></tr>
-<tr><td><strong>/dev</strong></td><td>전체 개발 사이클 오케스트레이터</td><td>에이전트 + 유틸리티 스킬</td><td>/beom, 사용자</td></tr>
-<tr><td><strong>/persist</strong></td><td>끝까지 실행 (6단계 루프)</td><td>상황에 따라 다름</td><td>사용자 ("끝까지 해")</td></tr>
+<tr><th>스킬</th><th>역할</th></tr>
+<tr><td><strong>/beom</strong></td><td>작업 분석 &rarr; 팀 추천 &rarr; 사용자 선택 &rarr; 에이전트 팀 작업 &rarr; 커밋. 유일한 개발 진입점.</td></tr>
+</table>
+
+<h3>독립 조사 스킬 (선행 작업용)</h3>
+<table>
+<tr><th>스킬</th><th>역할</th><th>산출물</th></tr>
+<tr><td><strong>/lens</strong></td><td>비즈니스 정책 분석</td><td>.dev/lens-report.md &rarr; /beom이 자동 감지</td></tr>
+<tr><td><strong>/research</strong></td><td>코드베이스 조사</td><td>.dev/research-report.md &rarr; /beom이 자동 감지</td></tr>
 </table>
 
 <h3>Git / CI 스킬</h3>
 <table>
-<tr><th>스킬</th><th>역할</th><th>호출 주체</th></tr>
-<tr><td><strong>/commit</strong></td><td>이슈 키 파싱 + 한국어 커밋 메시지 생성</td><td>/dev (complete Phase), 사용자</td></tr>
-<tr><td><strong>/pull-request</strong></td><td>커밋 히스토리에서 PR 자동 생성</td><td>사용자 (자동 호출 안 됨)</td></tr>
-<tr><td><strong>/worktree</strong></td><td>Git worktree 자동화 (기본/workspace 모드)</td><td>사용자</td></tr>
+<tr><th>스킬</th><th>역할</th></tr>
+<tr><td><strong>/commit</strong></td><td>이슈 키 파싱 + 한국어 커밋 메시지</td></tr>
+<tr><td><strong>/pull-request</strong></td><td>커밋 히스토리에서 PR 자동 생성</td></tr>
+<tr><td><strong>/worktree</strong></td><td>Git worktree 자동화</td></tr>
 </table>
 
-<h3>유틸리티 스킬 (이전 에이전트에서 전환)</h3>
+<h3>유틸리티 스킬</h3>
 <table>
-<tr><th>스킬</th><th>역할</th><th>호출 주체</th><th>트리거 조건</th></tr>
-<tr><td><strong>/hacker</strong></td><td>제약 우회 분석</td><td>/dev</td><td>SPINNING / NO_DRIFT 정체 감지</td></tr>
-<tr><td><strong>/simplifier</strong></td><td>복잡도 제거</td><td>/dev</td><td>DIMINISHING_RETURNS 정체 감지</td></tr>
-<tr><td><strong>/design-critic</strong></td><td>설계 비판 (악마의 대변인)</td><td>/dev (architect)</td><td>설계 규모 중형/대형</td></tr>
-<tr><td><strong>/todo-verifier</strong></td><td>계획 TODO 검증</td><td>/dev, /plan</td><td>verification.enabled = true</td></tr>
-<tr><td><strong>/plan-visualizer</strong></td><td>계획 MD &rarr; HTML 대시보드</td><td>/dev, /plan</td><td>autoVisualize = true</td></tr>
-<tr><td><strong>/web-test-qa</strong></td><td>E2E 테스트 오케스트레이터</td><td>/dev</td><td>프론트엔드 변경 감지</td></tr>
-<tr><td><strong>/report</strong></td><td>세션 결과 보고서</td><td>Stop 훅</td><td>.dev/state.md 존재, 보고서 미생성</td></tr>
+<tr><th>스킬</th><th>역할</th><th>호출 조건</th></tr>
+<tr><td><strong>/hacker</strong></td><td>제약 우회 분석</td><td>SPINNING / NO_DRIFT 정체</td></tr>
+<tr><td><strong>/simplifier</strong></td><td>복잡도 제거</td><td>DIMINISHING_RETURNS 정체</td></tr>
+<tr><td><strong>/design-critic</strong></td><td>설계 비판 (악마의 대변인)</td><td>설계 규모 중형/대형</td></tr>
+<tr><td><strong>/todo-verifier</strong></td><td>계획 TODO 검증</td><td>verification.enabled</td></tr>
+<tr><td><strong>/plan-visualizer</strong></td><td>계획 MD &rarr; HTML</td><td>autoVisualize</td></tr>
+<tr><td><strong>/report</strong></td><td>세션 결과 보고서</td><td>Stop 훅</td></tr>
+<tr><td><strong>/persist</strong></td><td>끝까지 실행 모드</td><td>사용자 요청</td></tr>
 </table>
 
-<h3>E2E 테스트 스킬 (/web-test-qa가 순차 체이닝)</h3>
+<h3>E2E 테스트 스킬</h3>
 <table>
 <tr><th>스킬</th><th>역할</th><th>단계</th></tr>
-<tr><td><strong>/test-plan</strong></td><td>인증 분석 + 브라우저 탐색 + 시나리오 설계</td><td>1단계</td></tr>
-<tr><td><strong>/test-generate</strong></td><td>시나리오를 .spec.ts 파일로 변환</td><td>2단계</td></tr>
-<tr><td><strong>/test-heal</strong></td><td>테스트 실행 + 실패 디버깅/수정</td><td>3단계</td></tr>
+<tr><td><strong>/web-test-qa</strong></td><td>E2E 테스트 오케스트레이터</td><td>프론트엔드 변경 시</td></tr>
+<tr><td><strong>/test-plan</strong></td><td>인증 분석 + 시나리오 설계</td><td>1</td></tr>
+<tr><td><strong>/test-generate</strong></td><td>시나리오 &rarr; .spec.ts</td><td>2</td></tr>
+<tr><td><strong>/test-heal</strong></td><td>테스트 실행 + 디버깅</td><td>3</td></tr>
 </table>
 
-<h3>외부 연동 / 설정 스킬</h3>
+<h3>외부 연동 / 기타</h3>
 <table>
 <tr><th>스킬</th><th>역할</th></tr>
-<tr><td><strong>/fetch-jenkins</strong></td><td>Jenkins 빌드 상태 조회 / 트리거 / 로그 확인</td></tr>
-<tr><td><strong>/fetch-jira-issue</strong></td><td>Jira 이슈 조회 (MCP 우선, REST API 폴백)</td></tr>
-<tr><td><strong>/hecto-setup</strong></td><td>HectoProject용 CLAUDE.md 설정</td></tr>
-<tr><td><strong>/new-context</strong></td><td>새 도메인 컨텍스트 생성 (디렉토리 + 문서)</td></tr>
-<tr><td><strong>/humanizer</strong></td><td>AI 글쓰기 패턴 감지 및 교정 (40+ 패턴)</td></tr>
-<tr><td><strong>/tmux-team-agent</strong></td><td>TeamCreate 후 실패한 tmux pane 복구</td></tr>
+<tr><td>/fetch-jenkins</td><td>Jenkins 빌드 연동</td></tr>
+<tr><td>/fetch-jira-issue</td><td>Jira 이슈 조회</td></tr>
+<tr><td>/hecto-setup</td><td>HectoProject 설정</td></tr>
+<tr><td>/new-context</td><td>도메인 컨텍스트 생성</td></tr>
+<tr><td>/humanizer</td><td>AI 글쓰기 교정</td></tr>
+<tr><td>/tmux-team-agent</td><td>tmux pane 복구</td></tr>
 </table>
 </section>
 
-<!-- ==================== /dev 파이프라인 ==================== -->
+<!-- ===== /beom 파이프라인 ===== -->
 <section id="pipeline">
-<h2>/dev 파이프라인 (6 Phase)</h2>
+<h2>/beom 파이프라인</h2>
 
-<h3>Phase 흐름</h3>
+<h3>팀 조합별 Phase 흐름</h3>
 <div class="flow"><pre>
-<span class="hl-phase">setup</span> ──────> <span class="hl-phase">requirements</span> ──────> <span class="hl-phase">design</span> ──────> <span class="hl-phase">implement</span> ──────> <span class="hl-phase">review</span> ──────> <span class="hl-phase">complete</span>
-  |               |                  |                |                |               |
-  |          <span class="hl-agent">product-</span>          <span class="hl-agent">architect</span>          <span class="hl-agent">coder</span>         <span class="hl-agent">qa-manager</span>    <span class="hl-agent">product-</span>
-  |          <span class="hl-agent">owner</span>            + <span class="hl-skill">/design-</span>       + <span class="hl-agent">qa-manager</span>    + <span class="hl-agent">security-</span>    <span class="hl-agent">owner</span>
-  |          (PRD)            <span class="hl-skill">critic</span>           (자기점검)      <span class="hl-agent">auditor</span>      (인수검증)
-  |                          (중형+ 시)        + <span class="hl-skill">/todo-</span>       + <span class="hl-skill">/web-test-</span>   + <span class="hl-agent">coder</span>
-TeamCreate                                      <span class="hl-skill">verifier</span>       <span class="hl-skill">qa</span>          (수정)
-5명 팀                                                                       + <span class="hl-skill">/commit</span>
+<span class="hl-phase">Light (3명)</span>:  setup → <span class="hl-phase">설계</span> → <span class="hl-phase">구현</span> → <span class="hl-phase">리뷰</span> → <span class="hl-phase">커밋</span>
+                         <span class="hl-agent">architect</span>  <span class="hl-agent">coder</span>    <span class="hl-agent">qa-manager</span>
 
+<span class="hl-phase">Full  (5명)</span>:  setup → <span class="hl-phase">PRD</span> → <span class="hl-phase">설계</span> → <span class="hl-phase">구현</span> → <span class="hl-phase">리뷰</span> → <span class="hl-phase">커밋</span>
+                     <span class="hl-agent">product-</span> <span class="hl-agent">architect</span>  <span class="hl-agent">coder</span>  <span class="hl-agent">qa-mgr</span> +   <span class="hl-agent">product-</span>
+                     <span class="hl-agent">owner</span>                       <span class="hl-agent">sec-audit</span>  <span class="hl-agent">owner (인수)</span>
 
-<span style="color:var(--muted)">핫픽스 경로 (--hotfix): setup ─> requirements (경량) ─> implement ─> complete</span>
+<span class="hl-phase">Hotfix</span>:       setup → <span class="hl-phase">구현</span> → <span class="hl-phase">커밋</span>
+                         <span class="hl-agent">coder</span>
+</pre></div>
+
+<h3>/beom 실행 흐름</h3>
+<div class="flow"><pre>
+사용자: /beom [JIRA-123] 결제 한도 변경
+    |
+    v
+<span class="hl-phase">[setup]</span> 환경 준비
+    ├── Git 저장소 확인 + 베이스 브랜치 감지
+    ├── 프로젝트 정보 수집 (병렬)
+    ├── 코드 맵 생성 (.dev/codemap.md)
+    ├── 작업 브랜치 생성
+    ├── 이전 산출물 감지 (lens-report, research-report)
+    v
+<span class="hl-skill">[팀 추천]</span> 작업 분석 + AskUserQuestion
+    ├── "Light (3명) 추천" / "Full (5명) 추천"
+    ├── 사용자 선택
+    v
+<span class="hl-agent">[TeamCreate]</span> 선택된 조합으로 팀 생성
+    v
+<span class="hl-phase">[PRD]</span> Full 전용
+    ├── <span class="hl-agent">product-owner</span>: PRD 작성 (최대 1회 Q&A)
+    ├── .dev/prd.md 저장
+    v
+<span class="hl-phase">[설계]</span>
+    ├── <span class="hl-agent">architect</span>: 기술 설계 (최대 2회 Q&A)
+    ├── <span class="hl-skill">/design-critic</span> (중형/대형 시)
+    ├── .dev/design.md 저장
+    v
+<span class="hl-phase">[구현]</span>
+    ├── <span class="hl-agent">coder</span>: 코드 작성
+    ├── <span class="hl-agent">qa-manager</span>: 자기점검 (Critical만)
+    ├── <span class="hl-skill">/todo-verifier</span> (검증 활성화 시)
+    v
+<span class="hl-phase">[리뷰]</span> (Hotfix 건너뜀)
+    ├── Mechanical Gate: lint → build → test
+    ├── Light: <span class="hl-agent">qa-manager</span>
+    ├── Full:  <span class="hl-agent">qa-manager</span> + <span class="hl-agent">security-auditor</span> (병렬)
+    ├── <span class="hl-skill">/web-test-qa</span> (프론트엔드 변경 시)
+    v
+<span class="hl-phase">[커밋]</span>
+    ├── Full: <span class="hl-agent">product-owner</span> 인수 검증
+    ├── 사용자 확인
+    ├── <span class="hl-skill">/commit</span>
+    ├── plan 파일 상태: COMPLETED
+    v
+완료. "PR이 필요하면 /pull-request를 실행하세요."
 </pre></div>
 
 <details>
-<summary>Phase: setup (환경 설정)</summary>
+<summary>Phase 상세: setup</summary>
 <div class="detail-content">
 <table>
 <tr><th>단계</th><th>동작</th></tr>
-<tr><td>0.1</td><td>인자 파싱 (이슈 키, 플래그)</td></tr>
-<tr><td>0.2</td><td>config.json에서 프로젝트 타입 감지</td></tr>
-<tr><td>0.3</td><td>작업 브랜치 생성 (이슈 키 기반)</td></tr>
-<tr><td>0.4</td><td>코드 맵 작성 (.dev/codemap.md)</td></tr>
-<tr><td>0.5</td><td>TeamCreate: product-owner, architect, coder, qa-manager, security-auditor</td></tr>
-<tr><td>0.6</td><td>.dev/state.md 초기화</td></tr>
-<tr><td>0.7</td><td>계획 파일 스켈레톤 생성 (verification.enabled 시)</td></tr>
-<tr><td>0.8</td><td>이전 스킬 산출물 감지 (lens-report.md, research-report.md)</td></tr>
+<tr><td>0.1</td><td>Git 저장소 확인</td></tr>
+<tr><td>0.2</td><td>베이스 브랜치 결정 + 동기화</td></tr>
+<tr><td>0.3</td><td>프로젝트 정보 수집 (타입, 구조, 컨벤션, 도메인) — 병렬</td></tr>
+<tr><td>0.4</td><td>코드 맵 생성 (ARGS[0] 키워드 기반)</td></tr>
+<tr><td>0.5</td><td>작업 브랜치 생성 + .gitignore 보강</td></tr>
+<tr><td>0.6</td><td>이전 산출물 감지 (lens-report, research-report)</td></tr>
+<tr><td>0.7</td><td><strong>작업 분석 + 팀 추천</strong> (AskUserQuestion)</td></tr>
+<tr><td>0.8</td><td>TeamCreate (선택된 조합)</td></tr>
+<tr><td>0.9</td><td>state.md + plan 파일 초기화</td></tr>
 </table>
 </div>
 </details>
 
 <details>
-<summary>Phase: requirements (product-owner, 최대 1회 Q&A)</summary>
+<summary>Phase 상세: 리뷰</summary>
 <div class="detail-content">
 <table>
-<tr><th>단계</th><th>주체</th><th>동작</th></tr>
-<tr><td>1</td><td><span class="badge badge-agent">product-owner</span></td><td>사용자 요청 + 코드 맵 + 이전 산출물로 PRD 작성</td></tr>
-<tr><td>2</td><td><span class="badge badge-agent">product-owner</span></td><td>자가 검증: UX 검증, 해석 여지 제거, 엣지 케이스 커버리지</td></tr>
-<tr><td>3</td><td>사용자</td><td>질문 답변 (있으면, 최대 1회)</td></tr>
-<tr><td>4</td><td>오케스트레이터</td><td>PRD를 .dev/prd.md에 저장</td></tr>
-<tr><td>5</td><td><span class="badge badge-skill">/todo-verifier</span></td><td>계획 기준 검증 (활성화 시)</td></tr>
-<tr><td>6</td><td><span class="badge badge-skill">/plan-visualizer</span></td><td>HTML 대시보드 생성 (활성화 시)</td></tr>
-</table>
-</div>
-</details>
-
-<details>
-<summary>Phase: design (architect, 최대 2회 Q&A)</summary>
-<div class="detail-content">
-<table>
-<tr><th>단계</th><th>주체</th><th>동작</th></tr>
-<tr><td>1</td><td><span class="badge badge-agent">architect</span></td><td>PRD + 코드 맵으로 기술 설계 작성</td></tr>
-<tr><td>2</td><td><span class="badge badge-agent">architect</span></td><td>설계 규모 판단: 소형 / 중형 / 대형</td></tr>
-<tr><td>2.5</td><td><span class="badge badge-skill">/design-critic</span></td><td>설계 비판 검토 (중형/대형일 때만)</td></tr>
-<tr><td>3</td><td>사용자</td><td>설계 질문 답변 (최대 2회)</td></tr>
-<tr><td>4</td><td>오케스트레이터</td><td>설계서를 .dev/design.md에 저장</td></tr>
-<tr><td>5</td><td><span class="badge badge-skill">/plan-visualizer</span></td><td>HTML 대시보드 갱신</td></tr>
-</table>
-<p style="margin-top:8px;font-size:0.85em;color:var(--muted)">design-critic 출력: MUST-ADDRESS (설계 차단) vs CONSIDER (참고용)</p>
-</div>
-</details>
-
-<details>
-<summary>Phase: implement (coder + qa-manager 자기점검)</summary>
-<div class="detail-content">
-<table>
-<tr><th>단계</th><th>주체</th><th>동작</th></tr>
-<tr><td>1</td><td><span class="badge badge-agent">coder</span></td><td>설계의 구현 순서에 따라 코드 작성</td></tr>
-<tr><td>2</td><td><span class="badge badge-agent">qa-manager</span></td><td>자기점검: diff에서 Critical 이슈만 확인</td></tr>
-<tr><td>3</td><td><span class="badge badge-agent">coder</span></td><td>Critical 발견 시 자동 수정 (1회)</td></tr>
-<tr><td>4</td><td><span class="badge badge-skill">/todo-verifier</span></td><td>PENDING 항목을 코드와 대조 검증</td></tr>
-<tr><td>5</td><td><span class="badge badge-agent">coder</span></td><td>FAILED 항목 수정 (최대 2회 재시도)</td></tr>
-<tr><td>6</td><td><span class="badge badge-skill">/plan-visualizer</span></td><td>HTML 대시보드 갱신</td></tr>
-</table>
-</div>
-</details>
-
-<details>
-<summary>Phase: review (qa-manager + security-auditor, 최대 2회 반복)</summary>
-<div class="detail-content">
-<table>
-<tr><th>단계</th><th>주체</th><th>동작</th></tr>
-<tr><td>0</td><td>오케스트레이터</td><td><strong>Mechanical Gate:</strong> lint &rarr; build &rarr; test (실패 시 coder 자동 수정)</td></tr>
-<tr><td>1~2</td><td><span class="badge badge-agent">qa-manager</span> + <span class="badge badge-agent">security-auditor</span></td><td><strong>병렬:</strong> 코드 리뷰 + 보안 감사</td></tr>
-<tr><td>2.5</td><td><span class="badge badge-skill">/web-test-qa</span></td><td>브라우저 E2E 테스트 (프론트엔드 변경 감지 시)</td></tr>
-<tr><td>3</td><td>오케스트레이터</td><td>전체 결과 합산, 게이트 로직 적용</td></tr>
-<tr><td>4</td><td><span class="badge badge-agent">coder</span></td><td>Critical/RISK 발견 사항 자동 수정</td></tr>
-<tr><td>5</td><td><span class="badge badge-skill">/todo-verifier</span></td><td>Mechanical 결과를 계획 파일에 반영 후 교차 검증</td></tr>
-</table>
-<p style="margin-top:8px;font-size:0.85em;color:var(--muted)">2회 반복 후 미해결 Critical이 있으면 사용자에게 진행 여부를 확인한다.</p>
-</div>
-</details>
-
-<details>
-<summary>Phase: complete (인수 검증 + 커밋)</summary>
-<div class="detail-content">
-<table>
-<tr><th>단계</th><th>주체</th><th>동작</th></tr>
-<tr><td>5.1</td><td><span class="badge badge-agent">product-owner</span></td><td>PRD 대비 인수 검증</td></tr>
-<tr><td>5.2</td><td>사용자</td><td>요약 확인 + 결정: 커밋 / 수정 / 중단</td></tr>
-<tr><td>5.3</td><td><span class="badge badge-skill">/commit</span></td><td>lint &rarr; test &rarr; git commit</td></tr>
-<tr><td>5.4</td><td><span class="badge badge-skill">/plan-visualizer</span></td><td>최종 HTML 생성</td></tr>
-<tr><td>5.5</td><td>오케스트레이터</td><td>안내: "PR이 필요하면 /pull-request를 실행하세요"</td></tr>
+<tr><th>단계</th><th>Light (3명)</th><th>Full (5명)</th></tr>
+<tr><td>Gate</td><td colspan="2">lint → build → test (실패 시 coder 자동 수정)</td></tr>
+<tr><td>리뷰</td><td>qa-manager 단독</td><td>qa-manager + security-auditor 병렬</td></tr>
+<tr><td>UI 테스트</td><td colspan="2">/web-test-qa (프론트엔드 변경 감지 시)</td></tr>
+<tr><td>결과</td><td colspan="2">Critical → coder 수정 / QUESTION → 사용자 확인</td></tr>
+<tr><td>반복</td><td colspan="2">최대 2회. 미해결 시 사용자에게 진행 여부 확인</td></tr>
 </table>
 </div>
 </details>
 </section>
 
-<!-- ==================== 정체 에스컬레이션 ==================== -->
+<!-- ===== Plan 형상관리 ===== -->
+<section id="plan">
+<h2>Plan 파일 형상관리</h2>
+<p>전 과정이 <code>docs/plan/{이슈키}-plan.md</code> 하나에 기록된다.</p>
+
+<div class="flow"><pre>
+# JIRA-123: 결제 한도 변경
+
+## 메타 정보
+- 상태: IN_PROGRESS
+- 팀 구성: Full 5명 (product-owner, architect, coder, qa-manager, security-auditor)
+- 브랜치: JIRA-123 (base: main)
+- 프로젝트 타입: kotlin-gradle
+- 생성일: 2026-03-31 14:00
+
+## Phase 기록
+
+### [PRD] product-owner — 2026-03-31 14:05
+요구사항: 사용자별 결제 한도를 변경할 수 있는 API 추가
+수용 기준: 한도 변경 시 FDS 연동, 변경 이력 저장
+
+### [설계] architect — 2026-03-31 14:15
+설계 요약: PaymentLimitController + PaymentLimitService + FdsClient
+변경 범위: 3개 파일 신규, 2개 파일 수정
+규모: 중형
+
+### [구현] coder — 2026-03-31 14:30
+구현 요약: API 엔드포인트 + 서비스 로직 + FDS 연동 구현
+변경 파일: PaymentLimitController.kt, PaymentLimitService.kt, ...
+자기점검: Critical 0건, Warning 1건
+
+### [리뷰] qa-manager — 2026-03-31 14:45
+결과: Critical 0, Warning 0, Info 2
+
+### [감사] security-auditor — 2026-03-31 14:45
+결과: RISK 0, POLICY 0, GAP 1 (한도 초과 시 알림 미구현)
+
+### [인수] product-owner — 2026-03-31 14:50
+결과: ACCEPT
+
+### [커밋] — 2026-03-31 14:55
+커밋: abc1234 "JIRA-123 결제 한도 변경 API 추가"
+</pre></div>
+
+<h3>형상관리 규칙</h3>
+<table>
+<tr><th>규칙</th><th>설명</th></tr>
+<tr><td>오케스트레이터만 Write</td><td>에이전트가 직접 plan 파일에 쓰지 않음</td></tr>
+<tr><td>항상 append</td><td>기존 기록 수정 금지. 새 기록만 추가</td></tr>
+<tr><td>상태 갱신</td><td>IN_PROGRESS &rarr; COMPLETED는 메타 정보만 Edit</td></tr>
+<tr><td>식별</td><td>[Phase명] 에이전트 &mdash; timestamp</td></tr>
+</table>
+</section>
+
+<!-- ===== 정체 에스컬레이션 ===== -->
 <section id="stall">
 <h2>정체 감지 및 에스컬레이션</h2>
-<p>/dev 오케스트레이터가 4가지 정체 패턴을 감지하고 전문 스킬로 에스컬레이션한다.</p>
-
 <table>
-<tr><th>패턴</th><th>감지 기준</th><th>1차 대응</th><th>2차 대응</th></tr>
-<tr>
-  <td><strong style="color:var(--red)">SPINNING</strong></td>
-  <td>동일 에러 메시지 2회 이상 반복</td>
-  <td><span class="badge badge-skill">/hacker</span> 제약 우회 분석</td>
-  <td><span class="badge badge-skill">/research</span> 근본 원인 조사</td>
-</tr>
-<tr>
-  <td><strong style="color:var(--red)">NO_DRIFT</strong></td>
-  <td>반복 간 실질적 코드 변경 없음</td>
-  <td><span class="badge badge-skill">/hacker</span> 제약 식별 + 우회</td>
-  <td><span class="badge badge-skill">/research</span> 코드베이스 탐색</td>
-</tr>
-<tr>
-  <td><strong style="color:var(--yellow)">OSCILLATION</strong></td>
-  <td>접근법 A &rarr; B &rarr; A 반복</td>
-  <td><span class="badge badge-agent">architect</span> 설계 재검토</td>
-  <td>사용자에게 두 접근법 중 선택 요청</td>
-</tr>
-<tr>
-  <td><strong style="color:var(--orange)">DIMINISHING_RETURNS</strong></td>
-  <td>수정 범위는 커지는데 결과 미개선</td>
-  <td><span class="badge badge-skill">/simplifier</span> 복잡도 분석</td>
-  <td>사용자에게 방향 전환 확인</td>
-</tr>
+<tr><th>패턴</th><th>감지</th><th>1차</th><th>2차</th></tr>
+<tr><td><strong style="color:var(--red)">SPINNING</strong></td><td>동일 에러 2회 반복</td><td><span class="badge badge-skill">/hacker</span></td><td><span class="badge badge-skill">/research</span></td></tr>
+<tr><td><strong style="color:var(--red)">NO_DRIFT</strong></td><td>코드 변경 없음</td><td><span class="badge badge-skill">/hacker</span></td><td><span class="badge badge-skill">/research</span></td></tr>
+<tr><td><strong style="color:var(--yellow)">OSCILLATION</strong></td><td>접근법 왕복</td><td><span class="badge badge-agent">architect</span></td><td>사용자 선택</td></tr>
+<tr><td><strong style="color:var(--orange)">DIMINISHING</strong></td><td>범위↑ 품질→</td><td><span class="badge badge-skill">/simplifier</span></td><td>사용자 확인</td></tr>
 </table>
-
-<div class="flow"><pre>
-반복 N회차 완료 (이슈 잔존)
-    |
-    v
-오케스트레이터: 이전 반복과 비교
-    |
-    +-- 동일 에러? ------------> <span class="hl-stall">SPINNING</span> -------> <span class="hl-skill">/hacker</span>
-    |                                                  |
-    +-- 코드 변경 없음? -------> <span class="hl-stall">NO_DRIFT</span> -------> <span class="hl-skill">/hacker</span>
-    |                                                  |
-    +-- 접근법 왕복? ----------> <span class="hl-stall">OSCILLATION</span> ----> <span class="hl-agent">architect</span>
-    |                                                  |
-    +-- 범위 확대, 품질 정체? -> <span class="hl-stall">DIMINISHING</span> ----> <span class="hl-skill">/simplifier</span>
-    |                                                  |
-    +-- 패턴 없음 ------------> 정상 재시도             |
-                                                       v
-                                               여전히 정체?
-                                                       |
-                                               2차 에스컬레이션
-                                               또는 사용자 판단
-</pre></div>
 </section>
 
-<!-- ==================== 호출 관계 ==================== -->
+<!-- ===== 호출 관계 ===== -->
 <section id="matrix">
-<h2>호출 관계 매트릭스</h2>
-<p>누가 누구를 호출하는지 표시. 행 = 호출자, 열 = 피호출자.</p>
-
-<table class="matrix" style="font-size:0.78em">
-<tr>
-  <th></th>
-  <th class="rotate">product-owner</th>
-  <th class="rotate">architect</th>
-  <th class="rotate">coder</th>
-  <th class="rotate">qa-manager</th>
-  <th class="rotate">security-auditor</th>
-  <th class="rotate">/design-critic</th>
-  <th class="rotate">/hacker</th>
-  <th class="rotate">/simplifier</th>
-  <th class="rotate">/todo-verifier</th>
-  <th class="rotate">/plan-visualizer</th>
-  <th class="rotate">/web-test-qa</th>
-  <th class="rotate">/commit</th>
-  <th class="rotate">/report</th>
-  <th class="rotate">/test-plan</th>
-  <th class="rotate">/test-generate</th>
-  <th class="rotate">/test-heal</th>
-</tr>
-<tr>
-  <td><strong>/dev</strong></td>
-  <td class="yes">&#10003;</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td>
-  <td class="yes">&#10003;</td><td class="yes">&#10003;</td>
-  <td class="cond">&#9679;</td><td class="cond">&#9679;</td><td class="cond">&#9679;</td>
-  <td class="cond">&#9679;</td><td class="cond">&#9679;</td><td class="cond">&#9679;</td>
-  <td class="yes">&#10003;</td><td></td><td></td><td></td><td></td>
-</tr>
-<tr>
-  <td><strong>/beom</strong></td>
-  <td></td><td></td><td></td><td></td><td></td>
-  <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-</tr>
-<tr>
-  <td><strong>architect</strong></td>
-  <td></td><td></td><td></td><td></td><td></td>
-  <td class="cond">&#9679;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-</tr>
-<tr>
-  <td><strong>/web-test-qa</strong></td>
-  <td></td><td></td><td></td><td></td><td></td>
-  <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-  <td class="yes">&#10003;</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td>
-</tr>
-<tr>
-  <td><strong>/plan</strong></td>
-  <td></td><td></td><td></td><td></td><td></td>
-  <td></td><td></td><td></td><td></td><td class="cond">&#9679;</td><td></td><td></td><td></td><td></td><td></td><td></td>
-</tr>
-<tr>
-  <td><strong>Stop 훅</strong></td>
-  <td></td><td></td><td></td><td></td><td></td>
-  <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-  <td class="cond">&#9679;</td><td></td><td></td><td></td>
-</tr>
-</table>
-
-<div class="legend" style="font-size:0.8em">
-  <div class="legend-item"><span style="color:var(--green);font-weight:700">&#10003;</span> 항상 호출</div>
-  <div class="legend-item"><span style="color:var(--yellow);font-weight:700">&#9679;</span> 조건부 호출</div>
-  <div class="legend-item"><span style="color:var(--muted)">빈칸</span> 호출 안 함</div>
-</div>
-
+<h2>호출 관계</h2>
 <h3>스킬 체이닝 맵</h3>
 <div class="flow"><pre>
-<span class="hl-skill">/beom</span> ───> <span class="hl-skill">/lens</span> ───> <span class="hl-skill">/research</span> ───> <span class="hl-skill">/plan</span> ───> <span class="hl-skill">/dev</span>
-                                                    |
-                           <span class="hl-skill">/plan-visualizer</span> <───────┘
-                                                    |
-              ┌─────────────────────────────────────┘
-              v
-         <span class="hl-skill">/dev</span> 오케스트레이션:
-              |
-              +──> <span class="hl-agent">product-owner</span> (PRD 작성)
-              +──> <span class="hl-agent">architect</span> ──> <span class="hl-skill">/design-critic</span>
-              +──> <span class="hl-agent">coder</span> (구현)
-              +──> <span class="hl-agent">qa-manager</span> + <span class="hl-agent">security-auditor</span> (병렬 리뷰)
-              +──> <span class="hl-skill">/todo-verifier</span> (계획 검증)
-              +──> <span class="hl-skill">/plan-visualizer</span> (대시보드)
-              +──> <span class="hl-skill">/web-test-qa</span> ──> <span class="hl-skill">/test-plan</span> ──> <span class="hl-skill">/test-generate</span> ──> <span class="hl-skill">/test-heal</span>
-              +──> <span class="hl-skill">/hacker</span> | <span class="hl-skill">/simplifier</span> (정체 에스컬레이션)
-              +──> <span class="hl-skill">/commit</span> (최종 커밋)
-              +──> <span class="hl-skill">/report</span> (Stop 훅 경유)
+<span class="hl-skill">/beom</span> (유일한 개발 진입점)
+  |
+  +──> <span class="hl-agent">product-owner</span> (PRD, Full만)
+  +──> <span class="hl-agent">architect</span> ──> <span class="hl-skill">/design-critic</span> (중형+)
+  +──> <span class="hl-agent">coder</span> (구현)
+  +──> <span class="hl-agent">qa-manager</span> + <span class="hl-agent">security-auditor</span> (리뷰, Full은 병렬)
+  +──> <span class="hl-skill">/todo-verifier</span> (검증)
+  +──> <span class="hl-skill">/plan-visualizer</span> (대시보드)
+  +──> <span class="hl-skill">/web-test-qa</span> ──> <span class="hl-skill">/test-plan</span> ──> <span class="hl-skill">/test-generate</span> ──> <span class="hl-skill">/test-heal</span>
+  +──> <span class="hl-skill">/hacker</span> | <span class="hl-skill">/simplifier</span> (정체 시)
+  +──> <span class="hl-skill">/commit</span>
+  +──> <span class="hl-skill">/report</span> (Stop 훅)
+
+
+<span class="hl-skill">/lens</span> ──(산출물)──> <span class="hl-skill">/beom</span>이 자동 감지
+<span class="hl-skill">/research</span> ──(산출물)──> <span class="hl-skill">/beom</span>이 자동 감지
 </pre></div>
 </section>
 
-<!-- ==================== 설정 ==================== -->
+<!-- ===== 설정 ===== -->
 <section id="config">
-<h2>설정 참조 (config.json)</h2>
-
+<h2>설정 (config.json)</h2>
 <details>
-<summary>issueKey &mdash; 이슈 키 패턴</summary>
-<div class="detail-content">
-<p>패턴: <code>^[A-Z]+-[0-9]+$</code> (예: JIRA-123, AFS-6)</p>
-<p><strong>사용처:</strong> /dev (브랜치명 생성), /commit (커밋 메시지 접두사)</p>
-</div>
-</details>
-
-<details>
-<summary>projectTypes &mdash; 언어별 빌드/린트/테스트 명령</summary>
+<summary>projectTypes &mdash; 언어별 빌드/린트/테스트</summary>
 <div class="detail-content">
 <table>
-<tr><th>타입</th><th>감지 파일</th><th>빌드</th><th>린트</th><th>테스트</th></tr>
+<tr><th>타입</th><th>감지</th><th>빌드</th><th>린트</th><th>테스트</th></tr>
 <tr><td>kotlin-java</td><td>build.gradle(.kts)</td><td>./gradlew build</td><td>./gradlew ktlintFormat</td><td>./gradlew test</td></tr>
 <tr><td>nodejs</td><td>package.json</td><td>npm/bun run build</td><td>npm/bun run lint --fix</td><td>npm/bun test</td></tr>
-<tr><td>python</td><td>pyproject.toml, setup.py</td><td>python -m build</td><td>ruff format + check</td><td>pytest --tb=short</td></tr>
+<tr><td>python</td><td>pyproject.toml</td><td>python -m build</td><td>ruff format + check</td><td>pytest</td></tr>
 </table>
-<p><strong>사용처:</strong> /dev (phase-setup 타입 감지, phase-review Mechanical Gate), architect, coder</p>
 </div>
 </details>
-
 <details>
-<summary>verification &mdash; 계획 검증 설정</summary>
+<summary>verification &mdash; 검증 설정</summary>
 <div class="detail-content">
 <table>
 <tr><th>키</th><th>값</th><th>효과</th></tr>
-<tr><td>enabled</td><td>true</td><td>계획 파일 생성 + TODO 검증 활성화</td></tr>
-<tr><td>autoVisualize</td><td>true</td><td>각 Phase 완료 후 HTML 대시보드 자동 생성</td></tr>
-<tr><td>mechanicalChecks</td><td>{lint, test, build: true}</td><td>review Phase에서 린트/테스트/빌드 게이트 활성화</td></tr>
-<tr><td>maxVerificationRetries</td><td>2</td><td>FAILED TODO 항목 최대 재시도 횟수</td></tr>
-</table>
-<p><strong>사용처:</strong> /dev, task-verifier 훅, idle-checker 훅, /todo-verifier, /plan-visualizer</p>
-</div>
-</details>
-
-<details>
-<summary>uiTesting &mdash; E2E 브라우저 테스트 설정</summary>
-<div class="detail-content">
-<table>
-<tr><th>키</th><th>값</th><th>효과</th></tr>
-<tr><td>enabled</td><td>true</td><td>review Phase에서 브라우저 UI 테스트 활성화</td></tr>
-<tr><td>frontendFilePatterns</td><td>*.html, *.jsx, *.tsx, *.vue...</td><td>프론트엔드 변경 감지 패턴</td></tr>
-<tr><td>devServerUrl</td><td>http://localhost:3000</td><td>기본 개발 서버 URL</td></tr>
-<tr><td>maxHealerRetries</td><td>2</td><td>test-heal 최대 재시도 횟수</td></tr>
-</table>
-<p><strong>사용처:</strong> /dev (phase-review step 2.5), /web-test-qa</p>
-</div>
-</details>
-
-<details>
-<summary>contextLimits &mdash; 역할별 최대 입력 라인 수</summary>
-<div class="detail-content">
-<table>
-<tr><th>역할</th><th>최대 라인</th><th>비고</th></tr>
-<tr><td>explorer</td><td>1000</td><td>프로젝트 탐색, 구조 파악</td></tr>
-<tr><td>researcher</td><td>1000</td><td>조사 요청 + 코드 맵</td></tr>
-<tr><td>planner</td><td>800</td><td>요구사항 + 코드 맵</td></tr>
-<tr><td>coder</td><td>2000</td><td>설계서 + 코드 맵 + 참조 코드</td></tr>
-<tr><td>reviewer</td><td>1500</td><td>diff + 설계서</td></tr>
-<tr><td>critic</td><td>800</td><td>계획서 + 기준 문서</td></tr>
-<tr><td>todo-verifier</td><td>1000</td><td>계획 파일 + 코드 검증 결과</td></tr>
-<tr><td>plan-visualizer</td><td>500</td><td>계획 MD 파싱</td></tr>
-<tr><td>web-test-qa</td><td>1500</td><td>PRD 수용기준 + diff + 코드맵 + 테스트</td></tr>
+<tr><td>enabled</td><td>true</td><td>plan 파일 + TODO 검증 활성화</td></tr>
+<tr><td>autoVisualize</td><td>true</td><td>Phase 완료 시 HTML 대시보드 자동 생성</td></tr>
+<tr><td>mechanicalChecks</td><td>{lint, test, build}</td><td>리뷰 Phase Mechanical Gate</td></tr>
+<tr><td>maxVerificationRetries</td><td>2</td><td>FAILED TODO 최대 재시도</td></tr>
 </table>
 </div>
 </details>
-
 <details>
-<summary>timeouts &mdash; 명령 타임아웃</summary>
+<summary>uiTesting &mdash; E2E 테스트 설정</summary>
 <div class="detail-content">
 <table>
-<tr><th>작업</th><th>타임아웃</th></tr>
-<tr><td>lint</td><td>5분 (300,000ms)</td></tr>
-<tr><td>test</td><td>5분</td></tr>
-<tr><td>build</td><td>5분</td></tr>
-<tr><td>network</td><td>2분 (120,000ms)</td></tr>
-<tr><td>install</td><td>5분</td></tr>
+<tr><th>키</th><th>값</th></tr>
+<tr><td>enabled</td><td>true</td></tr>
+<tr><td>frontendFilePatterns</td><td>*.html, *.jsx, *.tsx, *.vue...</td></tr>
+<tr><td>devServerUrl</td><td>http://localhost:3000</td></tr>
+<tr><td>maxHealerRetries</td><td>2</td></tr>
 </table>
 </div>
 </details>
 </section>
 
-<!-- ==================== 워크플로우 예시 ==================== -->
+<!-- ===== 워크플로우 예시 ===== -->
 <section id="workflow">
 <h2>워크플로우 예시</h2>
 
 <details>
-<summary>간단한 버그 수정: /dev 직접 실행</summary>
-<div class="detail-content">
-<div class="flow"><pre>
-사용자: /dev [JIRA-123] 재고 차감 버그 수정
+<summary>버그 수정 &mdash; Light 팀 (3명)</summary>
+<div class="detail-content"><div class="flow"><pre>
+사용자: /beom [JIRA-123] 재고 차감 버그 수정
 
-<span class="hl-phase">setup</span>     브랜치: feat/JIRA-123, 프로젝트 타입 감지
-<span class="hl-phase">require</span>   <span class="hl-agent">product-owner</span>가 경량 PRD 작성
-<span class="hl-phase">design</span>    <span class="hl-agent">architect</span>가 수정 설계 (소형, /design-critic 건너뜀)
-<span class="hl-phase">implement</span> <span class="hl-agent">coder</span>가 버그 수정, <span class="hl-agent">qa-manager</span> 자기점검
-<span class="hl-phase">review</span>    lint + build + test 게이트, <span class="hl-agent">qa-manager</span> + <span class="hl-agent">security-auditor</span> 리뷰
-<span class="hl-phase">complete</span>  <span class="hl-agent">product-owner</span> 인수, <span class="hl-skill">/commit</span>, 사용자가 /pull-request 실행
-</pre></div>
-</div>
+<span class="hl-phase">setup</span>       브랜치: JIRA-123, 코드 맵 생성
+<span class="hl-skill">팀 추천</span>     "Light (3명) 추천: 버그 수정은 요구사항이 명확"
+            사용자: Light 선택
+<span class="hl-agent">TeamCreate</span>  architect + coder + qa-manager
+<span class="hl-phase">설계</span>       <span class="hl-agent">architect</span>: 수정 설계 (소형)
+<span class="hl-phase">구현</span>       <span class="hl-agent">coder</span>: 버그 수정, <span class="hl-agent">qa-manager</span> 자기점검
+<span class="hl-phase">리뷰</span>       lint + test + <span class="hl-agent">qa-manager</span> 리뷰
+<span class="hl-phase">커밋</span>       <span class="hl-skill">/commit</span>, plan 파일 COMPLETED
+</pre></div></div>
 </details>
 
 <details>
-<summary>긴급 핫픽스: /dev --hotfix</summary>
-<div class="detail-content">
-<div class="flow"><pre>
-사용자: /dev --hotfix [JIRA-999] 결제 오류 긴급
-
-<span class="hl-phase">setup</span>     브랜치: hotfix/JIRA-999
-<span class="hl-phase">require</span>   <span class="hl-agent">product-owner</span> 경량 PRD (배경 + 요구사항 + 수용기준만)
-<span style="color:var(--muted)">design    건너뜀</span>
-<span class="hl-phase">implement</span> <span class="hl-agent">coder</span>가 수정 구현
-<span style="color:var(--muted)">review    건너뜀</span>
-<span class="hl-phase">complete</span>  <span class="hl-agent">product-owner</span> 인수, <span class="hl-skill">/commit</span>
-</pre></div>
-</div>
-</details>
-
-<details>
-<summary>풀코스: /beom (lens &rarr; research &rarr; plan &rarr; dev)</summary>
-<div class="detail-content">
-<div class="flow"><pre>
+<summary>신규 기능 &mdash; Full 팀 (5명)</summary>
+<div class="detail-content"><div class="flow"><pre>
 사용자: /beom 결제 한도 변경 기능 개발
 
-<span class="hl-skill">/lens</span>      결제 한도 관련 비즈니스 정책 분석
-           산출물: .dev/lens-report.md
-              |
-              v
-<span class="hl-skill">/research</span>  결제 모듈 코드베이스 구조 조사
-           산출물: .dev/research-report.md
-              |
-              v
-<span class="hl-skill">/plan</span>      구현 계획 수립 (Interview 모드)
-           산출물: docs/plan/JIRA-456-plan.md
-              |
-              v
-<span class="hl-skill">/dev</span>       전체 6-Phase 파이프라인 (모든 산출물 참조)
-           PRD에 lens + research 보고서 반영
-</pre></div>
-</div>
+<span class="hl-phase">setup</span>       코드 맵 생성, lens-report 감지
+<span class="hl-skill">팀 추천</span>     "Full (5명) 추천: 신규 기능 + 정책 관련"
+            사용자: Full 선택
+<span class="hl-agent">TeamCreate</span>  product-owner + architect + coder + qa-manager + security-auditor
+<span class="hl-phase">PRD</span>        <span class="hl-agent">product-owner</span>: PRD 작성 (1회 Q&A)
+<span class="hl-phase">설계</span>       <span class="hl-agent">architect</span>: 설계 (중형) + <span class="hl-skill">/design-critic</span>
+<span class="hl-phase">구현</span>       <span class="hl-agent">coder</span>: 구현, <span class="hl-agent">qa-manager</span> 자기점검
+<span class="hl-phase">리뷰</span>       lint + test + <span class="hl-agent">qa-manager</span> + <span class="hl-agent">security-auditor</span> 병렬
+<span class="hl-phase">커밋</span>       <span class="hl-agent">product-owner</span> 인수 → <span class="hl-skill">/commit</span>
+</pre></div></div>
 </details>
 
 <details>
-<summary>정체 복구 예시</summary>
-<div class="detail-content">
-<div class="flow"><pre>
-<span class="hl-phase">implement</span> 반복 1: coder가 코드 작성, 테스트 실패
-<span class="hl-phase">implement</span> 반복 2: coder가 수정, <span class="hl-stall">동일 에러 반복</span>
+<summary>긴급 핫픽스 &mdash; coder만</summary>
+<div class="detail-content"><div class="flow"><pre>
+사용자: /beom --hotfix [JIRA-999] 결제 오류 긴급
 
-오케스트레이터 감지: <span class="hl-stall">SPINNING</span>
+<span class="hl-phase">setup</span>       브랜치: JIRA-999
+<span class="hl-phase">구현</span>       <span class="hl-agent">coder</span>: 즉시 수정
+<span class="hl-phase">커밋</span>       <span class="hl-skill">/commit</span>
+</pre></div></div>
+</details>
 
-1차 에스컬레이션: <span class="hl-skill">/hacker</span>
-  [CONSTRAINT] "반드시 ORM을 써야 한다" &larr; 선택적 제약
-  [BYPASS] Raw SQL로 우회 가능
-  [REFRAME] 성능 문제가 아닌 N+1 쿼리 문제
+<details>
+<summary>선행 조사 후 개발</summary>
+<div class="detail-content"><div class="flow"><pre>
+사용자: /research 인증 모듈 구조 분석해
+        → .dev/research-report.md 생성
 
-coder가 우회 방안 적용...
-
-여전히 실패? 2차 에스컬레이션: <span class="hl-skill">/research</span>
-  근본 원인: 외부 API 응답 형식이 변경됨
-  수정 방향이 포함된 조사 보고서 출력
-</pre></div>
-</div>
+사용자: /beom 인증 토큰 갱신 로직 수정
+        → /beom이 research-report.md 자동 감지
+        → 팀 추천 시 조사 결과 반영
+</pre></div></div>
 </details>
 
 </section>
 
-<footer style="margin-top:48px;padding:24px 0;border-top:1px solid var(--border);text-align:center;color:var(--muted);font-size:0.85em">
-  oh-my-beom v1.1.0 하네스 가이드 &mdash; <span id="gen-time"></span>
+<footer style="margin-top:48px;padding:24px 0;border-top:1px solid var(--border);text-align:center;color:var(--muted);font-size:.85em">
+  oh-my-beom v2.0 하네스 가이드 &mdash; <span id="gen-time"></span>
 </footer>
-
 </div>
 
 <script>
-document.getElementById('gen-time').textContent = new Date().toLocaleString('ko-KR');
-const sections = document.querySelectorAll('section[id]');
-const navLinks = document.querySelectorAll('.nav a');
-window.addEventListener('scroll', () => {
-  let current = '';
-  sections.forEach(s => {
-    if (window.scrollY >= s.offsetTop - 80) current = s.id;
-  });
-  navLinks.forEach(a => {
-    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
-  });
-});
+document.getElementById('gen-time').textContent=new Date().toLocaleString('ko-KR');
+const ss=document.querySelectorAll('section[id]'),nl=document.querySelectorAll('.nav a');
+window.addEventListener('scroll',()=>{let c='';ss.forEach(s=>{if(window.scrollY>=s.offsetTop-80)c=s.id});nl.forEach(a=>{a.classList.toggle('active',a.getAttribute('href')==='#'+c)})});
 </script>
 </body>
 </html>

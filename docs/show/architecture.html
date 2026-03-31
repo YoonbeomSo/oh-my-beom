@@ -143,10 +143,10 @@
     </div>
     <div style="height:16px"></div>
     <h2>Prompt Router &rarr; Skill 라우팅</h2>
-    <div class="hook-row"><span class="hook-event" style="background:#d2a8ff22;color:#d2a8ff">계획, plan, 설계</span><span class="hook-arrow">&rarr;</span><span class="hook-script">/plan</span></div>
+    <div class="hook-row"><span class="hook-event" style="background:#d2a8ff22;color:#d2a8ff">beom, 비서</span><span class="hook-arrow">&rarr;</span><span class="hook-script">/beom</span></div>
+    <div class="hook-row"><span class="hook-event" style="background:#d2a8ff22;color:#d2a8ff">개발, dev, 구현</span><span class="hook-arrow">&rarr;</span><span class="hook-script">/beom</span></div>
     <div class="hook-row"><span class="hook-event" style="background:#d2a8ff22;color:#d2a8ff">분석, 조사, research</span><span class="hook-arrow">&rarr;</span><span class="hook-script">/research</span></div>
     <div class="hook-row"><span class="hook-event" style="background:#d2a8ff22;color:#d2a8ff">끝까지, 멈추지마</span><span class="hook-arrow">&rarr;</span><span class="hook-script">/persist</span></div>
-    <div class="hook-row"><span class="hook-event" style="background:#d2a8ff22;color:#d2a8ff">개발, dev, 구현</span><span class="hook-arrow">&rarr;</span><span class="hook-script">/dev</span></div>
     <div class="hook-row"><span class="hook-event" style="background:#d2a8ff22;color:#d2a8ff">정책, 비즈니스, lens</span><span class="hook-arrow">&rarr;</span><span class="hook-script">/lens</span></div>
   </div>
 
@@ -190,9 +190,9 @@
     </div>
     <h3 style="margin-top:16px">Orchestrator &rarr; Skill 호출</h3>
     <div class="connections">
-      <div class="conn-row"><span class="conn-from">/dev (complete)</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/commit</span><span class="conn-cond">Phase complete</span></div>
-      <div class="conn-row"><span class="conn-from">/dev (complete)</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/pull-request</span><span class="conn-cond">Phase complete</span></div>
-      <div class="conn-row"><span class="conn-from">/dev (setup)</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/tmux-team-agent</span><span class="conn-cond">TeamCreate 직후</span></div>
+      <div class="conn-row"><span class="conn-from">/beom (complete)</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/commit</span><span class="conn-cond">Phase complete</span></div>
+      <div class="conn-row"><span class="conn-from">/beom (complete)</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/pull-request</span><span class="conn-cond">Phase complete</span></div>
+      <div class="conn-row"><span class="conn-from">/beom (setup)</span><span class="conn-arrow">&rarr;</span><span class="conn-to">/tmux-team-agent</span><span class="conn-cond">TeamCreate 직후</span></div>
     </div>
     <h3 style="margin-top:16px">Escalation 경로</h3>
     <div class="connections">
@@ -208,15 +208,13 @@
     <h2>Skills <span class="count">19</span></h2>
     <h3>개발 워크플로우</h3>
     <div class="skill-grid">
-      <div class="skill-item" style="border-left:3px solid #58a6ff"><span class="skill-cmd">/beom</span><span class="skill-desc">풀사이클 비서 (lens&rarr;research&rarr;plan&rarr;dev)</span></div>
-      <div class="skill-item"><span class="skill-cmd">/dev</span><span class="skill-desc">구현 파이프라인</span></div>
+      <div class="skill-item" style="border-left:3px solid #58a6ff"><span class="skill-cmd">/beom</span><span class="skill-desc">개발 오케스트레이터 (팀 추천 &rarr; 에이전트 작업 &rarr; 커밋)</span></div>
       <div class="skill-item"><span class="skill-cmd">/commit</span><span class="skill-desc">스마트 커밋</span></div>
       <div class="skill-item"><span class="skill-cmd">/pull-request</span><span class="skill-desc">PR 자동 생성</span></div>
       <div class="skill-item"><span class="skill-cmd">/worktree</span><span class="skill-desc">Git worktree 자동화</span></div>
     </div>
     <h3>분석 + 계획</h3>
     <div class="skill-grid">
-      <div class="skill-item"><span class="skill-cmd">/plan</span><span class="skill-desc">4-Mode 계획 전략</span></div>
       <div class="skill-item"><span class="skill-cmd">/research</span><span class="skill-desc">리서치 파이프라인</span></div>
       <div class="skill-item"><span class="skill-cmd">/lens</span><span class="skill-desc">비즈니스 정책 분석</span></div>
       <div class="skill-item"><span class="skill-cmd">/persist</span><span class="skill-desc">끝까지 실행 모드</span></div>
@@ -315,36 +313,36 @@
             </div>
           </div>
 
-          <!-- beomStep 3: plan -->
+          <!-- beomStep 3: 팀 선택 -->
           <div class="sf-section">
             <div style="display:flex;align-items:center;gap:10px">
               <span style="color:#7ee787;font-weight:700;font-size:13px">3</span>
-              <span class="sf-skill">/plan</span>
-              <span style="color:#8b949e;font-size:11px">계획 수립 &rarr;</span>
+              <span class="sf-skill">/beom</span>
+              <span style="color:#8b949e;font-size:11px">팀 추천 &rarr; 사용자 선택 &rarr;</span>
               <code style="color:#7ee787;font-size:11px">docs/plan/*.md</code>
-              <span style="color:#f0883e;font-size:10px;background:#f0883e22;padding:2px 6px;border-radius:4px">사용자 확인</span>
+              <span style="color:#f0883e;font-size:10px;background:#f0883e22;padding:2px 6px;border-radius:4px">Light 3명 / Full 5명</span>
             </div>
           </div>
 
-          <!-- beomStep 4: dev -->
+          <!-- beomStep 4: 에이전트 작업 -->
           <div class="sf-section" style="border-color:#f0883e">
             <div style="display:flex;align-items:center;gap:10px">
               <span style="color:#f0883e;font-weight:700;font-size:13px">4</span>
-              <span class="sf-skill">/dev</span>
+              <span class="sf-skill">/beom</span>
               <span style="color:#8b949e;font-size:11px">구현 파이프라인 (아래 상세)</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- /dev pipeline detail -->
+      <!-- /beom pipeline detail -->
       <div class="sf-step">
         <div class="sf-rail">
           <div class="sf-dot" style="border-color:#f0883e"></div>
           <div class="sf-line" style="background:linear-gradient(#f0883e,#58a6ff)"></div>
         </div>
         <div class="sf-body">
-          <div class="sf-label" style="color:#f0883e">/dev 구현 파이프라인</div>
+          <div class="sf-label" style="color:#f0883e">/beom 구현 파이프라인</div>
 
           <!-- Phase: requirements -->
           <div class="sf-section">
@@ -445,8 +443,8 @@
 
   <!-- Pipeline -->
   <div class="card full">
-    <h2>/dev Pipeline</h2>
-    <p style="color:#8b949e;font-size:12px;margin-bottom:12px">자동 스킬 체이닝: /lens &rarr; /research &rarr; /plan &rarr; (확인) &rarr; /dev</p>
+    <h2>/beom Pipeline</h2>
+    <p style="color:#8b949e;font-size:12px;margin-bottom:12px">/beom: 작업 분석 &rarr; 팀 추천 (Light 3명 / Full 5명) &rarr; 사용자 선택 &rarr; 에이전트 작업 &rarr; 커밋</p>
     <div class="pipeline">
       <div class="phase setup">
         <div class="phase-name" style="color:#8b949e">setup</div>
@@ -454,7 +452,7 @@
           Git/프로젝트 감지<br>
           브랜치 생성<br>
           코드 맵 초기화<br>
-          <span class="ag">TeamCreate</span> (5명)<br>
+          <span class="ag">TeamCreate</span> (3명 또는 5명)<br>
           <span class="sk">/tmux-team-agent</span>
         </div>
       </div>
@@ -524,14 +522,9 @@
         <div style="color:#8b949e;font-size:11px">코드 조사</div>
       </div>
       <div style="color:#484f58;font-size:20px">&rarr;</div>
-      <div style="background:#1c2128;padding:12px 20px;border-radius:10px;border-top:3px solid #7ee787;text-align:center">
-        <div style="color:#7ee787;font-weight:700">/plan</div>
-        <div style="color:#8b949e;font-size:11px">계획 수립</div>
-      </div>
-      <div style="color:#484f58;font-size:20px">&rarr; <span style="font-size:11px;color:#8b949e">(확인)</span> &rarr;</div>
       <div style="background:#1c2128;padding:12px 20px;border-radius:10px;border-top:3px solid #f0883e;text-align:center">
-        <div style="color:#f0883e;font-weight:700">/dev</div>
-        <div style="color:#8b949e;font-size:11px">개발 파이프라인</div>
+        <div style="color:#f0883e;font-weight:700">/beom</div>
+        <div style="color:#8b949e;font-size:11px">팀 추천 &rarr; 에이전트 작업 &rarr; 커밋</div>
       </div>
     </div>
     <p style="text-align:center;color:#8b949e;font-size:12px">각 스킬은 완료 후 자동으로 다음 단계 호출 &mdash; <code style="color:#f0883e">--only</code> 플래그로 단일 실행 가능</p>
