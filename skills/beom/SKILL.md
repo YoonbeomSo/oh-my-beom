@@ -80,14 +80,19 @@ Hotfix:      setup → 구현 → 커밋
 # Phase: setup (환경 준비)
 
 1. **진행 중 작업 감지**: `--resume` → state.md 복원. `--status` → 상태 출력 후 종료. ARGS[0] 없음 → state.md 탐색 후 AskUserQuestion.
-2. **Git 저장소 확인**: `git rev-parse --is-inside-work-tree`. 실패 시 `git init` 여부를 AskUserQuestion.
-3. **베이스 브랜치 결정 + 동기화**: `git checkout <base> && git pull origin <base>`. (감지 로직은 reference.md 참조)
-4. **프로젝트 정보 수집** (병렬): 타입 감지 (config.json), 디렉토리 구조, CLAUDE.md, 도메인 컨텍스트.
-5. **코드 맵 생성**: ARGS[0] 키워드로 Grep → `.dev/codemap.md` 저장.
-6. **작업 브랜치 생성**: 이슈 키 → 브랜치명, 없으면 키워드 slug. `.gitignore`에 `.dev/` 추가.
-7. **이전 산출물 감지**: `.dev/lens-report.md`, `.dev/research-report.md` 존재 확인.
-8. **이전 메트릭 로드**: `.dev/agent-metrics.md` 존재 시 읽어서 effort 스코어링 보정에 활용.
-9. **작업 분석 + 팀/effort 추천**:
+2. **Jira 이슈 감지**: ARGS[0]에 Jira URL(`*/browse/*`) 또는 이슈 키(`[A-Z]+-[0-9]+`) 포함 시:
+   - `Skill("oh-my-beom:fetch-jira-issue")` 호출하여 이슈 상세 조회.
+   - 조회 결과(제목, 설명, 수용 기준)를 `.dev/jira-context.md`에 저장.
+   - ARGS[0]을 `[이슈키] 이슈제목 + 설명 요약`으로 보강하여 이후 Phase에 전달.
+   - 조회 실패 시: 경고 후 원본 ARGS[0]으로 계속 진행.
+3. **Git 저장소 확인**: `git rev-parse --is-inside-work-tree`. 실패 시 `git init` 여부를 AskUserQuestion.
+4. **베이스 브랜치 결정 + 동기화**: `git checkout <base> && git pull origin <base>`. (감지 로직은 reference.md 참조)
+5. **프로젝트 정보 수집** (병렬): 타입 감지 (config.json), 디렉토리 구조, CLAUDE.md, 도메인 컨텍스트.
+6. **코드 맵 생성**: ARGS[0] 키워드로 Grep → `.dev/codemap.md` 저장.
+7. **작업 브랜치 생성**: 이슈 키 → 브랜치명, 없으면 키워드 slug. `.gitignore`에 `.dev/` 추가.
+8. **이전 산출물 감지**: `.dev/lens-report.md`, `.dev/research-report.md` 존재 확인.
+9. **이전 메트릭 로드**: `.dev/agent-metrics.md` 존재 시 읽어서 effort 스코어링 보정에 활용.
+10. **작업 분석 + 팀/effort 추천**:
    - **팀 판단**: 이전 산출물 존재, 키워드 분석, 코드 맵 파일 수(10개↑→Full, 5개↓→Light).
    - **effort 판단**:
      - `low`: 오타 수정, 설정 변경, 단일 파일 수정 → architect에게 설계 요약만 요청
@@ -96,8 +101,8 @@ Hotfix:      setup → 구현 → 커밋
    - 이전 메트릭이 있으면 평균 review_rounds, critical_count로 effort 보정.
    - `--hotfix` 시 건너뜀 (coder 1명, effort=low 고정).
    - AskUserQuestion으로 팀 + effort 추천 표시, 사용자 선택.
-10. **팀 생성**: TeamCreate 호출. tmux 환경이면 `Skill("oh-my-beom:tmux-team-agent")`.
-11. **상태 + plan 파일 초기화**: `.dev/state.md` + `docs/plan/{이슈키}-plan.md` 생성. (포맷은 reference.md 참조)
+11. **팀 생성**: TeamCreate 호출. tmux 환경이면 `Skill("oh-my-beom:tmux-team-agent")`.
+12. **상태 + plan 파일 초기화**: `.dev/state.md` + `docs/plan/{이슈키}-plan.md` 생성. (포맷은 reference.md 참조)
 
 ---
 
