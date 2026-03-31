@@ -107,7 +107,7 @@ section { scroll-margin-top: 60px; }
      |                 TaskCompleted, TeammateIdle, Stop
      v
 <span class="hl-skill">[ 스킬 ]</span>            사용자/파이프라인이 호출하는 슬래시 커맨드 (25종)
-     |                 /mac, /dev, /plan, /research, /lens, /commit...
+     |                 /beom, /dev, /plan, /research, /lens, /commit...
      |
      |--- 오케스트레이션 ---+
      v                      v
@@ -143,7 +143,7 @@ oh-my-beom/
 │   ├── qa-manager.md
 │   └── security-auditor.md
 ├── <span class="hl-skill">skills/</span>                     슬래시 커맨드 스킬 (25종)
-│   ├── mac/ dev/ plan/ research/ lens/ persist/
+│   ├── beom/ dev/ plan/ research/ lens/ persist/
 │   ├── commit/ pull-request/ worktree/
 │   ├── hacker/ simplifier/ design-critic/
 │   ├── todo-verifier/ plan-visualizer/ report/
@@ -183,7 +183,7 @@ oh-my-beom/
   <div class="card-section"><h4>라우팅 테이블</h4>
     <table style="font-size:0.8em">
       <tr><th>키워드</th><th>스킬</th></tr>
-      <tr><td>mac, 비서</td><td>/mac</td></tr>
+      <tr><td>beom, 비서</td><td>/beom</td></tr>
       <tr><td>plan, 계획</td><td>/plan</td></tr>
       <tr><td>lens, 정책</td><td>/lens</td></tr>
       <tr><td>research, 분석해</td><td>/research</td></tr>
@@ -431,11 +431,11 @@ Claude 응답 종료 시도
 <h3>메인 워크플로우 스킬</h3>
 <table>
 <tr><th>스킬</th><th>역할</th><th>자동 체이닝</th><th>호출 주체</th></tr>
-<tr><td><strong>/mac</strong></td><td>풀사이클 비서</td><td>/lens &rarr; /research &rarr; /plan &rarr; /dev</td><td>사용자</td></tr>
-<tr><td><strong>/lens</strong></td><td>비즈니스 정책 분석</td><td>/research (자동)</td><td>/mac, 사용자</td></tr>
-<tr><td><strong>/research</strong></td><td>코드베이스 조사</td><td>/plan (자동)</td><td>/mac, /lens, 사용자</td></tr>
-<tr><td><strong>/plan</strong></td><td>4-Mode 계획 수립</td><td>/plan-visualizer (autoVisualize 시)</td><td>/mac, /research, 사용자</td></tr>
-<tr><td><strong>/dev</strong></td><td>전체 개발 사이클 오케스트레이터</td><td>에이전트 + 유틸리티 스킬</td><td>/mac, 사용자</td></tr>
+<tr><td><strong>/beom</strong></td><td>풀사이클 비서</td><td>/lens &rarr; /research &rarr; /plan &rarr; /dev</td><td>사용자</td></tr>
+<tr><td><strong>/lens</strong></td><td>비즈니스 정책 분석</td><td>/research (자동)</td><td>/beom, 사용자</td></tr>
+<tr><td><strong>/research</strong></td><td>코드베이스 조사</td><td>/plan (자동)</td><td>/beom, /lens, 사용자</td></tr>
+<tr><td><strong>/plan</strong></td><td>4-Mode 계획 수립</td><td>/plan-visualizer (autoVisualize 시)</td><td>/beom, /research, 사용자</td></tr>
+<tr><td><strong>/dev</strong></td><td>전체 개발 사이클 오케스트레이터</td><td>에이전트 + 유틸리티 스킬</td><td>/beom, 사용자</td></tr>
 <tr><td><strong>/persist</strong></td><td>끝까지 실행 (6단계 루프)</td><td>상황에 따라 다름</td><td>사용자 ("끝까지 해")</td></tr>
 </table>
 
@@ -682,7 +682,7 @@ TeamCreate                                      <span class="hl-skill">verifier<
   <td class="yes">&#10003;</td><td></td><td></td><td></td><td></td>
 </tr>
 <tr>
-  <td><strong>/mac</strong></td>
+  <td><strong>/beom</strong></td>
   <td></td><td></td><td></td><td></td><td></td>
   <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
 </tr>
@@ -718,7 +718,7 @@ TeamCreate                                      <span class="hl-skill">verifier<
 
 <h3>스킬 체이닝 맵</h3>
 <div class="flow"><pre>
-<span class="hl-skill">/mac</span> ───> <span class="hl-skill">/lens</span> ───> <span class="hl-skill">/research</span> ───> <span class="hl-skill">/plan</span> ───> <span class="hl-skill">/dev</span>
+<span class="hl-skill">/beom</span> ───> <span class="hl-skill">/lens</span> ───> <span class="hl-skill">/research</span> ───> <span class="hl-skill">/plan</span> ───> <span class="hl-skill">/dev</span>
                                                     |
                            <span class="hl-skill">/plan-visualizer</span> <───────┘
                                                     |
@@ -862,10 +862,10 @@ TeamCreate                                      <span class="hl-skill">verifier<
 </details>
 
 <details>
-<summary>풀코스: /mac (lens &rarr; research &rarr; plan &rarr; dev)</summary>
+<summary>풀코스: /beom (lens &rarr; research &rarr; plan &rarr; dev)</summary>
 <div class="detail-content">
 <div class="flow"><pre>
-사용자: /mac 결제 한도 변경 기능 개발
+사용자: /beom 결제 한도 변경 기능 개발
 
 <span class="hl-skill">/lens</span>      결제 한도 관련 비즈니스 정책 분석
            산출물: .dev/lens-report.md
