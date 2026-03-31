@@ -73,10 +73,10 @@ section{scroll-margin-top:60px}
 <!-- ===== 개요 ===== -->
 <section id="overview">
 <h1>oh-my-beom 하네스 가이드</h1>
-<p style="color:var(--muted)">Claude Code 플러그인 v2.0 &mdash; /beom 중심 구조</p>
+<p style="color:var(--muted)">Claude Code 플러그인 v2.1 &mdash; /beom 중심 구조 + 벤치마크 기반 개선</p>
 
 <div class="stats">
-  <div class="stat"><div class="stat-num">6</div><div class="stat-label">훅</div></div>
+  <div class="stat"><div class="stat-num">8</div><div class="stat-label">훅</div></div>
   <div class="stat"><div class="stat-num">5</div><div class="stat-label">에이전트</div></div>
   <div class="stat"><div class="stat-num">23</div><div class="stat-label">스킬</div></div>
   <div class="stat"><div class="stat-num">3</div><div class="stat-label">팀 조합</div></div>
@@ -93,7 +93,7 @@ section{scroll-margin-top:60px}
 
 <h3>아키텍처 레이어</h3>
 <div class="flow"><pre>
-<span class="hl-hook">[ 훅 ]</span>              이벤트 기반 자동화 (6종)
+<span class="hl-hook">[ 훅 ]</span>              이벤트 기반 자동화 (8종)
      |
      v
 <span class="hl-skill">[ /beom ]</span>           개발 오케스트레이터 (유일한 진입점)
@@ -113,7 +113,7 @@ oh-my-beom/
 ├── CLAUDE.md                   최상위 지침
 ├── config/config.json          공통 설정
 ├── rules/                      항상 적용되는 행동 규칙
-├── <span class="hl-hook">hooks/</span> (6종)                이벤트 핸들러
+├── <span class="hl-hook">hooks/</span> (8종)                이벤트 핸들러 + 품질 게이트
 ├── <span class="hl-agent">agents/</span> (5종)               팀 에이전트 정의
 ├── <span class="hl-skill">skills/</span> (23종)
 │   ├── <strong>beom/</strong>                   개발 오케스트레이터 (핵심)
@@ -131,11 +131,12 @@ oh-my-beom/
 
 <!-- ===== 훅 ===== -->
 <section id="hooks">
-<h2>훅 (6종)</h2>
+<h2>훅 (8종)</h2>
+<p style="color:var(--muted);margin-bottom:12px">Exit Code 규약: 0=성공, 1=비차단 경고, 2=차단(수정 필요)</p>
 <div class="card-grid">
 <div class="card">
   <div class="card-header"><span class="badge badge-hook">SessionStart</span><span class="card-title">session-start</span></div>
-  <div class="card-desc">진행 중인 계획 감지 + 워크플로우 가이드 표시</div>
+  <div class="card-desc">진행 중인 계획 감지 + /beom 중심 워크플로우 가이드 표시</div>
   <div class="card-section"><h4>트리거</h4>세션 시작, /clear, /compact</div>
 </div>
 <div class="card">
@@ -143,17 +144,34 @@ oh-my-beom/
   <div class="card-desc">키워드 감지 → 스킬 자동 라우팅</div>
   <div class="card-section"><h4>라우팅</h4>
     <table style="font-size:.8em">
-      <tr><td>beom, 비서</td><td>&rarr; /beom</td></tr>
+      <tr><td>beom</td><td>&rarr; /beom</td></tr>
       <tr><td>개발해, 구현해, 만들어줘</td><td>&rarr; /beom</td></tr>
-      <tr><td>정책, lens</td><td>&rarr; /lens</td></tr>
-      <tr><td>분석해, research</td><td>&rarr; /research</td></tr>
-      <tr><td>끝까지, persist</td><td>&rarr; /persist</td></tr>
+      <tr><td>정책, 비즈니스, lens</td><td>&rarr; /lens</td></tr>
+      <tr><td>분석해, 조사해, research</td><td>&rarr; /research</td></tr>
+      <tr><td>끝까지, 멈추지마, persist</td><td>&rarr; /persist</td></tr>
     </table>
   </div>
 </div>
 <div class="card">
   <div class="card-header"><span class="badge badge-hook">PreToolUse</span><span class="card-title">pre-tool-guard</span></div>
-  <div class="card-desc">보호 브랜치 직접 커밋 차단</div>
+  <div class="card-desc">보호 브랜치(main/master/develop/test/dev) 직접 커밋 차단</div>
+</div>
+<div class="card" style="border-color:var(--green)">
+  <div class="card-header"><span class="badge badge-hook">PreToolUse</span><span class="card-title">code-quality-gate</span><span class="badge" style="background:#3fb95022;color:var(--green);border:1px solid #3fb95055;font-size:.7em">NEW</span></div>
+  <div class="card-desc">Write/Edit 전 코드 품질 자동 검사 + 플러그인 파일 탬퍼링 감지</div>
+  <div class="card-section"><h4>검사 항목</h4>
+    <table style="font-size:.8em">
+      <tr><td>시크릿 하드코딩</td><td>AWS/OpenAI/GitHub 키, Bearer 토큰</td></tr>
+      <tr><td>보안 취약점</td><td>eval(), innerHTML, SQL 문자열 연결</td></tr>
+      <tr><td>TODO 스텁</td><td>implement/placeholder/stub 잔존</td></tr>
+      <tr><td>탬퍼링</td><td>플러그인 파일 수정 시 사용자 확인</td></tr>
+    </table>
+  </div>
+</div>
+<div class="card" style="border-color:var(--green)">
+  <div class="card-header"><span class="badge badge-hook">PostToolUse</span><span class="card-title">error-learner</span><span class="badge" style="background:#3fb95022;color:var(--green);border:1px solid #3fb95055;font-size:.7em">NEW</span></div>
+  <div class="card-desc">Bash 실패 시 에러 패턴 자동 기록 + 반복 에러 경고</div>
+  <div class="card-section"><h4>동작</h4>.dev/error-log.md에 기록, 동일 에러 2회↑ 시 근본 원인 분석 유도</div>
 </div>
 <div class="card">
   <div class="card-header"><span class="badge badge-hook">TaskCompleted</span><span class="card-title">task-verifier</span></div>
