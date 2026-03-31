@@ -10,7 +10,7 @@
       "name": "oh-my-beom",
       "source": "./",
       "description": "Korean developer toolkit for Claude Code: team-based orchestration with /beom, adaptive agent teams (Light 3 / Full 5), plan-based tracking, coding guidelines, and Playwright E2E testing",
-      "version": "2.1.0"
+      "version": "2.2.0"
     }
   ]
 }

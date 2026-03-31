@@ -73,7 +73,7 @@ section{scroll-margin-top:60px}
 <!-- ===== 개요 ===== -->
 <section id="overview">
 <h1>oh-my-beom 하네스 가이드</h1>
-<p style="color:var(--muted)">Claude Code 플러그인 v2.1 &mdash; /beom 중심 구조 + 벤치마크 기반 개선</p>
+<p style="color:var(--muted)">Claude Code 플러그인 v2.2 &mdash; /beom 중심 구조 + Jira 자동 체이닝</p>
 
 <div class="stats">
   <div class="stat"><div class="stat-num">8</div><div class="stat-label">훅</div></div>
@@ -308,11 +308,12 @@ oh-my-beom/
     |
     v
 <span class="hl-phase">[setup]</span> 환경 준비
+    ├── <span class="hl-skill">Jira 감지</span>: URL/이슈 키 → fetch-jira-issue 자동 조회 → .dev/jira-context.md
     ├── Git 저장소 확인 + 베이스 브랜치 감지
     ├── 프로젝트 정보 수집 (병렬)
     ├── 코드 맵 생성 (.dev/codemap.md)
     ├── 작업 브랜치 생성
-    ├── 이전 산출물 감지 (lens-report, research-report)
+    ├── 이전 산출물 감지 (lens-report, research-report, jira-context)
     v
 <span class="hl-skill">[팀 추천]</span> 작업 분석 + AskUserQuestion
     ├── "Light (3명) 추천" / "Full (5명) 추천"
