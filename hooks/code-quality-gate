@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+# PreToolUse hook for Write|Edit
+# Step 1: 코드 품질 게이트 (시크릿, TODO 스텁, 보안 취약점 감지)
+# Step 6: 탬퍼링 감지 (플러그인 설정 파일 보호)
+#
+# Exit codes: 0=통과, 2=차단(수정 필요)
+
+set -uo pipefail
+
+INPUT=$(cat /dev/stdin 2>/dev/null || echo '{}')
+
+# JSON에서 필드 추출
+extract() {
+  echo "$INPUT" | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    inp = data.get('tool_input', data)
+    print(inp.get('$1', ''))
+except:
+    print('')
+" 2>/dev/null || echo ""
+}
+
+FILE_PATH=$(extract "file_path")
+NEW_CONTENT=$(extract "new_string")  # Edit
+if [ -z "$NEW_CONTENT" ]; then
+  NEW_CONTENT=$(extract "content")   # Write
+fi
+
+# 파일 경로가 없으면 통과
+if [ -z "$FILE_PATH" ]; then
+  echo '{"continue": true}'
+  exit 0
+fi
+
+ISSUES=()
+
+# ─── Step 6: 탬퍼링 감지 ───
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-}"
+if [ -n "$PLUGIN_ROOT" ]; then
+  # 정규화된 경로 비교
+  REAL_PLUGIN=$(cd "$PLUGIN_ROOT" 2>/dev/null && pwd -P)
+  REAL_FILE=$(cd "$(dirname "$FILE_PATH")" 2>/dev/null && pwd -P)/$(basename "$FILE_PATH") 2>/dev/null || echo "$FILE_PATH"
+
+  case "$REAL_FILE" in
+    "$REAL_PLUGIN"/hooks/*|"$REAL_PLUGIN"/rules/*|"$REAL_PLUGIN"/config/*|\
+    "$REAL_PLUGIN"/agents/*|"$REAL_PLUGIN"/skills/*|"$REAL_PLUGIN"/.claude-plugin/*|\
+    "$REAL_PLUGIN"/CLAUDE.md)
+      # 테스트 파일은 허용
+      case "$REAL_FILE" in
+        "$REAL_PLUGIN"/tests/*) ;;
+        *)
+          BASENAME=$(basename "$FILE_PATH")
+          cat <<EOF
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "ask",
+    "permissionDecisionReason": "플러그인 파일(${BASENAME})을 수정하려고 합니다. 의도된 변경인지 확인해주세요."
+  }
+}
+EOF
+          exit 0
+          ;;
+      esac
+      ;;
+  esac
+fi
+
+# ─── Step 1: 코드 품질 검사 ───
+
+# 콘텐츠가 없으면 (old_string 삭제 등) 통과
+if [ -z "$NEW_CONTENT" ]; then
+  echo '{"continue": true}'
+  exit 0
+fi
+
+# 시크릿 하드코딩 감지
+SECRET_PATTERNS=(
+  'AKIA[0-9A-Z]{16}'                          # AWS Access Key
+  'sk-[a-zA-Z0-9]{20,}'                       # OpenAI/Stripe API Key
+  'ghp_[a-zA-Z0-9]{36}'                       # GitHub Personal Access Token
+  'password\s*[:=]\s*["\x27][^"\x27]{8,}'     # password = "..." (8자 이상)
+  'secret\s*[:=]\s*["\x27][^"\x27]{8,}'       # secret = "..." (8자 이상)
+  'token\s*[:=]\s*["\x27][^"\x27]{20,}'       # token = "..." (20자 이상)
+  'Bearer [a-zA-Z0-9\-._~+/]{20,}'            # Bearer token
+)
+
+for pattern in "${SECRET_PATTERNS[@]}"; do
+  if echo "$NEW_CONTENT" | grep -qE "$pattern" 2>/dev/null; then
+    ISSUES+=("시크릿 하드코딩 감지 (패턴: ${pattern%%\\*}...)")
+    break
+  fi
+done
+
+# TODO/FIXME 플레이스홀더 감지 (실제 구현이 아닌 스텁)
+if echo "$NEW_CONTENT" | grep -qE '(TODO|FIXME|HACK|XXX).*(\.\.\.|implement|placeholder|stub)' 2>/dev/null; then
+  ISSUES+=("TODO/FIXME 플레이스홀더가 남아있습니다")
+fi
+
+# 보안 취약점 패턴
+# eval() 사용 (JavaScript/Python)
+if echo "$NEW_CONTENT" | grep -qE '\beval\s*\(' 2>/dev/null; then
+  case "$FILE_PATH" in
+    *.js|*.ts|*.jsx|*.tsx|*.py)
+      ISSUES+=("eval() 사용 감지 — 코드 인젝션 위험")
+      ;;
+  esac
+fi
+
+# innerHTML 직접 할당 (XSS)
+if echo "$NEW_CONTENT" | grep -qE '\.innerHTML\s*=' 2>/dev/null; then
+  ISSUES+=("innerHTML 직접 할당 — XSS 위험. textContent 또는 sanitize 사용 권장")
+fi
+
+# SQL 문자열 연결 (SQL Injection)
+if echo "$NEW_CONTENT" | grep -qE "(SELECT|INSERT|UPDATE|DELETE|DROP).*\+\s*(req\.|params\.|query\.|input)" 2>/dev/null; then
+  ISSUES+=("SQL 문자열 연결 감지 — SQL 인젝션 위험. 파라미터 바인딩 사용 권장")
+fi
+
+# 결과 출력
+if [ ${#ISSUES[@]} -eq 0 ]; then
+  echo '{"continue": true}'
+  exit 0
+fi
+
+# 이슈 목록 조합
+REASON="코드 품질 게이트: "
+for i in "${!ISSUES[@]}"; do
+  if [ "$i" -gt 0 ]; then
+    REASON+=", "
+  fi
+  REASON+="${ISSUES[$i]}"
+done
+
+cat <<EOF
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": "${REASON}"
+  }
+}
+EOF
+exit 0

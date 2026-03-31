@@ -10,10 +10,13 @@ oh-my-beom/                  <- 플러그인 루트
 │   └── plugin.json             <- 플러그인 메타데이터
 ├── CLAUDE.md                   <- 플러그인 레벨 지침
 ├── hooks/
-│   ├── hooks.json              <- 훅 등록 (SessionStart, UserPromptSubmit, PreToolUse, TaskCompleted, TeammateIdle, Stop)
+│   ├── hooks.json              <- 훅 등록 (SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, TaskCompleted, TeammateIdle, Stop)
+│   ├── README.md               <- 훅 목록, exit code 규약, 검사 항목 문서
 │   ├── session-start           <- 세션 시작 시 활성 계획 감지
 │   ├── prompt-router           <- 사용자 프롬프트 키워드 매칭 -> 스킬 라우팅
 │   ├── pre-tool-guard          <- 보호 브랜치 커밋 차단
+│   ├── code-quality-gate       <- Write/Edit 전 시크릿/보안/탬퍼링 감지
+│   ├── error-learner           <- Bash 실패 시 에러 패턴 자동 학습
 │   ├── task-verifier           <- TaskCompleted 시 계획 완료 기준 자동 검증
 │   ├── idle-checker            <- TeammateIdle 시 미완료 항목 자동 할당
 │   └── stop-report             <- Stop 시 /dev 결과 보고서 자동 생성

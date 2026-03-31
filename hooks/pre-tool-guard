@@ -16,7 +16,7 @@ case "$INPUT" in
         CURRENT_BRANCH=$(git -C "$GIT_DIR" symbolic-ref --short HEAD 2>/dev/null || echo "")
       fi
     fi
-    if [[ "$CURRENT_BRANCH" =~ ^(develop|main|master)$ ]]; then
+    if [[ "$CURRENT_BRANCH" =~ ^(develop|main|master|test|dev)$ ]]; then
       cat <<EOF
 {
   "hookSpecificOutput": {
