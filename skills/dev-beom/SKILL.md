@@ -13,6 +13,8 @@ argument-hint: "[Jira URL 또는 이슈키] <작업 설명>"
 1. **오케스트레이터는 직접 코드를 작성하지 않는다.** 모든 산출물은 에이전트(SendMessage)를 통해 생성한다.
 2. **팀 실행을 생략하지 않는다.** 작업 규모와 무관하게 반드시 TeamCreate → 에이전트 실행을 수행한다.
 3. **plan 파일을 반드시 생성한다.** `docs/plan/plan_{작업내용}.md`가 없으면 작업을 시작하지 않는다.
+4. **qa-manager 호출을 생략하지 않는다.** Phase 5는 변경 크기, 파일 수, 줄 수와 무관하게 반드시 실행한다. 오케스트레이터가 직접 리뷰하여 대체하는 것은 금지한다.
+5. **TeamCreate 직후 tmux-team-agent를 호출한다.** `Skill("oh-my-beom:tmux-team-agent")`를 생략하지 않는다.
 
 ## 인자
 
@@ -161,6 +163,16 @@ while qa_result == FAIL and loop_count < 5:
     # 4. qa-manager 재리뷰
     SendMessage(to="qa-manager", message="재리뷰해주세요. diff: .dev/diff.txt")
 ```
+
+### 웹 테스트 실행 (조건부)
+
+qa-manager 리뷰 결과에 **"웹 테스트 권고"** 섹션이 포함되어 있으면, QA PASS 후 커밋 전에 반드시 웹 테스트를 실행한다:
+
+```
+Skill("oh-my-beom:web-test", args="{대상 URL} {시나리오 설명}")
+```
+
+웹 테스트 권고가 있는데 실행하지 않는 것은 금지한다. URL이 불분명하면 사용자에게 질문한다.
 
 ### 5회 초과 시
 
