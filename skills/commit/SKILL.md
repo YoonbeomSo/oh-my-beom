@@ -146,9 +146,11 @@ JIRA-123
 
 1. 현재 브랜치명 확인: `git branch --show-current`
 2. **보호 브랜치 push 금지**: `master`, `main`, `dev`, `test`에는 절대 push하지 않는다. 해당 브랜치에 있으면 push를 거부하고 작업 브랜치 생성을 안내한다.
-3. origin에 동일 이름으로 push: `git push -u origin feat/{작업내용}`
+3. origin에 동일 이름으로 push: `git push -u origin {현재 브랜치명}`
+
+**PR/MR은 자동 생성하지 않는다.** 사용자가 `/pull-request`로 명시적으로 요청할 때만 생성한다. 커밋 후 "PR 만들까요?" 같은 질문도 금지.
 
 **금지사항**:
 - `Co-Authored-By` 라인을 절대 추가하지 말 것.
 - `master`, `main`, `dev`, `test` 브랜치에 직접 push 금지.
-- commit, push 등 git 관련 명령은 사용자 확인을 받을 것.
+- 커밋 후 PR/MR 자동 생성 금지. 사용자가 `/pull-request`로 요청할 때만.

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Skill(update-config)",
+      "Skill(oh-my-beom:pull-request)",
+      "Bash(./gradlew *)",
+      "Bash(java *)",
+      "Bash(npm run dev*)",
+      "Bash(npm run start*)",
+      "Bash(bun run dev*)",
+      "Bash(bun run start*)",
+      "Bash(kill *)",
+      "Bash(curl -sf *)",
+      "Bash(lsof -ti *)"
+    ]
+  }
+}

@@ -75,7 +75,7 @@ argument-hint: "[Jira URL 또는 이슈키] <작업 설명>"
 ## Phase 5: QA 리뷰 + 루프
 `/dev-beom` Phase 5와 동일하나 루프 확장 (위 참조).
 
-**웹 테스트 권고 시:** qa-manager가 웹 테스트를 권고하면 QA PASS 후 자동으로 `Skill("oh-my-beom:web-test")`를 실행한다. URL은 프로젝트 설정 또는 로컬 서버 주소를 자동 추정한다.
+**웹 테스트 필수 시:** qa-manager 리뷰에 `[WEB-TEST-REQUIRED]` 마커가 있으면, QA PASS 후 즉시 서버를 기동하고 웹 테스트를 실행한다. dev-beom의 "웹 테스트 실행" 절차와 동일 (서버 기동 → URL 자동 결정 → 웹 테스트 → 서버 종료).
 
 ## Phase 6: 커밋
 사용자 확인 없이 자동 커밋:

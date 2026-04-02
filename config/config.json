@@ -67,9 +67,10 @@
     ],
     "detectPatterns": {
       "frontend": ["src/pages/**", "src/views/**", "src/components/**", "app/**/*.tsx", "pages/**/*.vue"],
-      "admin": ["**/admin/**", "**/backoffice/**", "**/back-office/**", "**/management/**"]
+      "admin": ["**/admin/**", "**/backoffice/**", "**/back-office/**", "**/management/**", "**/store-admin/**"]
     },
-    "credentials": {}
+    "credentials": {},
+    "serverProfiles": {}
   },
   "verification": {
     "enabled": true,
