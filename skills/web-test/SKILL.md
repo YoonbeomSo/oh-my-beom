@@ -39,24 +39,116 @@ ARGS 없이 호출 시: "테스트할 URL을 입력해주세요. 예: `/web-test
 
 ### 1-1. 인자 파싱
 - ARGS에서 URL을 추출한다 (http/https로 시작하는 첫 번째 토큰)
-- URL이 없으면 사용자에게 요청한다
+- URL이 없으면 아래 1-2의 자동 결정 로직으로 URL을 결정한다
 - URL 외 나머지 텍스트를 시나리오 설명으로 사용한다
 
 ### 1-2. 프로젝트 타입 감지
 1. `config/config.json`의 `projectTypes` 규칙으로 프로젝트 타입을 감지한다
-2. 감지 결과를 기록한다 (OTP 탐지 패턴 선택에 사용)
+   - `build.gradle.kts` 또는 `build.gradle` → **spring-boot** (kotlin-java)
+   - `package.json` → **nodejs**
+   - `pyproject.toml` 또는 `setup.py` → **python**
+2. 감지 결과를 기록한다 (서버 기동 방식, OTP 탐지 패턴 선택에 사용)
+3. 프로젝트 디렉토리명을 `PROJECT_NAME`으로 저장한다 (예: `store-admin`)
 
-### 1-3. Playwright 환경 확인
+### 1-3. 서버 프로필 확인 및 저장
+
+Spring Boot 등 빌드가 필요한 서버 프로젝트의 경우, 실행에 필요한 설정을 확보한다.
+
+1. `config/config.json`의 `webTest.serverProfiles`에서 `PROJECT_NAME` 키로 조회
+2. **프로필이 있는 경우** → 저장된 설정을 사용
+3. **프로필이 없는 경우** → 사용자에게 요청하여 저장:
+
+```
+AskUserQuestion("""
+웹 테스트를 위해 서버 실행 설정이 필요합니다.
+프로젝트: {PROJECT_NAME}
+
+1. Active Profiles (예: local, dev, test):
+2. Environment Variables (예: DB_HOST=localhost,REDIS_PORT=6379):
+   (불필요하면 'skip')
+
+입력한 설정은 config/config.json에 저장되어 다음 테스트에 재사용됩니다.
+""")
+```
+
+사용자 입력을 파싱하여 `config/config.json`에 저장:
+```json
+"serverProfiles": {
+  "store-admin": {
+    "type": "spring-boot",
+    "activeProfiles": "local",
+    "envVars": {
+      "SPRING_PROFILES_ACTIVE": "local",
+      "DB_HOST": "localhost"
+    },
+    "port": 8080,
+    "otpBypass": true
+  }
+}
+```
+
+- `type`: 감지된 프로젝트 타입
+- `activeProfiles`: Spring 프로필 (Spring Boot 전용)
+- `envVars`: 서버 실행 시 주입할 환경 변수
+- `port`: 서버 포트 (기본값: spring-boot=8080, nodejs=3000)
+- `otpBypass`: OTP 자동 바이패스 여부 (최초 1회 질문 후 저장)
+
+### 1-4. 서버 빌드 및 기동
+
+프로젝트 타입에 따라 서버를 빌드하고 기동한다.
+
+#### Spring Boot (kotlin-java)
+
+```
+# 1. 빌드
+Bash(command="./gradlew build -x test", timeout=300000)
+
+# 2. JAR 파일 탐색
+Bash(command="find build/libs -name '*.jar' -not -name '*-plain.jar' | head -1")
+
+# 3. 환경 변수 + 프로필로 서버 기동
+ENV_VARS = serverProfiles[PROJECT_NAME].envVars  # 예: "SPRING_PROFILES_ACTIVE=local DB_HOST=localhost"
+JAR_PATH = 위에서 찾은 JAR
+
+Bash(command="{ENV_VARS} java -jar {JAR_PATH} --server.port={port} &", run_in_background=true)
+
+# 4. PID 기록
+Bash(command="echo $! > .dev/server.pid")
+
+# 5. 서버 ready 대기 (최대 60초, Spring Boot는 기동이 느림)
+Bash(command="for i in $(seq 1 30); do curl -sf http://localhost:{port}/actuator/health >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1", timeout=70000)
+```
+
+#### Node.js
+
+```
+# 1. playwright.config.ts에 webServer 설정이 있으면 → 서버 기동 생략
+# 2. 없으면 직접 기동:
+런타임 감지: which bun → bun, 없으면 npm
+Bash(command="{런타임} run dev &", run_in_background=true)
+Bash(command="echo $! > .dev/server.pid")
+
+# 3. 서버 ready 대기 (최대 30초)
+Bash(command="for i in $(seq 1 15); do curl -sf http://localhost:{port} >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1", timeout=35000)
+```
+
+#### URL 결정 우선순위 (사용자 질문 없이 자동 결정):
+1. ARGS에 명시된 URL
+2. `playwright.config.ts`의 `use.baseURL`
+3. `serverProfiles[PROJECT_NAME].port` → `http://localhost:{port}`
+4. 기본값: spring-boot=`http://localhost:8080`, nodejs=`http://localhost:3000`
+
+### 1-5. Playwright 환경 확인
 1. `npx playwright --version` 실행
 2. 미설치 시 사용자에게 안내: "Playwright가 설치되어 있지 않습니다. `npm init playwright@latest`로 설치해주세요."
 3. 설치 확인 후 진행
 
-### 1-4. 테스트 디렉토리 결정
+### 1-6. 테스트 디렉토리 결정
 1. `playwright.config.ts` 또는 `playwright.config.js` 존재 여부 확인
 2. 있으면 `testDir` 설정을 읽어 사용
 3. 없으면 기본값 `e2e/` 사용
 
-### 1-5. 테스트 계정 정보 확인
+### 1-7. 테스트 계정 정보 확인
 
 로그인이 필요한 서비스 테스트를 위해 계정 정보를 확보한다.
 
@@ -84,21 +176,25 @@ AskUserQuestion("테스트에 사용할 로그인 계정을 입력해주세요.\
 - `config/config.json`의 `webTest.credentials`에 호스트명을 키로 저장
 - 이후 같은 호스트 테스트 시 자동으로 사용
 
-### 1-6. .dev 디렉토리 준비
+### 1-8. .dev 디렉토리 준비
 - `.dev/` 디렉토리가 없으면 생성
 - `.gitignore`에 `.dev/` 추가 (없으면)
 
 ---
 
-## Phase 2: OTP 바이패스 (조건부)
+## Phase 2: OTP 바이패스
 
-### 2-1. OTP 바이패스 필요 여부 확인
+### 2-1. OTP 바이패스 필요 여부 판단
 
-```
-AskUserQuestion("이 서비스에 OTP/2FA 인증이 있습니까? 있다면 테스트 중 임시로 비활성화합니다. (y/n)")
-```
+`config/config.json`의 `webTest.serverProfiles[PROJECT_NAME].otpBypass` 값을 확인한다:
 
-사용자가 `n` 또는 불필요하다고 답하면 Phase 3으로 건너뛴다.
+- **`otpBypass: true`** → 사용자 확인 없이 **자동으로** 2-2 ~ 2-6 실행
+- **`otpBypass: false`** → Phase 3으로 건너뛴다
+- **`otpBypass` 키 없음 (최초 실행)** → 사용자에게 1회 질문 후 결과를 저장:
+  ```
+  AskUserQuestion("이 서비스에 OTP/2FA 인증이 있습니까? 있다면 테스트 중 임시로 비활성화합니다. (y/n)")
+  ```
+  답변에 따라 `serverProfiles[PROJECT_NAME].otpBypass`를 `true`/`false`로 저장.
 
 ### 2-2. OTP 코드 탐지
 
@@ -125,24 +221,10 @@ Grep(pattern="(speakeasy|otplib|authenticator\\.verify|totp\\.verify)", glob="*.
 Grep(pattern="(pyotp|django_otp|verify_otp|check_otp)", glob="*.py")
 ```
 
-### 2-3. 탐지 결과 사용자 확인
+### 2-3. 탐지 결과 처리
 
-탐지된 파일과 해당 라인을 사용자에게 표시한다:
-
-```
-AskUserQuestion("""
-OTP 관련 코드를 다음 파일에서 발견했습니다:
-
-{탐지 결과 목록 - 파일:라인번호 + 코드 스니펫}
-
-위 파일들의 OTP 검증 로직을 임시로 비활성화합니다.
-진행하시겠습니까? (y/n)
-
-참고: 테스트 완료 후 git checkout으로 자동 원복됩니다.
-""")
-```
-
-사용자가 거부하면 OTP 바이패스 없이 Phase 3으로 진행한다.
+- **`otpBypass: true` (자동 모드)**: 탐지 결과를 사용자에게 보여주되, **확인 없이 즉시 주석 처리 진행**. "다음 파일의 OTP를 바이패스합니다: {목록}" 메시지만 출력.
+- **최초 실행으로 사용자가 `y` 응답한 경우**: 동일하게 즉시 진행.
 
 ### 2-4. Git 상태 확인 + Stash
 
@@ -263,9 +345,18 @@ while heal_count < max_heal:
 
 ---
 
-## Phase 6: OTP 원복 + 결과 보고
+## Phase 6: 정리 (서버 종료 + OTP 원복 + 결과 보고)
 
 **이 Phase는 어떤 상황에서도 반드시 실행한다.**
+
+### 6-0. dev 서버 종료
+
+Phase 1에서 서버를 직접 기동한 경우 (`playwright.config.ts`의 `webServer` 사용 시 생략):
+
+1. `.dev/server.pid` 파일이 존재하면 PID를 읽는다
+2. `kill {PID}` 실행
+3. `.dev/server.pid` 삭제
+4. 종료 확인: `kill -0 {PID}` 가 실패하면 성공
 
 ### 6-1. OTP 원복
 

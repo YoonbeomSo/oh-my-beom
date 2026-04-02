@@ -1,32 +1,101 @@
 #!/usr/bin/env bash
 # PreToolUse Guard for oh-my-beom plugin
-# Blocks git commit on protected branches (main/master/develop)
+# 1. 보호 브랜치 커밋 차단
+# 2. 보호 브랜치 push 차단 (force push 포함)
+# 3. config/config.json 개인정보 커밋 차단
 
 set -uo pipefail
 
 INPUT=$(cat /dev/stdin 2>/dev/null || echo '{}')
 
-# Check if input contains git commit command
-case "$INPUT" in
-  *git*commit*)
-    CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
-    if [ -z "$CURRENT_BRANCH" ]; then
-      GIT_DIR=$(echo "$INPUT" | sed -n 's/.*git[[:space:]]\{1,\}-C[[:space:]]\{1,\}\([^[:space:]"]\{1,\}\).*/\1/p' 2>/dev/null || echo "")
-      if [ -n "$GIT_DIR" ] && [ -d "$GIT_DIR" ]; then
-        CURRENT_BRANCH=$(git -C "$GIT_DIR" symbolic-ref --short HEAD 2>/dev/null || echo "")
-      fi
-    fi
-    if [[ "$CURRENT_BRANCH" =~ ^(develop|main|master|test|dev)$ ]]; then
-      cat <<EOF
+deny() {
+  local reason="$1"
+  cat <<EOF
 {
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "deny",
-    "permissionDecisionReason": "Protected branch: ${CURRENT_BRANCH} 브랜치에서는 직접 커밋할 수 없습니다. 작업 브랜치를 먼저 생성하세요."
+    "permissionDecisionReason": "${reason}"
   }
 }
 EOF
-      exit 0
+  exit 0
+}
+
+get_branch() {
+  local branch
+  branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+  if [ -z "$branch" ]; then
+    local git_dir
+    git_dir=$(echo "$INPUT" | sed -n 's/.*git[[:space:]]\{1,\}-C[[:space:]]\{1,\}\([^[:space:]"]\{1,\}\).*/\1/p' 2>/dev/null || echo "")
+    if [ -n "$git_dir" ] && [ -d "$git_dir" ]; then
+      branch=$(git -C "$git_dir" symbolic-ref --short HEAD 2>/dev/null || echo "")
+    fi
+  fi
+  echo "$branch"
+}
+
+PROTECTED_RE="^(develop|main|master|test|dev)$"
+
+case "$INPUT" in
+  # ─── git push 보호 ───
+  *git*push*)
+    # force push 차단
+    case "$INPUT" in
+      *--force*|*" -f "*)
+        deny "git push --force는 금지되어 있습니다."
+        ;;
+    esac
+
+    # 보호 브랜치로의 직접 push 차단
+    for b in main master develop test dev; do
+      case "$INPUT" in
+        *"origin ${b}"*|*"origin/${b}"*|*":${b}"*|*"HEAD:${b}"*)
+          deny "Protected branch: ${b} 브랜치로 직접 push할 수 없습니다."
+          ;;
+      esac
+    done
+
+    # 현재 보호 브랜치에서 타겟 미지정 bare push 차단
+    # (origin 뒤에 비보호 브랜치명이 명시되면 허용)
+    CURRENT=$(get_branch)
+    if [[ -n "$CURRENT" && "$CURRENT" =~ $PROTECTED_RE ]]; then
+      if echo "$INPUT" | grep -qE 'origin[[:space:]]+[a-zA-Z]' 2>/dev/null; then
+        # origin 뒤에 브랜치명이 있음 → 보호 브랜치 대상은 위에서 이미 차단됨
+        # 여기까지 왔으면 비보호 브랜치 대상이므로 허용
+        :
+      else
+        # "git push" 또는 "git push origin" (타겟 브랜치 없음)
+        deny "Protected branch: ${CURRENT} 브랜치에서 직접 push할 수 없습니다. 작업 브랜치로 전환하세요."
+      fi
+    fi
+    ;;
+
+  # ─── git commit 보호 ───
+  *git*commit*)
+    # 보호 브랜치 커밋 차단
+    CURRENT=$(get_branch)
+    if [[ -n "$CURRENT" && "$CURRENT" =~ $PROTECTED_RE ]]; then
+      deny "Protected branch: ${CURRENT} 브랜치에서는 직접 커밋할 수 없습니다. 작업 브랜치를 먼저 생성하세요."
+    fi
+
+    # config/config.json 개인정보 커밋 차단
+    if git diff --cached --name-only 2>/dev/null | grep -q "config/config.json"; then
+      HAS_CREDS=$(git show :config/config.json 2>/dev/null | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    creds = data.get('webTest', {}).get('credentials', {})
+    if creds and any(v for v in creds.values() if isinstance(v, dict) and (v.get('id') or v.get('pw') or v.get('password'))):
+        print('yes')
+    else:
+        print('no')
+except:
+    print('no')
+" 2>/dev/null || echo "no")
+      if [ "$HAS_CREDS" = "yes" ]; then
+        deny "config/config.json에 개인정보(webTest.credentials)가 포함되어 있습니다. credentials를 비운 후 다시 커밋하세요."
+      fi
     fi
     ;;
 esac

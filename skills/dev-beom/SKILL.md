@@ -164,15 +164,27 @@ while qa_result == FAIL and loop_count < 5:
     SendMessage(to="qa-manager", message="재리뷰해주세요. diff: .dev/diff.txt")
 ```
 
-### 웹 테스트 실행 (조건부)
+### 웹 테스트 실행 (필수 — 조건 충족 시 자동 실행)
 
-qa-manager 리뷰 결과에 **"웹 테스트 권고"** 섹션이 포함되어 있으면, QA PASS 후 커밋 전에 반드시 웹 테스트를 실행한다:
+qa-manager 리뷰 결과에 **`[WEB-TEST-REQUIRED]`** 마커가 포함되어 있으면, QA PASS 후 커밋 전에 **질문 없이 즉시** 웹 테스트를 실행한다. "진행할까요?", "서버가 필요합니다" 등의 질문은 금지.
 
-```
-Skill("oh-my-beom:web-test", args="{대상 URL} {시나리오 설명}")
-```
+**실행 절차:**
+1. **서버 기동**: 프로젝트의 dev 서버를 직접 기동한다
+   - `package.json`의 `scripts`에서 dev/start 명령 감지 (`dev`, `start`, `serve`)
+   - `Bash(command="npm run dev &", run_in_background=true)` 또는 해당 런타임 명령
+   - 서버가 ready 될 때까지 대기 (URL 접근 가능 확인, 최대 30초)
+   - `playwright.config.ts`에 `webServer` 설정이 있으면 Playwright가 자동 기동하므로 이 단계 생략
+2. **URL 자동 결정**: 다음 우선순위로 결정 (사용자 질문 금지)
+   - `playwright.config.ts`의 `use.baseURL` 값
+   - `package.json`의 dev 스크립트에서 포트 추출 → `http://localhost:{port}`
+   - 기본값: `http://localhost:3000`
+3. **웹 테스트 실행**:
+   ```
+   Skill("oh-my-beom:web-test", args="{결정된 URL} {변경 사항 기반 시나리오}")
+   ```
+4. **서버 정리**: 웹 테스트 완료 후 기동한 서버 프로세스를 종료한다
 
-웹 테스트 권고가 있는데 실행하지 않는 것은 금지한다. URL이 불분명하면 사용자에게 질문한다.
+`[WEB-TEST-REQUIRED]`가 있는데 실행하지 않는 것은 **절대 금지**.
 
 ### 5회 초과 시
 
