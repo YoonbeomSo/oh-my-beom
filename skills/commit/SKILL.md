@@ -140,9 +140,9 @@ JIRA-123
 7. 커밋이 실패하면 `git reset HEAD`로 스테이징을 원복한 뒤, step 0에서 캡처한 기존 staged 파일이 있으면 `git add <파일>`로 재스테이징하여 원래 상태를 복원하고, 사용자에게 에러를 보고한다.
 8. `git show --stat HEAD`로 결과 표시
 
-## Push (자동)
+## Push
 
-커밋 완료 후 **질문 없이 자동으로** push한다:
+커밋 완료 후 사용자에게 push 여부를 확인한다. 사용자가 승인하면:
 
 1. 현재 브랜치명 확인: `git branch --show-current`
 2. **보호 브랜치 push 금지**: `master`, `main`, `dev`, `test`에는 절대 push하지 않는다. 해당 브랜치에 있으면 push를 거부하고 작업 브랜치 생성을 안내한다.
