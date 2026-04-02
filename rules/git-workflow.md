@@ -1,11 +1,24 @@
 # Git 워크플로우
 
+## 브랜치 전략
+
+| 브랜치 | 용도 |
+|--------|------|
+| `master` | 운영 배포 브랜치 |
+| `dev` | 개발 브랜치 |
+| `test` | 테스트 브랜치 |
+| `deploy/deploy_YYYYMMDD` | 배포 브랜치 |
+| `feat/*` | 기능 개발 브랜치 |
+| `hotfix/*` | 긴급 수정 브랜치 |
+
 ## 브랜치 규칙
 
-보호 브랜치(`main`, `master`, `develop`, `test`, `dev`)에서 직접 커밋하지 마라. 보호 브랜치 목록은 `config/config.json`의 `protectedBranches`를 참조한다.
+보호 브랜치(`master`, `main`, `dev`, `test`)에서 직접 커밋하지 마라.
 
 1. **파일을 수정하기 전에** 작업 브랜치를 먼저 생성하라. 수정 후에 브랜치를 만드는 것이 아니라, 브랜치를 만든 뒤 수정을 시작하라.
-2. 브랜치명에 이슈 키를 포함하라 (예: `feat/JIRA-123/login`). 이슈 키 패턴은 `config/config.json`의 `issueKey` 필드를 참조한다.
+2. 작업 브랜치는 `dev` 또는 `test`에서 분기한다. 브랜치명은 `feat/{작업내용}` 형식.
+3. push는 origin에 동일 이름의 `feat/{작업내용}` 브랜치로만 한다. `master`, `main`, `dev`, `test`에 직접 push 금지.
+4. commit, push 등 git 관련 명령은 반드시 개발자의 확인을 받을 것.
 
 ### 브랜치 정리 시 안전 규칙
 

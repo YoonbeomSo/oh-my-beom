@@ -15,6 +15,8 @@ argument-hint: "[Jira URL 또는 이슈키] <작업 설명>"
 3. **plan 파일을 반드시 생성한다.**
 4. **사용자에게 질문하지 않는다.** 모호한 사항은 합리적으로 가정하고 진행한다. 가정은 plan 파일에 기록한다.
 5. **멈추지 않는다.** 에러가 발생해도 대안을 찾아 계속 진행한다.
+6. **qa-manager 호출을 생략하지 않는다.** Phase 5는 변경 크기와 무관하게 반드시 실행한다. 자율 실행 모드에서도 QA 리뷰를 건너뛸 수 없다.
+7. **TeamCreate 직후 tmux-team-agent를 호출한다.** `Skill("oh-my-beom:tmux-team-agent")`를 생략하지 않는다.
 
 ## 인자
 
@@ -62,6 +64,8 @@ argument-hint: "[Jira URL 또는 이슈키] <작업 설명>"
 ## Phase 2: Plan
 `/dev-beom` Phase 2와 동일. planner 질문은 자동 가정으로 처리.
 
+**TeamCreate 직후 반드시 `Skill("oh-my-beom:tmux-team-agent")` 호출하여 빈 pane을 복구한다.**
+
 ## Phase 3: 설계
 `/dev-beom` Phase 3과 동일. architect 질문은 안전한 선택지로 자동 결정.
 
@@ -70,6 +74,8 @@ argument-hint: "[Jira URL 또는 이슈키] <작업 설명>"
 
 ## Phase 5: QA 리뷰 + 루프
 `/dev-beom` Phase 5와 동일하나 루프 확장 (위 참조).
+
+**웹 테스트 권고 시:** qa-manager가 웹 테스트를 권고하면 QA PASS 후 자동으로 `Skill("oh-my-beom:web-test")`를 실행한다. URL은 프로젝트 설정 또는 로컬 서버 주소를 자동 추정한다.
 
 ## Phase 6: 커밋
 사용자 확인 없이 자동 커밋:

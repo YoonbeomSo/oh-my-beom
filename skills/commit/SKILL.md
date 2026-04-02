@@ -26,6 +26,9 @@ allowed-tools:
   # 도구 존재 확인 - lint/test 내부 pre-check용
   - Bash(which:*)
   - Bash(test:*)
+  # git - 브랜치 생성/전환, push
+  - Bash(git checkout:*)
+  - Bash(git push:*)
   # git - 에러 복구, 이력 참고, 빌드 아티팩트 tracking 해제
   - Bash(git reset:*)
   - Bash(git log:*)
@@ -47,11 +50,18 @@ Arguments:
 - ARGS[0]만: 커밋 메시지로 사용. 이슈 키는 브랜치에서 파싱
 - ARGS[0] + ARGS[1]: ARGS[0]은 이슈 키 (`^[A-Z]+-[0-9]+$` 매칭 필수, 불일치 시 에러), ARGS[1]은 커밋 메시지
 
-## 사전 확인
+## 브랜치 확인 및 생성
 
-- Git 저장소인지 확인
-- **작업 디렉토리 보정**: `git rev-parse --show-toplevel`로 Git 루트를 확인한다. 현재 디렉토리와 다르면, 이후 모든 git/빌드 명령을 Git 루트 기준 서브셸 `(cd <git-root> && <명령>)`로 실행한다.
-- 커밋할 변경사항이 있는지 확인 (없으면: "커밋할 변경사항이 없습니다.")
+1. Git 저장소인지 확인
+2. **작업 디렉토리 보정**: `git rev-parse --show-toplevel`로 Git 루트를 확인한다. 현재 디렉토리와 다르면, 이후 모든 git/빌드 명령을 Git 루트 기준 서브셸 `(cd <git-root> && <명령>)`로 실행한다.
+3. `git branch --show-current`로 현재 브랜치 확인
+4. **보호 브랜치 체크**: 현재 브랜치가 `master`, `main`, `dev`, `test` 중 하나이면 직접 커밋하지 않는다.
+   - 사용자에게 작업 내용을 질문하고, `dev` 또는 `test`를 베이스로 `feat/{작업내용}` 브랜치를 생성한다.
+   - 베이스 브랜치 선택: 현재 `dev`에 있으면 `dev`, `test`에 있으면 `test`. `master`/`main`에 있으면 `dev` → `test` 순으로 존재 여부 확인 후 선택. 없으면 사용자에게 질문.
+   - 브랜치 생성: `git checkout -b feat/{작업내용}`
+5. 커밋할 변경사항이 있는지 확인 (없으면: "커밋할 변경사항이 없습니다.")
+
+## 사전 확인
 - 커밋 전에 lint와 test를 실행한다:
   - 프로젝트 타입 감지 (빌드/설정 파일 기준):
     | 파일 | 린트 | 테스트 |
@@ -80,18 +90,29 @@ Arguments:
 3. 어떤 파일이 수정/추가/삭제되었는지 파악
 
 **메시지 구조**:
-- **제목 (첫 줄)**: 변경의 핵심을 한국어로 요약. 40자 이내.
-  - 이슈 키 있으면: `[ISSUE-KEY] 메시지`
-  - 이슈 키 없으면: `메시지`
-- **본문 (빈 줄 이후)**: 구체적 변경사항을 `-` bullet으로 나열
+```
+<type>: <subject>
+
+- <변경 내용 1>
+- <변경 내용 2>
+
+<issue-ticket-code>
+```
+
+- **type**: `feat`, `fix`, `docs`, `refactor`, `test`, `chore` 등. 변경 성격에 맞게 선택
+- **subject**: 변경 대상 요약. 한국어로 작성
+- **본문**: 빈 줄 후, 코드 내용이 아닌 **핵심 변경 내용**을 `-`로 나열
+- **이슈 키**: 본문 끝에 빈 줄 후 이슈 키만 단독 기재. 이슈 키가 없으면 생략
 
 예시:
 ```
-[JIRA-123] 로그인 기능 추가
+feat: 로그인 기능 추가
 
 - 로그인 API 엔드포인트 구현
 - JWT 토큰 발급 로직 추가
 - 로그인 폼 UI 구현
+
+JIRA-123
 ```
 
 ## 커밋 실행
@@ -107,14 +128,27 @@ Arguments:
 6. HEREDOC 포맷으로 커밋:
    ```bash
    git commit -m "$(cat <<'EOF'
-   [ISSUE-KEY] 제목
+   <type>: <subject>
 
-   - 변경사항 1
-   - 변경사항 2
+   - 변경 내용 1
+   - 변경 내용 2
+
+   ISSUE-KEY
    EOF
    )"
    ```
 7. 커밋이 실패하면 `git reset HEAD`로 스테이징을 원복한 뒤, step 0에서 캡처한 기존 staged 파일이 있으면 `git add <파일>`로 재스테이징하여 원래 상태를 복원하고, 사용자에게 에러를 보고한다.
 8. `git show --stat HEAD`로 결과 표시
 
-**금지**: `Co-Authored-By` 라인을 절대 추가하지 말 것.
+## Push
+
+커밋 완료 후 사용자에게 push 여부를 확인한다. 사용자가 승인하면:
+
+1. 현재 브랜치명 확인: `git branch --show-current`
+2. **보호 브랜치 push 금지**: `master`, `main`, `dev`, `test`에는 절대 push하지 않는다. 해당 브랜치에 있으면 push를 거부하고 작업 브랜치 생성을 안내한다.
+3. origin에 동일 이름으로 push: `git push -u origin feat/{작업내용}`
+
+**금지사항**:
+- `Co-Authored-By` 라인을 절대 추가하지 말 것.
+- `master`, `main`, `dev`, `test` 브랜치에 직접 push 금지.
+- commit, push 등 git 관련 명령은 사용자 확인을 받을 것.
