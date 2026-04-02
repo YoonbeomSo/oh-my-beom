@@ -54,45 +54,30 @@
     "install": 300000
   },
   "contextLimits": {
-    "explorer": { "maxInputLines": 1000, "note": "프로젝트 탐색, 구조 파악" },
-    "researcher": { "maxInputLines": 1000, "note": "조사 요청 + 코드 맵" },
     "planner": { "maxInputLines": 800, "note": "요구사항 + 코드 맵" },
+    "architect": { "maxInputLines": 1500, "note": "plan + 코드 맵 + 컨벤션" },
     "coder": { "maxInputLines": 2000, "note": "설계서 + 코드 맵 + 참조 코드" },
-    "reviewer": { "maxInputLines": 1500, "note": "diff + 설계서" },
-    "critic": { "maxInputLines": 800, "note": "계획서 + 기준 문서" },
-    "todo-verifier": { "maxInputLines": 1000, "note": "계획 파일 + 코드 검증 결과" },
-    "plan-visualizer": { "maxInputLines": 500, "note": "계획 MD 파싱" },
-    "web-test-qa": { "maxInputLines": 1500, "note": "PRD 수용기준 + diff + 코드맵 + 테스트 코드" }
+    "reviewer": { "maxInputLines": 1500, "note": "diff + plan 완료 기준 + 코드 맵" }
+  },
+  "webTest": {
+    "triggerConditions": [
+      "프론트엔드 프로젝트 (React, Vue, Next.js, Nuxt 등)",
+      "어드민/백오피스 프로젝트",
+      "변경 범위에 프론트엔드 코드 포함 (*.tsx, *.vue, *.html 등)"
+    ],
+    "detectPatterns": {
+      "frontend": ["src/pages/**", "src/views/**", "src/components/**", "app/**/*.tsx", "pages/**/*.vue"],
+      "admin": ["**/admin/**", "**/backoffice/**", "**/back-office/**", "**/management/**"]
+    },
+    "credentials": {}
   },
   "verification": {
     "enabled": true,
     "planDirectory": "docs/plan",
-    "showDirectory": "docs/show",
-    "autoVisualize": true,
     "mechanicalChecks": {
       "lint": true,
       "test": true,
       "build": true
-    },
-    "hookTimeouts": {
-      "taskVerifier": 300,
-      "idleChecker": 10
-    },
-    "maxVerificationRetries": 2
-  },
-  "uiTesting": {
-    "enabled": true,
-    "frontendFilePatterns": [
-      "*.html", "*.htm", "*.jsx", "*.tsx", "*.vue", "*.svelte",
-      "*.css", "*.scss", "*.less", "*.astro"
-    ],
-    "devServerConfigFiles": [
-      "vite.config.*", "next.config.*", "nuxt.config.*",
-      "svelte.config.*", "webpack.config.*", "astro.config.*"
-    ],
-    "devServerCommand": null,
-    "devServerUrl": "http://localhost:3000",
-    "devServerStartTimeout": 30000,
-    "maxHealerRetries": 2
+    }
   }
 }

@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>oh-my-beom Harness Architecture</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --orange: #f0883e;
+    --cyan: #39d2c0;
+    --pink: #f778ba;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, 'Pretendard', sans-serif; background: var(--bg); color: var(--text); line-height:1.6; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #1a1f35 0%, #0d1117 100%); padding: 40px 0; border-bottom: 1px solid var(--border); text-align: center; }
+  .header h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 8px; }
+  .header h1 span { color: var(--accent); }
+  .header p { color: var(--text-muted); font-size: 1rem; }
+  .stats-row { display: flex; justify-content: center; gap: 32px; margin-top: 20px; flex-wrap: wrap; }
+  .stat { text-align: center; }
+  .stat-num { font-size: 2rem; font-weight: 700; }
+  .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Navigation */
+  .nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; gap: 0; overflow-x: auto; }
+  .nav-btn { background: none; border: none; color: var(--text-muted); padding: 14px 20px; cursor: pointer; font-size: 0.85rem; white-space: nowrap; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .nav-btn:hover { color: var(--text); background: var(--surface2); }
+  .nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Content */
+  .container { max-width: 1200px; margin: 0 auto; padding: 32px 20px; }
+  .section { display: none; animation: fadeIn 0.3s ease; }
+  .section.active { display: block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  .card h2 { font-size: 1.3rem; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .card h3 { font-size: 1rem; margin: 16px 0 8px; color: var(--accent); }
+
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+
+  /* Skill cards */
+  .skill-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 18px; transition: all 0.2s; cursor: default; }
+  .skill-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(88,166,255,0.1); }
+  .skill-card .name { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+  .skill-card .desc { font-size: 0.8rem; color: var(--text-muted); }
+  .skill-card .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; margin-top: 8px; }
+  .badge-main { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .badge-util { background: rgba(139,148,158,0.15); color: var(--text-muted); }
+  .badge-ext { background: rgba(188,140,255,0.15); color: var(--purple); }
+
+  /* Agent cards */
+  .agent-card { background: var(--surface2); border-left: 3px solid; border-radius: 8px; padding: 16px; }
+  .agent-card.planner { border-color: var(--accent); }
+  .agent-card.architect { border-color: var(--cyan); }
+  .agent-card.coder { border-color: var(--green); }
+  .agent-card.qa { border-color: var(--yellow); }
+  .agent-card .role { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+  .agent-card .model-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,0.06); color: var(--text-muted); }
+  .agent-card .do-list, .agent-card .dont-list { font-size: 0.8rem; margin-top: 8px; }
+  .agent-card .do-list li { color: var(--green); list-style: none; }
+  .agent-card .do-list li::before { content: "O "; font-weight: 700; }
+  .agent-card .dont-list li { color: var(--red); list-style: none; }
+  .agent-card .dont-list li::before { content: "X "; font-weight: 700; }
+
+  /* Flow diagram */
+  .flow { display: flex; flex-direction: column; gap: 0; align-items: center; }
+  .flow-step { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 24px; min-width: 320px; text-align: center; position: relative; }
+  .flow-step .step-title { font-weight: 700; font-size: 0.9rem; }
+  .flow-step .step-detail { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+  .flow-step.setup { border-color: var(--text-muted); }
+  .flow-step.plan { border-color: var(--accent); }
+  .flow-step.design { border-color: var(--cyan); }
+  .flow-step.impl { border-color: var(--green); }
+  .flow-step.review { border-color: var(--yellow); }
+  .flow-step.commit { border-color: var(--purple); }
+  .flow-step.loop { border-color: var(--orange); background: rgba(240,136,62,0.05); }
+  .flow-step.fail { border-color: var(--red); background: rgba(248,81,73,0.05); }
+  .flow-arrow { color: var(--text-muted); font-size: 1.2rem; padding: 4px 0; }
+  .flow-branch { display: flex; gap: 20px; align-items: flex-start; }
+  .flow-branch-label { font-size: 0.75rem; color: var(--text-muted); padding: 4px 10px; background: var(--surface); border-radius: 6px; margin-bottom: 4px; text-align: center; }
+
+  /* QA Loop */
+  .qa-loop-box { border: 2px dashed var(--orange); border-radius: 14px; padding: 20px; margin: 12px 0; position: relative; }
+  .qa-loop-box .loop-label { position: absolute; top: -12px; left: 20px; background: var(--bg); padding: 0 10px; color: var(--orange); font-weight: 700; font-size: 0.85rem; }
+  .qa-loop-inner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .qa-loop-inner .flow-step { min-width: 200px; }
+
+  /* Directory tree */
+  .tree { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.82rem; line-height: 1.8; }
+  .tree .dir { color: var(--accent); font-weight: 600; }
+  .tree .file { color: var(--text-muted); }
+  .tree .comment { color: #484f58; }
+  .tree .highlight { color: var(--green); }
+
+  /* Table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .tbl th { text-align: left; padding: 10px 14px; background: var(--surface2); color: var(--text-muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .tbl tr:hover td { background: rgba(88,166,255,0.03); }
+
+  /* Tags */
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; }
+  .tag-blue { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .tag-green { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-yellow { background: rgba(210,153,34,0.15); color: var(--yellow); }
+  .tag-red { background: rgba(248,81,73,0.15); color: var(--red); }
+  .tag-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .tag-cyan { background: rgba(57,210,192,0.15); color: var(--cyan); }
+
+  /* Prohibition list */
+  .prohibit { list-style: none; }
+  .prohibit li { padding: 8px 14px; border-left: 3px solid var(--red); margin-bottom: 6px; background: rgba(248,81,73,0.04); border-radius: 0 6px 6px 0; font-size: 0.85rem; }
+
+  /* Context Slice */
+  .ctx-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .ctx-bar .label { width: 90px; font-size: 0.8rem; font-weight: 600; text-align: right; }
+  .ctx-bar .bar { flex: 1; height: 28px; border-radius: 6px; display: flex; align-items: center; padding: 0 12px; font-size: 0.75rem; font-weight: 600; }
+
+  /* Hook visual */
+  .hook-card { border-radius: 10px; padding: 16px; border: 1px solid var(--border); background: var(--surface2); }
+  .hook-card .hook-name { font-weight: 700; margin-bottom: 4px; }
+  .hook-card .hook-event { font-size: 0.75rem; color: var(--text-muted); }
+  .hook-card .hook-desc { font-size: 0.82rem; margin-top: 8px; }
+
+  /* Doc template */
+  .doc-preview { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; line-height: 1.7; overflow-x: auto; }
+  .doc-preview .md-h1 { color: var(--accent); font-weight: 700; font-size: 1rem; }
+  .doc-preview .md-h2 { color: var(--cyan); font-weight: 600; font-size: 0.9rem; margin-top: 10px; }
+  .doc-preview .md-meta { color: var(--text-muted); }
+  .doc-preview .md-todo { color: var(--green); }
+  .doc-preview .md-todo-done { color: var(--text-muted); text-decoration: line-through; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .flow-branch { flex-direction: column; align-items: center; }
+    .stats-row { gap: 16px; }
+    .nav-btn { padding: 12px 14px; font-size: 0.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1><span>oh-my-beom</span> Harness Architecture</h1>
+  <p>에이전트 팀 기반 개발 파이프라인 구조 시각화</p>
+  <div class="stats-row">
+    <div class="stat"><div class="stat-num" style="color:var(--accent)">4</div><div class="stat-label">진입점 스킬</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--green)">4</div><div class="stat-label">에이전트</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--yellow)">11</div><div class="stat-label">유틸리티 스킬</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--red)">2</div><div class="stat-label">안전 훅</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--purple)">2</div><div class="stat-label">Rules</div></div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<div class="nav">
+  <div class="nav-inner">
+    <button class="nav-btn active" onclick="showSection('overview')">Overview</button>
+    <button class="nav-btn" onclick="showSection('pipeline')">Pipeline Flow</button>
+    <button class="nav-btn" onclick="showSection('agents')">Agents</button>
+    <button class="nav-btn" onclick="showSection('skills')">Skills</button>
+    <button class="nav-btn" onclick="showSection('qaloop')">QA Loop</button>
+    <button class="nav-btn" onclick="showSection('hooks')">Hooks & Rules</button>
+    <button class="nav-btn" onclick="showSection('docs')">Documents</button>
+    <button class="nav-btn" onclick="showSection('tree')">Directory</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ===== OVERVIEW ===== -->
+<div class="section active" id="overview">
+  <div class="card">
+    <h2>Architecture Overview</h2>
+    <p style="color:var(--text-muted); margin-bottom:20px;">4개 진입점 스킬이 에이전트 팀을 강제 실행하여, plan 작성부터 커밋까지 전체 개발 사이클을 자동화합니다.</p>
+
+    <div style="display:flex; flex-wrap:wrap; gap:16px; justify-content:center; margin:30px 0;">
+      <!-- Entry Points -->
+      <div style="text-align:center;">
+        <div style="color:var(--text-muted); font-size:0.75rem; margin-bottom:10px;">ENTRY POINTS</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="background:rgba(88,166,255,0.1); border:1px solid var(--accent); border-radius:8px; padding:10px 20px; font-weight:700; font-size:0.85rem;">/dev-beom</div>
+          <div style="background:rgba(63,185,80,0.1); border:1px solid var(--green); border-radius:8px; padding:10px 20px; font-weight:700; font-size:0.85rem;">/fix-beom</div>
+          <div style="background:rgba(210,153,34,0.1); border:1px solid var(--yellow); border-radius:8px; padding:10px 20px; font-weight:700; font-size:0.85rem;">/analysis-beom</div>
+          <div style="background:rgba(188,140,255,0.1); border:1px solid var(--purple); border-radius:8px; padding:10px 20px; font-weight:700; font-size:0.85rem;">/persist-beom</div>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; color:var(--text-muted); font-size:1.5rem; padding:0 10px;">&#x2192;</div>
+
+      <!-- Team -->
+      <div style="text-align:center;">
+        <div style="color:var(--text-muted); font-size:0.75rem; margin-bottom:10px;">AGENT TEAM</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="background:rgba(88,166,255,0.08); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:8px; padding:10px 20px; text-align:left;">
+            <div style="font-weight:700; font-size:0.85rem;">planner</div>
+            <div style="font-size:0.7rem; color:var(--text-muted);">plan 관리, TODO</div>
+          </div>
+          <div style="background:rgba(57,210,192,0.08); border:1px solid var(--border); border-left:3px solid var(--cyan); border-radius:8px; padding:10px 20px; text-align:left;">
+            <div style="font-weight:700; font-size:0.85rem;">architect</div>
+            <div style="font-size:0.7rem; color:var(--text-muted);">기술 설계</div>
+          </div>
+          <div style="background:rgba(63,185,80,0.08); border:1px solid var(--border); border-left:3px solid var(--green); border-radius:8px; padding:10px 20px; text-align:left;">
+            <div style="font-weight:700; font-size:0.85rem;">coder</div>
+            <div style="font-size:0.7rem; color:var(--text-muted);">코드 구현</div>
+          </div>
+          <div style="background:rgba(210,153,34,0.08); border:1px solid var(--border); border-left:3px solid var(--yellow); border-radius:8px; padding:10px 20px; text-align:left;">
+            <div style="font-weight:700; font-size:0.85rem;">qa-manager</div>
+            <div style="font-size:0.7rem; color:var(--text-muted);">코드 리뷰</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; color:var(--text-muted); font-size:1.5rem; padding:0 10px;">&#x2192;</div>
+
+      <!-- Outputs -->
+      <div style="text-align:center;">
+        <div style="color:var(--text-muted); font-size:0.75rem; margin-bottom:10px;">OUTPUTS</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 20px; font-size:0.85rem;">docs/plan/*.md</div>
+          <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 20px; font-size:0.85rem;">docs/result/*.md</div>
+          <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 20px; font-size:0.85rem;">docs/issue/*.md</div>
+          <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 20px; font-size:0.85rem;">Git Commit + PR</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Entry Point Comparison -->
+  <div class="card">
+    <h2>Entry Point Comparison</h2>
+    <table class="tbl">
+      <thead><tr><th>스킬</th><th>용도</th><th>팀 구성</th><th>사용자 질문</th><th>QA 5회 초과</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong style="color:var(--accent)">/dev-beom</strong></td>
+          <td>기능 개발</td>
+          <td>planner + architect + coder + qa</td>
+          <td><span class="tag tag-green">질문 O</span></td>
+          <td>issue 보고 + 중단</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--green)">/fix-beom</strong></td>
+          <td>버그 수정</td>
+          <td>planner + coder + qa</td>
+          <td><span class="tag tag-green">질문 O</span></td>
+          <td>issue 보고 + 중단</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--yellow)">/analysis-beom</strong></td>
+          <td>분석</td>
+          <td>Explore 에이전트 (팀 없음)</td>
+          <td><span class="tag tag-green">질문 O</span></td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--purple)">/persist-beom</strong></td>
+          <td>자율 실행</td>
+          <td>planner + architect + coder + qa</td>
+          <td><span class="tag tag-red">질문 X (자율)</span></td>
+          <td>접근 변경 + 재시도</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== PIPELINE FLOW ===== -->
+<div class="section" id="pipeline">
+  <div class="card">
+    <h2>/dev-beom Pipeline Flow</h2>
+    <p style="color:var(--text-muted); margin-bottom:20px;">6단계 Phase를 순서대로 실행. Phase를 건너뛰지 않습니다.</p>
+
+    <div class="flow">
+      <div class="flow-step setup" style="border-left:4px solid var(--text-muted);">
+        <div class="step-title">Phase 1: Setup</div>
+        <div class="step-detail">Jira 조회(선택) &rarr; Git 브랜치 생성 &rarr; 코드 맵 생성(.dev/codemap.md)</div>
+      </div>
+      <div class="flow-arrow">&darr;</div>
+
+      <div class="flow-step plan" style="border-left:4px solid var(--accent);">
+        <div class="step-title">Phase 2: Plan <span class="tag tag-blue">planner</span></div>
+        <div class="step-detail">TeamCreate(4명) &rarr; planner가 docs/plan/plan_{작업}.md 생성 (TODO 포함)</div>
+      </div>
+      <div class="flow-arrow">&darr;</div>
+
+      <div class="flow-step design" style="border-left:4px solid var(--cyan);">
+        <div class="step-title">Phase 3: Design <span class="tag tag-cyan">architect</span></div>
+        <div class="step-detail">기술 설계 + 비판적 자기검토 &rarr; .dev/design.md 저장</div>
+      </div>
+      <div class="flow-arrow">&darr;</div>
+
+      <div class="flow-step impl" style="border-left:4px solid var(--green);">
+        <div class="step-title">Phase 4: Implementation <span class="tag tag-green">coder</span> <span class="tag tag-green">TDD</span></div>
+        <div class="step-detail">
+          <span style="color:var(--red);">RED</span> 실패 테스트 &rarr;
+          <span style="color:var(--green);">GREEN</span> 최소 구현 &rarr;
+          <span style="color:var(--accent);">REFACTOR</span> 정리
+          &rarr; git add &rarr; diff 수집(.dev/diff.txt)
+        </div>
+      </div>
+      <div class="flow-arrow">&darr;</div>
+
+      <div class="flow-step review" style="border-left:4px solid var(--yellow);">
+        <div class="step-title">Phase 5: QA Review <span class="tag tag-yellow">qa-manager</span></div>
+        <div class="step-detail">diff + plan 완료 기준 대조 &rarr; PASS / FAIL 판정</div>
+      </div>
+
+      <div class="flow-arrow">&darr;</div>
+
+      <div class="flow-branch">
+        <div style="text-align:center;">
+          <div class="flow-branch-label" style="background:rgba(63,185,80,0.1); color:var(--green);">PASS</div>
+          <div class="flow-arrow">&darr;</div>
+          <div class="flow-step commit" style="border-left:4px solid var(--purple); min-width:200px;">
+            <div class="step-title">Phase 6: Commit</div>
+            <div class="step-detail">/commit &rarr; result 보고 &rarr; COMPLETED</div>
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <div class="flow-branch-label" style="background:rgba(248,81,73,0.1); color:var(--red);">FAIL</div>
+          <div class="flow-arrow">&darr;</div>
+          <div class="flow-step loop" style="min-width:200px;">
+            <div class="step-title">QA Loop (max 5)</div>
+            <div class="step-detail">planner &rarr; coder &rarr; qa &rarr; 반복</div>
+          </div>
+          <div class="flow-arrow">&darr;</div>
+          <div class="flow-step fail" style="min-width:200px;">
+            <div class="step-title">5회 초과</div>
+            <div class="step-detail">docs/issue/issue_{작업}.md 생성</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context Slicing -->
+  <div class="card">
+    <h2>Context Slicing</h2>
+    <p style="color:var(--text-muted); margin-bottom:16px;">에이전트별 필요한 정보만 전달하여 context window를 효율적으로 사용합니다.</p>
+
+    <div class="ctx-bar">
+      <div class="label" style="color:var(--accent);">planner</div>
+      <div class="bar" style="background:rgba(88,166,255,0.12); width:40%;">ARGS + CodeMap + Jira</div>
+      <div style="font-size:0.75rem; color:var(--text-muted);">800 lines</div>
+    </div>
+    <div class="ctx-bar">
+      <div class="label" style="color:var(--cyan);">architect</div>
+      <div class="bar" style="background:rgba(57,210,192,0.12); width:75%;">Plan + CodeMap + Convention</div>
+      <div style="font-size:0.75rem; color:var(--text-muted);">1500 lines</div>
+    </div>
+    <div class="ctx-bar">
+      <div class="label" style="color:var(--green);">coder</div>
+      <div class="bar" style="background:rgba(63,185,80,0.12); width:100%;">Design + CodeMap + Source</div>
+      <div style="font-size:0.75rem; color:var(--text-muted);">2000 lines</div>
+    </div>
+    <div class="ctx-bar">
+      <div class="label" style="color:var(--yellow);">qa-manager</div>
+      <div class="bar" style="background:rgba(210,153,34,0.12); width:75%;">Diff(file) + Plan TODO + CodeMap</div>
+      <div style="font-size:0.75rem; color:var(--text-muted);">1500 lines</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== AGENTS ===== -->
+<div class="section" id="agents">
+  <div class="card">
+    <h2>Agent Team</h2>
+    <div class="grid-2">
+      <div class="agent-card planner">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="role">planner</div>
+          <span class="model-badge">inherit (세션 모델)</span>
+        </div>
+        <div style="font-size:0.82rem; color:var(--text-muted); margin:6px 0;">plan 관리, TODO, QA 이슈 수신, result/issue 보고서</div>
+        <h3 style="color:var(--green); font-size:0.8rem;">Tools</h3>
+        <div style="font-size:0.78rem;">Read, Write, Edit, Glob, Grep</div>
+        <h3 style="color:var(--green); font-size:0.8rem;">Write 범위</h3>
+        <div style="font-size:0.78rem;"><strong style="color:var(--red);">Write 제한:</strong> docs/plan/ &middot; docs/result/ &middot; docs/issue/</div>
+        <ul class="do-list">
+          <li>plan 작성/수정, TODO 관리</li>
+          <li>QA 이슈 수신 &rarr; 수정 방향 결정</li>
+          <li>result/issue 보고서 작성</li>
+        </ul>
+        <ul class="dont-list">
+          <li>코드 구현, 기술 설계</li>
+          <li>소스 코드 파일 Write/Edit</li>
+        </ul>
+      </div>
+
+      <div class="agent-card architect">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="role">architect</div>
+          <span class="model-badge">inherit (세션 모델)</span>
+        </div>
+        <div style="font-size:0.82rem; color:var(--text-muted); margin:6px 0;">기술 설계 + 비판적 자기검토</div>
+        <h3 style="color:var(--green); font-size:0.8rem;">Tools</h3>
+        <div style="font-size:0.78rem;">Read, Glob, Grep (읽기 전용)</div>
+        <h3 style="color:var(--green); font-size:0.8rem;">자기검토 3항목</h3>
+        <div style="font-size:0.78rem;">1. 암묵적 가정 &nbsp; 2. 불필요한 복잡성 &nbsp; 3. 문제 정의</div>
+        <ul class="do-list">
+          <li>기술 설계, 영향 분석</li>
+          <li>설계 후 비판적 검토</li>
+        </ul>
+        <ul class="dont-list">
+          <li>코드 작성, 비즈니스 결정</li>
+        </ul>
+      </div>
+
+      <div class="agent-card coder">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="role">coder</div>
+          <span class="model-badge">sonnet</span>
+        </div>
+        <div style="font-size:0.82rem; color:var(--text-muted); margin:6px 0;">설계 기반 코드 구현/수정, Red-Green-Refactor TDD</div>
+        <h3 style="color:var(--green); font-size:0.8rem;">Tools</h3>
+        <div style="font-size:0.78rem;">Read, Write, Edit, Glob, Grep, Bash</div>
+        <h3 style="color:var(--green); font-size:0.8rem;">TDD 사이클</h3>
+        <div style="font-size:0.78rem; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+          <span class="tag tag-red">RED</span> 실패 테스트
+          <span style="color:var(--text-muted);">&rarr;</span>
+          <span class="tag tag-green">GREEN</span> 최소 구현
+          <span style="color:var(--text-muted);">&rarr;</span>
+          <span class="tag tag-blue">REFACTOR</span> 정리
+        </div>
+        <h3 style="color:var(--green); font-size:0.8rem;">보고 형식</h3>
+        <div style="font-size:0.78rem;">[N/M] 진행 보고 + RED&rarr;GREEN 상태 포함</div>
+        <ul class="do-list">
+          <li>TDD 기반 구현, 빌드/테스트</li>
+          <li>QA 피드백 반영 수정</li>
+        </ul>
+        <ul class="dont-list">
+          <li>PR 머지, 보호 브랜치 커밋</li>
+          <li>설계 변경, 비즈니스 판단</li>
+        </ul>
+      </div>
+
+      <div class="agent-card qa">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="role">qa-manager</div>
+          <span class="model-badge">sonnet</span>
+        </div>
+        <div style="font-size:0.82rem; color:var(--text-muted); margin:6px 0;">코드 리뷰, 스펙 검증, plan 완료 기준 대조</div>
+        <h3 style="color:var(--green); font-size:0.8rem;">Tools</h3>
+        <div style="font-size:0.78rem;">Read, Glob, Grep (읽기 전용)</div>
+        <h3 style="color:var(--green); font-size:0.8rem;">판정 형식</h3>
+        <div style="font-size:0.78rem;"><span class="tag tag-green">PASS</span> 또는 <span class="tag tag-red">FAIL (Critical N건)</span></div>
+        <ul class="do-list">
+          <li>코드 리뷰 6단계 (SCOPE~SPRING)</li>
+          <li>plan TODO 충족 검증</li>
+          <li>기본 보안 체크 (SQLi, XSS)</li>
+        </ul>
+        <ul class="dont-list">
+          <li>직접 코드 수정</li>
+          <li>비즈니스 요구사항 재정의</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SKILLS ===== -->
+<div class="section" id="skills">
+  <div class="card">
+    <h2>Main Skills (4)</h2>
+    <div class="grid-2">
+      <div class="skill-card" style="border-color:var(--accent);">
+        <div class="name" style="color:var(--accent);">/dev-beom</div>
+        <div class="desc">기능 개발. planner+architect+coder+qa-manager 팀을 실행하여 설계&rarr;구현&rarr;리뷰&rarr;커밋까지 수행</div>
+        <span class="badge badge-main">TeamCreate 강제</span>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">내부 호출: fetch-jira-issue, tmux-team-agent, <strong>tdd</strong>, commit</div>
+      </div>
+      <div class="skill-card" style="border-color:var(--green);">
+        <div class="name" style="color:var(--green);">/fix-beom</div>
+        <div class="desc">버그 수정. planner+coder+qa-manager 팀. 버그 분석 모드 + 최소 변경 원칙</div>
+        <span class="badge badge-main">TeamCreate 강제</span>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">architect 없음 (필요 시 추가). 버그 재현 테스트 TDD</div>
+      </div>
+      <div class="skill-card" style="border-color:var(--yellow);">
+        <div class="name" style="color:var(--yellow);">/analysis-beom</div>
+        <div class="desc">코드/정책 분석. Explore 에이전트로 탐색&rarr;수집&rarr;보고서 생성</div>
+        <span class="badge badge-util">팀 없음</span>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">읽기 전용. 소스 수정 안 함</div>
+      </div>
+      <div class="skill-card" style="border-color:var(--purple);">
+        <div class="name" style="color:var(--purple);">/persist-beom</div>
+        <div class="desc">자율 실행. dev-beom과 동일 팀이나 질문 없이 끝까지 자율 진행</div>
+        <span class="badge badge-main">TeamCreate 강제</span>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">가정으로 진행, 자동 커밋</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Utility Skills (11)</h2>
+    <div class="grid-3">
+      <div class="skill-card"><div class="name">/commit</div><div class="desc">Git 커밋. 이슈키 파싱, lint/test pre-check, 민감파일 감지</div><span class="badge badge-util">Git</span></div>
+      <div class="skill-card"><div class="name">/pull-request</div><div class="desc">PR 생성. 커밋 히스토리 기반 제목/본문 자동 생성</div><span class="badge badge-util">Git</span></div>
+      <div class="skill-card"><div class="name">/worktree</div><div class="desc">Git worktree 자동화. create/switch/done/remove</div><span class="badge badge-util">Git</span></div>
+      <div class="skill-card" style="border-color:var(--pink);">
+        <div class="name" style="color:var(--pink);">/web-test</div>
+        <div class="desc">E2E 웹 테스트. Playwright로 계획&rarr;생성&rarr;실행&rarr;수정. OTP 바이패스 지원</div>
+        <span class="badge" style="background:rgba(247,120,186,0.15); color:var(--pink);">Playwright</span>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">QA 리뷰 후 프론트/어드민 프로젝트에서 자동 권고</div>
+      </div>
+      <div class="skill-card" style="border-color:var(--green);">
+        <div class="name" style="color:var(--green);">/tdd</div>
+        <div class="desc">TDD 방법론. Red-Green-Refactor 사이클. coder 에이전트 구현 시 적용</div>
+        <span class="badge badge-main">방법론</span>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">dev-beom, fix-beom이 coder에게 TDD 지시 시 참조</div>
+      </div>
+      <div class="skill-card"><div class="name">/fetch-jira-issue</div><div class="desc">Jira 이슈 조회. MCP 우선, REST fallback</div><span class="badge badge-ext">내부 유틸</span></div>
+      <div class="skill-card"><div class="name">/fetch-jenkins</div><div class="desc">Jenkins 빌드 상태/트리거/로그 확인</div><span class="badge badge-ext">외부 연동</span></div>
+      <div class="skill-card"><div class="name">/tmux-team-agent</div><div class="desc">TeamCreate 후 빈 tmux pane 감지 + CLI 복구</div><span class="badge badge-util">인프라</span></div>
+      <div class="skill-card"><div class="name">/humanizer</div><div class="desc">AI 글쓰기 패턴 제거. 40+ 패턴 감지/교정</div><span class="badge badge-util">글쓰기</span></div>
+      <div class="skill-card"><div class="name">/hecto-setup</div><div class="desc">HectoProject용 CLAUDE.md 설정</div><span class="badge badge-util">설정</span></div>
+      <div class="skill-card"><div class="name">/new-context</div><div class="desc">새 도메인 컨텍스트 디렉토리 생성</div><span class="badge badge-util">설정</span></div>
+    </div>
+  </div>
+
+  <!-- Skill Chaining -->
+  <div class="card">
+    <h2>Skill Chaining</h2>
+    <p style="color:var(--text-muted); margin-bottom:16px;">메인 스킬이 내부에서 호출하는 유틸리티 스킬 관계도</p>
+    <table class="tbl">
+      <thead><tr><th>메인 스킬</th><th>내부 호출</th></tr></thead>
+      <tbody>
+        <tr><td><strong style="color:var(--accent)">/dev-beom</strong></td><td>/fetch-jira-issue (선택) &rarr; /tmux-team-agent &rarr; <strong style="color:var(--green);">/tdd</strong> (coder 구현 시) &rarr; /commit</td></tr>
+        <tr><td><strong style="color:var(--green)">/fix-beom</strong></td><td>/fetch-jira-issue (선택) &rarr; /tmux-team-agent &rarr; <strong style="color:var(--green);">/tdd</strong> (coder 수정 시) &rarr; /commit</td></tr>
+        <tr><td><strong style="color:var(--purple)">/persist-beom</strong></td><td>/fetch-jira-issue (선택) &rarr; /tmux-team-agent &rarr; <strong style="color:var(--green);">/tdd</strong> (coder 구현 시) &rarr; /commit (자동)</td></tr>
+        <tr><td><strong style="color:var(--yellow)">/analysis-beom</strong></td><td>/fetch-jira-issue (선택)</td></tr>
+        <tr><td><strong style="color:var(--pink)">/web-test</strong></td><td>OTP 바이패스(조건부) &rarr; playwright-test-planner &rarr; playwright-test-generator &rarr; playwright-test-healer</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== QA LOOP ===== -->
+<div class="section" id="qaloop">
+  <div class="card">
+    <h2>QA Loop Protocol</h2>
+    <p style="color:var(--text-muted); margin-bottom:20px;">qa-manager가 Critical 이슈를 발견하면 수정 루프가 시작됩니다. <strong>생략 불가.</strong></p>
+
+    <div style="text-align:center; margin: 20px 0;">
+      <div class="flow-step review" style="display:inline-block; border-left:4px solid var(--yellow);">
+        <div class="step-title">qa-manager 리뷰</div>
+        <div class="step-detail">diff + plan 완료 기준 대조</div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:center; gap: 40px; margin: 10px 0;">
+      <div style="text-align:center;">
+        <div class="flow-branch-label" style="background:rgba(63,185,80,0.1); color:var(--green);">PASS</div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step commit" style="display:inline-block; border-left:4px solid var(--purple);">
+          <div class="step-title">Commit &rarr; Result</div>
+        </div>
+      </div>
+
+      <div style="text-align:center;">
+        <div class="flow-branch-label" style="background:rgba(248,81,73,0.1); color:var(--red);">FAIL (Critical N건)</div>
+        <div class="flow-arrow">&darr;</div>
+
+        <div class="qa-loop-box">
+          <div class="loop-label">QA LOOP (max 5 rounds)</div>
+          <div class="qa-loop-inner">
+            <div class="flow-step plan" style="border-left:3px solid var(--accent); min-width:160px;">
+              <div class="step-title" style="font-size:0.82rem;">1. planner</div>
+              <div class="step-detail">plan 수정 + 수정 방향</div>
+            </div>
+            <div style="color:var(--text-muted);">&rarr;</div>
+            <div class="flow-step impl" style="border-left:3px solid var(--green); min-width:160px;">
+              <div class="step-title" style="font-size:0.82rem;">2. coder</div>
+              <div class="step-detail">피드백 반영 수정</div>
+            </div>
+            <div style="color:var(--text-muted);">&rarr;</div>
+            <div class="flow-step review" style="border-left:3px solid var(--yellow); min-width:160px;">
+              <div class="step-title" style="font-size:0.82rem;">3. qa-manager</div>
+              <div class="step-detail">재리뷰 &rarr; PASS/FAIL</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow-arrow">&darr; 5회 초과</div>
+        <div class="flow-step fail" style="display:inline-block;">
+          <div class="step-title">Issue Report</div>
+          <div class="step-detail">docs/issue/issue_{작업}.md 생성 &rarr; 사용자에게 보고</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Web Test Integration <span class="tag" style="background:rgba(247,120,186,0.15); color:var(--pink);">/web-test</span></h2>
+    <p style="color:var(--text-muted); margin-bottom:16px;">qa-manager가 코드 리뷰 PASS 후, 프론트엔드/어드민 프로젝트에서 E2E 웹 테스트를 권고합니다.</p>
+
+    <div style="display:flex; flex-wrap:wrap; gap:16px; margin:20px 0;">
+      <div style="flex:1; min-width:280px;">
+        <h3 style="color:var(--pink); margin-bottom:10px;">호출 조건</h3>
+        <table class="tbl">
+          <thead><tr><th>조건</th><th>탐지 패턴</th></tr></thead>
+          <tbody>
+            <tr><td>프론트엔드 프로젝트</td><td><code>*.tsx, *.jsx, *.vue, *.svelte</code></td></tr>
+            <tr><td>어드민/백오피스</td><td><code>**/admin/**, **/backoffice/**</code></td></tr>
+            <tr><td>UI 변경 포함</td><td>컴포넌트/라우팅/폼 로직 diff</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="flex:1; min-width:280px;">
+        <h3 style="color:var(--pink); margin-bottom:10px;">6 Phase 파이프라인</h3>
+        <div style="display:flex; flex-direction:column; gap:6px; font-size:0.82rem;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="tag tag-blue">1</span> Setup: URL + Playwright 확인 + 계정 조회
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="tag tag-red">2</span> OTP 바이패스: 탐지 &rarr; 사용자 확인 &rarr; 주석 처리
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="tag tag-cyan">3</span> 테스트 계획: playwright-test-planner 에이전트
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="tag tag-green">4</span> 테스트 생성: playwright-test-generator &rarr; .spec.ts
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="tag tag-yellow">5</span> 실행 + 수정: playwright-test-healer (max 3회)
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="tag tag-purple">6</span> OTP 원복 + 결과 보고 <strong style="color:var(--red);">(무조건 실행)</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:rgba(248,81,73,0.05); border:1px solid rgba(248,81,73,0.2); border-radius:8px; padding:14px; margin-top:12px;">
+      <strong style="color:var(--red);">OTP 안전 장치:</strong>
+      <span style="font-size:0.85rem; color:var(--text-muted);">
+        수정 전 git stash &rarr; 파일 목록 .dev/otp-bypass-files.txt 기록 &rarr; 테스트 완료 후 git checkout 원복 &rarr; 원복 검증
+      </span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>/persist-beom의 차이</h2>
+    <table class="tbl">
+      <thead><tr><th>항목</th><th>dev-beom / fix-beom</th><th>persist-beom</th></tr></thead>
+      <tbody>
+        <tr><td>QA 5회 초과</td><td>issue 보고 + <strong>중단</strong></td><td>issue 보고 + <strong>접근 변경 후 재시도</strong></td></tr>
+        <tr><td>에러 복구</td><td>사용자에게 보고</td><td>coder 자동 수정 (최대 3회)</td></tr>
+        <tr><td>질문</td><td>사용자에게 질문</td><td>합리적 가정으로 진행</td></tr>
+        <tr><td>커밋</td><td>사용자 확인 후</td><td>자동 커밋</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== HOOKS & RULES ===== -->
+<div class="section" id="hooks">
+  <div class="card">
+    <h2>Safety Hooks (2)</h2>
+    <div class="grid-2">
+      <div class="hook-card">
+        <div class="hook-name" style="color:var(--red);">pre-tool-guard</div>
+        <div class="hook-event">PreToolUse / Bash &nbsp; | &nbsp; timeout: 2s</div>
+        <div class="hook-desc">
+          <strong>보호 브랜치 커밋 차단.</strong><br>
+          main, master, develop, test, dev에서 <code>git commit</code> 실행 시 exit 2로 차단하고 작업 브랜치 생성을 안내합니다.
+        </div>
+      </div>
+      <div class="hook-card">
+        <div class="hook-name" style="color:var(--orange);">code-quality-gate</div>
+        <div class="hook-event">PreToolUse / Write|Edit &nbsp; | &nbsp; timeout: 3s</div>
+        <div class="hook-desc">
+          <strong>보안 위험 감지 + 플러그인 보호.</strong><br>
+          <span style="color:var(--red);">차단:</span> API 키 하드코딩, eval(), innerHTML, SQL 인젝션<br>
+          <span style="color:var(--yellow);">확인:</span> hooks/, rules/, config/, agents/, skills/ 수정
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Prohibition Rules (CLAUDE.md)</h2>
+    <ul class="prohibit">
+      <li><strong>PR 머지 금지</strong> &mdash; gh pr merge 실행 금지. PR 링크만 제공</li>
+      <li><strong>보호 브랜치 직접 커밋 금지</strong> &mdash; 작업 브랜치 먼저 생성</li>
+      <li><strong>Co-Authored-By 금지</strong></li>
+      <li><strong>팀 실행 생략 금지</strong> &mdash; "간단하다"는 이유로 생략 불가</li>
+      <li><strong>plan 파일 생략 금지</strong> &mdash; docs/plan/plan_{작업}.md 필수 생성</li>
+      <li><strong>QA 루프 생략 금지</strong> &mdash; Critical 발견 시 반드시 수정</li>
+      <li><strong>민감 파일 커밋 금지</strong> &mdash; .env*, *.key, *.pem, credentials*</li>
+      <li><strong>환각 금지</strong> &mdash; 존재하지 않는 API/패키지/경로 지어내기 금지</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Behavior Rules</h2>
+    <div class="grid-3">
+      <div style="background:var(--surface2); border-radius:8px; padding:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">1. 코딩 전에 생각하라</div>
+        <div style="font-size:0.8rem; color:var(--text-muted);">읽기 우선, 가정 명시, 환각 금지</div>
+      </div>
+      <div style="background:var(--surface2); border-radius:8px; padding:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">2. 단순함 우선</div>
+        <div style="font-size:0.8rem; color:var(--text-muted);">최소 코드, 불필요한 추상화 금지</div>
+      </div>
+      <div style="background:var(--surface2); border-radius:8px; padding:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">3. 외과적 변경</div>
+        <div style="font-size:0.8rem; color:var(--text-muted);">무관한 라인 수정 금지</div>
+      </div>
+      <div style="background:var(--surface2); border-radius:8px; padding:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">4. 점진적 실행</div>
+        <div style="font-size:0.8rem; color:var(--text-muted);">작은 단위, 중간 검증</div>
+      </div>
+      <div style="background:var(--surface2); border-radius:8px; padding:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">5. 실패 대응</div>
+        <div style="font-size:0.8rem; color:var(--text-muted);">근본 원인 분석, 반복 금지</div>
+      </div>
+      <div style="background:var(--surface2); border-radius:8px; padding:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">6. 피드백 반영</div>
+        <div style="font-size:0.8rem; color:var(--text-muted);">1회 → MEMORY, 2회 → rules 승격</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DOCUMENTS ===== -->
+<div class="section" id="docs">
+  <div class="card">
+    <h2>Document Templates</h2>
+    <div class="grid-2">
+      <div>
+        <h3 style="color:var(--accent); margin-bottom:10px;">docs/plan/plan_{작업}.md</h3>
+        <div class="doc-preview">
+          <div class="md-h1"># Plan: 로그인 기능 추가</div>
+          <div class="md-meta">- 상태: IN_PROGRESS</div>
+          <div class="md-meta">- 브랜치: feat/PROJ-123/login (base: main)</div>
+          <div class="md-meta">- Jira: PROJ-123</div>
+          <div class="md-meta">- 생성일: 2026-04-02</div>
+          <br>
+          <div class="md-h2">## TODO</div>
+          <div class="md-todo-done">- [x] 환경 분석 + plan 작성</div>
+          <div class="md-todo-done">- [x] 기술 설계</div>
+          <div class="md-todo">- [ ] 구현</div>
+          <div class="md-todo">- [ ] QA 리뷰</div>
+          <div class="md-todo">- [ ] 커밋</div>
+          <br>
+          <div class="md-h2">## 요구사항</div>
+          <div style="color:var(--text-muted);">...</div>
+          <div class="md-h2">## 설계</div>
+          <div style="color:var(--text-muted);">...</div>
+          <div class="md-h2">## QA 이력</div>
+          <div style="color:var(--text-muted);">### Round 1 ...</div>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="color:var(--green); margin-bottom:10px;">docs/result/result_{작업}.md</h3>
+        <div class="doc-preview">
+          <div class="md-h1"># Result: 로그인 기능 추가</div>
+          <div class="md-meta">- Jira: PROJ-123</div>
+          <div class="md-meta">- 브랜치: feat/PROJ-123/login</div>
+          <div class="md-meta">- 완료일: 2026-04-02</div>
+          <br>
+          <div class="md-h2">## 요약</div>
+          <div>JWT 기반 로그인 API 구현 완료.</div>
+          <br>
+          <div class="md-h2">## 변경 파일</div>
+          <div style="color:var(--text-muted);"> src/auth/login.ts | 45 +++</div>
+          <div style="color:var(--text-muted);"> src/auth/jwt.ts | 32 +++</div>
+          <br>
+          <div class="md-h2">## 검증 결과</div>
+          <div>- 빌드: <span style="color:var(--green);">성공</span></div>
+          <div>- 테스트: <span style="color:var(--green);">12/12 통과</span></div>
+          <div>- 코드 리뷰: <span style="color:var(--green);">Critical 0건</span></div>
+        </div>
+
+        <h3 style="color:var(--red); margin-top:20px; margin-bottom:10px;">docs/issue/issue_{작업}.md</h3>
+        <div class="doc-preview">
+          <div class="md-h1"># Issue: 결제 오류 수정</div>
+          <div style="color:var(--red);">QA 루프 5회 초과. 미해결 이슈 보고.</div>
+          <br>
+          <div class="md-h2">## 미해결 항목</div>
+          <div style="color:var(--text-muted);">| # | 이슈 | 파일:라인 | 실패 이유 |</div>
+          <br>
+          <div class="md-h2">## 권장 조치</div>
+          <div style="color:var(--text-muted);">수동 개입 필요 사항...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>.dev/ Runtime Files</h2>
+    <p style="color:var(--text-muted); margin-bottom:12px;">.gitignore에 추가되어 커밋되지 않는 임시 파일들</p>
+    <table class="tbl">
+      <thead><tr><th>파일</th><th>생성 시점</th><th>용도</th></tr></thead>
+      <tbody>
+        <tr><td><code>.dev/codemap.md</code></td><td>Setup Phase</td><td>관련 파일 경로+역할 (최대 25개)</td></tr>
+        <tr><td><code>.dev/design.md</code></td><td>Design Phase</td><td>architect 설계서</td></tr>
+        <tr><td><code>.dev/diff.txt</code></td><td>Implementation 후</td><td>git diff 결과 (context 오염 방지)</td></tr>
+        <tr><td><code>.dev/jira-context.md</code></td><td>Setup (Jira 감지 시)</td><td>Jira 이슈 정보</td></tr>
+        <tr><td><code>.dev/test-plan.md</code></td><td>/web-test Phase 3</td><td>Playwright 테스트 계획</td></tr>
+        <tr><td><code>.dev/otp-bypass-files.txt</code></td><td>/web-test Phase 2</td><td>OTP 바이패스 수정 파일 목록 (원복용)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== DIRECTORY TREE ===== -->
+<div class="section" id="tree">
+  <div class="card">
+    <h2>Directory Structure</h2>
+    <pre class="tree">
+<span class="dir">oh-my-beom/</span>
+├── <span class="highlight">CLAUDE.md</span>                         <span class="comment"># 최상위 지침 (금지 사항 + 워크플로우)</span>
+├── <span class="dir">agents/</span>                            <span class="comment"># 에이전트 4개</span>
+│   ├── <span class="file">planner.md</span>                    <span class="comment"># plan 관리, TODO, QA 이슈 수신</span>
+│   ├── <span class="file">architect.md</span>                  <span class="comment"># 기술 설계 + 비판적 자기검토</span>
+│   ├── <span class="file">coder.md</span>                      <span class="comment"># 코드 구현/수정, TDD</span>
+│   └── <span class="file">qa-manager.md</span>                 <span class="comment"># 코드 리뷰, 스펙 검증, PASS/FAIL</span>
+├── <span class="dir">skills/</span>                            <span class="comment"># 스킬 15개</span>
+│   ├── <span class="dir">dev-beom/</span>                      <span class="comment"># 기능 개발 (4명 팀 강제)</span>
+│   ├── <span class="dir">fix-beom/</span>                      <span class="comment"># 버그 수정 (3명 팀 강제)</span>
+│   ├── <span class="dir">analysis-beom/</span>                 <span class="comment"># 코드/정책 분석</span>
+│   ├── <span class="dir">persist-beom/</span>                  <span class="comment"># 자율 실행 (끝까지)</span>
+│   ├── <span class="dir">commit/</span>                        <span class="comment"># Git 커밋 (이슈키 파싱, pre-check)</span>
+│   ├── <span class="dir">pull-request/</span>                  <span class="comment"># PR 자동 생성</span>
+│   ├── <span class="dir">fetch-jira-issue/</span>              <span class="comment"># Jira 조회 (내부 유틸)</span>
+│   ├── <span class="dir">fetch-jenkins/</span>                 <span class="comment"># Jenkins 빌드 관리</span>
+│   ├── <span class="dir">worktree/</span>                      <span class="comment"># Git worktree 관리</span>
+│   ├── <span class="dir">tmux-team-agent/</span>               <span class="comment"># tmux pane 복구</span>
+│   ├── <span class="dir">humanizer/</span>                     <span class="comment"># AI 글쓰기 교정</span>
+│   ├── <span class="dir">tdd/</span>                           <span class="comment"># TDD 방법론 (Red-Green-Refactor)</span>
+│   ├── <span class="dir">web-test/</span>                      <span class="comment"># E2E 웹 테스트 (Playwright + OTP 바이패스)</span>
+│   ├── <span class="dir">hecto-setup/</span>                   <span class="comment"># HectoProject 설정</span>
+│   └── <span class="dir">new-context/</span>                   <span class="comment"># 도메인 컨텍스트 생성</span>
+├── <span class="dir">hooks/</span>                             <span class="comment"># 안전 훅 2개</span>
+│   ├── <span class="file">hooks.json</span>                    <span class="comment"># PreToolUse: Bash, Write|Edit</span>
+│   ├── <span class="file">pre-tool-guard</span>                <span class="comment"># 보호 브랜치 커밋 차단</span>
+│   ├── <span class="file">code-quality-gate</span>             <span class="comment"># 시크릿/보안 감지</span>
+│   └── <span class="file">README.md</span>                     <span class="comment"># 훅 설명</span>
+├── <span class="dir">rules/</span>                             <span class="comment"># 행동 규칙 2개</span>
+│   ├── <span class="file">behavior.md</span>                   <span class="comment"># 6가지 행동 원칙</span>
+│   └── <span class="file">git-workflow.md</span>               <span class="comment"># Git 브랜치/커밋/PR 규칙</span>
+├── <span class="dir">config/</span>
+│   └── <span class="file">config.json</span>                   <span class="comment"># 프로젝트 타입, 민감파일, 타임아웃</span>
+├── <span class="dir">docs/</span>                              <span class="comment"># 산출물</span>
+│   ├── <span class="dir">plan/</span>                          <span class="comment"># plan_{작업}.md (작업 계획)</span>
+│   ├── <span class="dir">result/</span>                        <span class="comment"># result_{작업}.md (최종 보고)</span>
+│   └── <span class="dir">issue/</span>                         <span class="comment"># issue_{작업}.md (QA 미해결)</span>
+└── <span class="dir">.claude-plugin/</span>
+    ├── <span class="file">plugin.json</span>                   <span class="comment"># 플러그인 메타</span>
+    └── <span class="file">marketplace.json</span>              <span class="comment"># 마켓플레이스</span>
+    </pre>
+  </div>
+</div>
+
+</div><!-- container -->
+
+<script>
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

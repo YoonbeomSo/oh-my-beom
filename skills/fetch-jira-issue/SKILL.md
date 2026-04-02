@@ -1,6 +1,6 @@
 ---
 name: fetch-jira-issue
-description: Use when user shares a Jira URL containing /browse/ (e.g. hh.hectoqnm.kr/browse/ISSUE-KEY), mentions a Jira issue key, or asks to look up a Jira ticket. Handles MCP tool fallback, settings setup, and server installation.
+description: "내부 유틸리티. Jira URL 또는 이슈 키로부터 이슈 정보를 조회한다. /dev-beom, /fix-beom, /persist-beom 등 메인 스킬 내부에서 호출된다."
 ---
 
 # Fetch Jira Issue

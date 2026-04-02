@@ -1,25 +1,5 @@
 {
   "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup|clear|compact",
-        "hooks": [{
-          "type": "command",
-          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/session-start\"",
-          "async": false
-        }]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "*",
-        "hooks": [{
-          "type": "command",
-          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/prompt-router\"",
-          "timeout": 3
-        }]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
@@ -35,43 +15,6 @@
           "type": "command",
           "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/code-quality-gate\"",
           "timeout": 3
-        }]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [{
-          "type": "command",
-          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/error-learner\"",
-          "timeout": 3
-        }]
-      }
-    ],
-    "TaskCompleted": [
-      {
-        "hooks": [{
-          "type": "command",
-          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/task-verifier\"",
-          "timeout": 300
-        }]
-      }
-    ],
-    "TeammateIdle": [
-      {
-        "hooks": [{
-          "type": "command",
-          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/idle-checker\"",
-          "timeout": 10
-        }]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [{
-          "type": "command",
-          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stop-report\"",
-          "timeout": 5
         }]
       }
     ]

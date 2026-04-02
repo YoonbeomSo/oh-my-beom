@@ -1,7 +1,7 @@
 # oh-my-beom
 
 한국어 개발자를 위한 Claude Code 플러그인.
-에이전트 기반 개발 파이프라인, 동적 스킬 라우팅, 코딩 가이드라인 자동 주입을 제공합니다.
+에이전트 팀 기반 개발 파이프라인으로, 기능 개발 / 버그 수정 / 분석 / 자율 실행을 지원합니다.
 
 ## 설치
 
@@ -11,161 +11,227 @@ claude plugin add --from-github YoonbeomSo/oh-my-beom
 
 ---
 
-## 핵심 기능
-
-### 동적 라우팅 (UserPromptSubmit Hook)
-
-사용자 입력을 자동으로 분석하여 적절한 스킬로 라우팅합니다.
-
-| 키워드 | 라우팅 대상 |
-|--------|------------|
-| 계획, plan, 설계 | `/plan` — 4-Mode 계획 전략 |
-| 분석, 조사, research | `/research` — 리서치 파이프라인 |
-| 끝까지, 멈추지마, persist | `/persist` — 지속 실행 모드 |
-| 개발, dev, 구현 | `/dev` — 전체 개발 라이프사이클 |
-| 정책, 비즈니스, lens | `/lens` — 정책 탐지 + 영향 분석 |
-
-### 가이드라인 자동 주입 (SessionStart Hook)
-
-세션 시작 시 코딩 가이드라인이 자동으로 주입됩니다.
-한국어 응답, 코딩 전 사고, 단순함 우선, 외과적 변경 등 7개 원칙.
-
-### Protected Branch 보호 (PreToolUse Hook)
-
-main/master/develop 브랜치에서 직접 커밋을 차단합니다.
-
-### 작업 완료 검증 (TaskCompleted Hook)
-
-작업 완료 시 자동으로 검증을 수행합니다.
-
-### 유휴 팀원 감지 (TeammateIdle Hook)
-
-팀 에이전트의 유휴 상태를 감지합니다.
-
-### 자동 체이닝 워크플로우
-
-각 스킬은 완료 후 자동으로 다음 스킬을 호출합니다.
+## 하네스 구조
 
 ```
-/lens → /research → /plan → (확인) → /dev
+oh-my-beom/
+├── CLAUDE.md                         # 최상위 지침 (금지 사항 + 워크플로우)
+├── agents/                           # 에이전트 4개
+│   ├── planner.md                    # plan 관리, TODO, QA 이슈 수신
+│   ├── architect.md                  # 기술 설계 + 비판적 자기검토
+│   ├── coder.md                      # 코드 구현/수정, 빌드/테스트
+│   └── qa-manager.md                 # 코드 리뷰, 스펙 검증, 기본 보안 체크
+├── skills/                           # 스킬 15개 (메인 4 + 유틸 11)
+│   ├── dev-beom/                     # 기능 개발
+│   ├── fix-beom/                     # 버그 수정
+│   ├── analysis-beom/                # 코드/정책 분석
+│   ├── persist-beom/                 # 자율 실행 (끝까지)
+│   ├── tdd/                          # TDD 방법론 (Red-Green-Refactor)
+│   ├── web-test/                     # E2E 웹 테스트 (Playwright + OTP 바이패스)
+│   ├── commit/                       # Git 커밋 (이슈키 파싱, pre-check)
+│   ├── pull-request/                 # PR 자동 생성
+│   ├── fetch-jira-issue/             # Jira 이슈 조회 (내부 유틸리티)
+│   ├── fetch-jenkins/                # Jenkins 빌드 관리
+│   ├── worktree/                     # Git worktree 자동화
+│   ├── tmux-team-agent/              # tmux pane 복구
+│   ├── humanizer/                    # AI 글쓰기 패턴 제거
+│   ├── hecto-setup/                  # HectoProject CLAUDE.md 설정
+│   └── new-context/                  # 도메인 컨텍스트 생성
+├── hooks/                            # 안전 훅 2개
+│   ├── hooks.json                    # 훅 설정
+│   ├── pre-tool-guard                # 보호 브랜치 커밋 차단
+│   └── code-quality-gate             # 시크릿/보안 감지
+├── rules/                            # 행동 규칙 2개
+│   ├── behavior.md                   # 행동 원칙 (읽기 우선, 단순함, 외과적 변경)
+│   └── git-workflow.md               # Git 브랜치/커밋/PR 규칙
+├── config/
+│   └── config.json                   # 프로젝트 타입, 민감파일, 타임아웃
+└── docs/
+    ├── plan/                         # plan_{작업내용}.md (작업 계획)
+    ├── result/                       # result_{작업내용}.md (최종 보고)
+    └── issue/                        # issue_{작업내용}.md (QA 미해결 보고)
 ```
 
-| 시작 스킬 | 자동 실행 흐름 | 상황 |
-|-----------|--------------|------|
-| `/lens` | → `/research` → `/plan` → `/dev` | 정책/비즈니스 영향 분석이 필요할 때 |
-| `/research` | → `/plan` → `/dev` | 코드베이스 파악이 필요할 때 |
-| `/plan` | → `/dev` | 요구사항이 명확할 때 |
-| `/dev` | (최종 스킬) | 간단한 버그 수정/핫픽스 |
+---
 
-- `/plan` → `/dev` 전환 시에만 사용자 확인을 받습니다.
-- 단일 스킬만 실행하려면 `--only` 플래그를 사용하세요. (예: `/research --only`)
+## 사용법
 
-세션 시작 시 워크플로우 가이드가 자동으로 표시됩니다.
+### 4개 진입점
+
+| 명령 | 용도 | 에이전트 팀 |
+|------|------|-----------|
+| `/dev-beom` | 기능 개발 | planner + architect + coder + qa-manager |
+| `/fix-beom` | 버그 수정 | planner + coder + qa-manager |
+| `/analysis-beom` | 코드/정책 분석 | Explore 에이전트 |
+| `/persist-beom` | 자율 실행 | 전체 팀 (질문 없이 끝까지) |
+
+### 기본 사용 예시
+
+```bash
+# 기능 개발 (Jira 이슈 연동)
+/dev-beom https://hh.hectoqnm.kr/browse/PROJ-123 로그인 기능 추가
+
+# 버그 수정
+/fix-beom https://hh.hectoqnm.kr/browse/PROJ-456 결제 오류 수정
+
+# 코드 분석
+/analysis-beom 결제 모듈 아키텍처 분석
+
+# 자율 실행 (질문 없이 끝까지)
+/persist-beom https://hh.hectoqnm.kr/browse/PROJ-789 사용자 인증 개선
+```
+
+### 유틸리티 스킬
+
+```bash
+/commit                  # 변경사항 커밋 (이슈키 자동 파싱)
+/pull-request            # PR 생성 (커밋 히스토리 기반)
+/worktree create feature # Git worktree 생성
+/fetch-jenkins           # Jenkins 빌드 상태 조회
+/humanizer               # AI 글쓰기 패턴 제거
+/hecto-setup             # HectoProject CLAUDE.md 설정
+/new-context payment     # 도메인 컨텍스트 생성
+```
+
+---
+
+## 개발 파이프라인
+
+### /dev-beom 실행 흐름
+
+```
+입력 → Jira 조회 → Git 준비 → 코드 맵 생성
+  ↓
+TeamCreate (planner + architect + coder + qa-manager)
+  ↓
+planner: plan 작성 (docs/plan/plan_{작업내용}.md)
+  ↓
+architect: 기술 설계 (.dev/design.md)
+  ↓
+coder: 구현
+  ↓
+qa-manager: 리뷰 → PASS / FAIL 판정
+  ├── PASS → /commit → result 보고
+  └── FAIL → QA 루프 (최대 5회)
+              ↓
+         planner: plan 수정 → coder: 수정 → qa-manager: 재리뷰
+              ↓
+         5회 초과 → issue 보고서 (docs/issue/) → 사용자에게 보고
+```
+
+### QA 루프
+
+qa-manager가 **Critical** 이슈를 발견하면 수정 루프가 시작됩니다:
+
+1. **planner**: plan 파일에 이슈 기록 + 수정 방향 결정
+2. **coder**: 수정 방향에 따라 코드 수정
+3. **qa-manager**: 재리뷰
+4. PASS가 나올 때까지 반복 (최대 5회)
+5. 5회 초과 시 `docs/issue/issue_{작업내용}.md`에 미해결 보고서 생성
+
+### /fix-beom과의 차이
+
+- architect 없이 coder가 직접 영향 범위 확인 + 수정 (경량)
+- planner는 "버그 분석 모드"로 동작 (재현 경로 + 원인 추정 + 수정 계획)
+
+### /persist-beom과의 차이
+
+- 사용자에게 질문하지 않고 합리적 가정으로 진행
+- QA 5회 초과 시 중단하지 않고 접근 방식을 변경하여 재시도
+- 커밋 전 사용자 확인 없이 자동 커밋
 
 ---
 
 ## 에이전트
 
-### 팀 에이전트 (5개, TeamCreate + tmux pane)
-
-`/dev` 실행 시 tmux 환경이면 TeamCreate로 생성되어 파이프라인 전체에 걸쳐 상시 실행됩니다.
-
-| Agent | 역할 | 모델 |
-|-------|------|------|
-| **product-owner** | PRD 작성 + AC 검증 | sonnet |
-| **architect** | 기술 설계 | sonnet |
-| **coder** | 코드 구현 + 수정 | inherit |
-| **qa-manager** | 코드 리뷰 + 스펙 검증 | sonnet |
-| **security-auditor** | 보안/정책 감사 | sonnet |
-
-### 유틸리티 에이전트 (7개, on-demand)
-
-필요할 때만 Agent tool로 개별 호출됩니다.
-
-| Agent | 역할 |
-|-------|------|
-| **researcher** | 코드베이스 탐색 + 분석 |
-| **hacker** | 제약 우회 + 돌파구 (정체 감지 시) |
-| **simplifier** | 복잡도 줄이기 (정체 감지 시) |
-| **plan-visualizer** | 계획 MD → HTML 대시보드 변환 |
-| **todo-verifier** | 계획 완료 기준 vs 코드 상태 검증 |
-| **web-test-qa** | E2E 테스트 전체 사이클 (계획+생성+디버깅) |
-| **design-critic** | 설계 가정 도전 (에이전트 정의, 스킬로도 호출 가능) |
+| 에이전트 | 역할 | 모델 | 한다 | 하지 않는다 |
+|---------|------|------|------|-----------|
+| **planner** | plan 관리 | sonnet | plan 작성/수정, TODO 관리, QA 이슈 수신 | 코드 구현, 설계 |
+| **architect** | 기술 설계 | sonnet | 설계, 영향 분석, 비판적 자기검토 | 코드 작성, 비즈니스 결정 |
+| **coder** | 코드 구현 | opus | 구현/수정, 빌드/테스트 | PR 머지, 보호 브랜치 커밋 |
+| **qa-manager** | 코드 리뷰 | sonnet | 리뷰, 스펙 검증, plan 완료 기준 대조 | 직접 코드 수정 |
 
 ---
 
-## 18개 Skills
+## 문서 산출물
 
-### 개발 워크플로우
+모든 개발/수정 작업은 문서를 남깁니다.
 
-| 명령어 | 설명 |
-|--------|------|
-| `/dev` | 전체 개발 라이프사이클 (PRD → 설계 → 구현 → 리뷰 → 완료) |
-| `/commit` | 스마트 커밋 (이슈키 파싱, pre-check, 민감파일 감지) |
-| `/pull-request` | PR 자동 생성 (커밋 히스토리 기반) |
-| `/worktree` | Git worktree 자동화 (create/list/remove/done/switch) |
+### plan 파일 (`docs/plan/plan_{작업내용}.md`)
 
-### 분석 + 계획
+작업 시작 전 **필수** 생성. TODO 리스트 포함. 세션이 끝나도 이 파일을 읽고 작업을 이어갈 수 있습니다.
 
-| 명령어 | 설명 |
-|--------|------|
-| `/plan` | 4-Mode 계획 전략 (Direct/Interview/Consensus/Review) |
-| `/research` | 리서치 파이프라인 (Explorer → Researcher → Analyzer) |
-| `/lens` | 비즈니스 정책 탐지 + 영향 분석 |
-| `/persist` | 지속 실행 모드 (6-Phase, 완료까지 멈추지 않음) |
+```markdown
+# Plan: 로그인 기능 추가
 
-### 유틸리티
+- 상태: IN_PROGRESS
+- 브랜치: feat/PROJ-123/login (base: main)
+- Jira: PROJ-123
+- 생성일: 2026-04-01
 
-| 명령어 | 설명 |
-|--------|------|
-| `/hecto-setup` | HectoProject용 CLAUDE.md를 프로젝트에 설정 |
-| `/new-context` | 도메인 컨텍스트 디렉토리 생성 |
-| `/humanizer` | AI 글쓰기 패턴 제거 (40+ 패턴 감지) |
-| `/design-critic` | 설계 비판 검토 (CHALLENGE/SIMPLIFY/ROOT-CAUSE) |
-| `/test-plan` | E2E 테스트 계획 (인증 분석 + 시나리오 설계) |
-| `/test-generate` | E2E 테스트 코드 생성 (.spec.ts) |
-| `/test-heal` | E2E 테스트 실행 + 실패 디버깅/수정 |
+## TODO
+- [x] 환경 분석 + plan 작성
+- [x] 기술 설계
+- [ ] 구현
+- [ ] QA 리뷰
+- [ ] 커밋
 
-### 외부 연동
-
-| 명령어 | 설명 |
-|--------|------|
-| `/fetch-jira-issue` | Jira 이슈 조회 (MCP 우선, REST API fallback) |
-| `/fetch-jenkins` | Jenkins 빌드 상태 조회/트리거/로그 확인 |
-| `/tmux-team-agent` | TeamCreate 후 빈 tmux pane 감지 + CLI 자동 복구 |
-
----
-
-## 디렉토리 구조
-
-```
-oh-my-beom/
-├── .claude-plugin/
-│   ├── plugin.json                   # 플러그인 메타데이터
-│   └── marketplace.json              # 마켓플레이스 등록 정보
-├── CLAUDE.md                         # 플러그인 스코프/제약사항
-├── hooks/
-│   ├── hooks.json                    # 5개 hook 정의
-│   ├── session-start                 # 가이드라인 주입
-│   ├── prompt-router                 # 키워드 감지 → 스킬 라우팅
-│   ├── pre-tool-guard                # protected branch 보호
-│   ├── task-verifier                 # 작업 완료 검증
-│   └── idle-checker                  # 유휴 팀원 감지
-├── rules/
-│   ├── behavior.md                   # 코딩 원칙
-│   ├── git-workflow.md               # 브랜치/커밋 규칙
-│   └── workspace-structure.md        # 워크스페이스 구조
-├── config/
-│   └── config.json                   # 이슈키, 프로젝트 타입, 타임아웃
-├── agents/                           # 12개 에이전트
-├── skills/                           # 18개 스킬
-├── docs/                             # 시각화 산출물
-└── package.json
+## 요구사항
+...
 ```
 
+### result 파일 (`docs/result/result_{작업내용}.md`)
+
+작업 완료 시 최종 보고. 변경 파일, 검증 결과, 미해결 사항을 포함합니다.
+
+### issue 파일 (`docs/issue/issue_{작업내용}.md`)
+
+QA 루프 5회 초과 시 자동 생성. 미해결 이슈, 시도 이력, 권장 조치를 포함합니다.
+
 ---
 
-## references
+## 안전 장치
+
+### 훅 (2개)
+
+| 훅 | 이벤트 | 역할 |
+|----|--------|------|
+| `pre-tool-guard` | Bash 실행 전 | 보호 브랜치(main, master, develop, test, dev) 커밋 차단 |
+| `code-quality-gate` | Write/Edit 전 | 시크릿 하드코딩, eval(), SQL 인젝션 감지 + 플러그인 파일 보호 |
+
+### 금지 사항 (CLAUDE.md)
+
+- PR 머지 금지 (PR 생성까지만)
+- 보호 브랜치 직접 커밋 금지
+- Co-Authored-By 트레일러 금지
+- 팀 실행 생략 금지 (규모와 무관하게 강제)
+- plan 파일 생략 금지
+- QA 루프 생략 금지
+- 민감 파일 커밋 금지
+- 환각 금지
+
+---
+
+## 설정
+
+### config.json
+
+```json
+{
+  "protectedBranches": ["main", "master", "develop", "test", "dev"],
+  "projectTypes": {
+    "kotlin-java": { "detect": ["build.gradle.kts"], "test": "./gradlew test" },
+    "nodejs": { "detect": ["package.json"], "test": "npm test | bun test" },
+    "python": { "detect": ["pyproject.toml"], "test": "pytest" }
+  }
+}
+```
+
+프로젝트 타입은 빌드 파일로 자동 감지됩니다. lint/test/build 명령이 타입별로 설정되어 있습니다.
+
+---
+
+## References
 
 - 코딩 가이드라인: [LOOPERS](https://www.loopers.im/)
 - Playwright Test Agents: [Playwright](https://playwright.dev/docs/test-agents)
