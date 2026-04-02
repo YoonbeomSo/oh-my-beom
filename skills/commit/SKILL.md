@@ -150,6 +150,16 @@ JIRA-123
 
 **PR/MR은 자동 생성하지 않는다.** 사용자가 `/pull-request`로 명시적으로 요청할 때만 생성한다. 커밋 후 "PR 만들까요?" 같은 질문도 금지.
 
+## 플러그인 업데이트 (oh-my-beom 프로젝트 전용)
+
+현재 프로젝트가 oh-my-beom 플러그인 자체인 경우 (`package.json`의 `name`이 `oh-my-beom`), push 완료 후 자동으로 플러그인을 갱신한다:
+
+```bash
+claude plugins update oh-my-beom@syb1224
+```
+
+이 단계는 oh-my-beom 프로젝트에서 커밋할 때만 실행하며, 다른 프로젝트에서는 실행하지 않는다.
+
 **금지사항**:
 - `Co-Authored-By` 라인을 절대 추가하지 말 것.
 - `master`, `main`, `dev`, `test` 브랜치에 직접 push 금지.
