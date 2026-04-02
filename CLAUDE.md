@@ -9,6 +9,7 @@ oh-my-beom 플러그인의 최상위 지침.
 ## 금지 사항 (절대)
 
 - **PR 머지 금지.** `gh pr merge` 실행 금지. PR 링크를 제공하여 사용자가 직접 머지
+- **PR/MR 자동 생성 금지.** 커밋/push 후 PR을 자동 생성하지 않는다. "PR 만들까요?" 질문도 금지. 사용자가 `/pull-request`로 명시적 요청 시에만 생성
 - **보호 브랜치 직접 커밋 금지.** main, master, develop, test, dev에서 직접 커밋 금지. 작업 브랜치를 먼저 생성
 - **Co-Authored-By 금지.** 커밋 메시지에 Co-Authored-By 트레일러 추가 금지
 - **팀 실행 생략 금지.** /dev-beom, /fix-beom, /persist-beom은 반드시 에이전트 팀을 생성하고 실행. "간단하다", "규모가 작다"는 이유로 생략 불가
