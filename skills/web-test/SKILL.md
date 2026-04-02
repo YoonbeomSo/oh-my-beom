@@ -259,89 +259,45 @@ Grep(pattern="(pyotp|django_otp|verify_otp|check_otp)", glob="*.py")
 
 ---
 
-## Phase 3: 테스트 계획
+## Phase 3: 기존 테스트 확인
 
-`playwright-test-planner` 에이전트에게 테스트 계획을 위임한다.
+테스트 디렉토리에서 기존 Playwright 테스트를 탐색한다:
+
+```
+Glob(pattern="**/*.spec.ts", path="{테스트 디렉토리}")
+```
+
+- **기존 테스트 있음** → `MODE = "실행만"` (Phase 4에서 탐색/생성 생략, 실행만 수행)
+- **기존 테스트 없음** → `MODE = "생성+실행"`
+
+## Phase 4: 통합 테스트 실행
+
+**기존 3개 에이전트(planner + generator + healer)를 `web-tester` 단일 에이전트로 통합.**
+
+에이전트 1개만 spawn하여 탐색→생성→실행→수정을 한 컨텍스트에서 처리한다.
+이전 구조 대비 에이전트 spawn 횟수 3~5회 → 1회로 감소.
 
 ```
 Agent(
-  subagent_type="playwright-test-planner",
+  name="web-tester",
   prompt="""
-  다음 웹 애플리케이션의 E2E 테스트 계획을 수립해주세요.
+  E2E 웹 테스트를 수행해주세요.
 
-  대상 URL: {URL}
-  시나리오: {시나리오 설명 또는 "전체 주요 기능 테스트"}
-  프로젝트 타입: {감지된 타입}
+  URL: {URL}
   테스트 계정: {ID/PW 또는 "로그인 불필요"}
-
-  브라우저로 사이트를 탐색하고 주요 사용자 플로우를 파악하여
-  테스트 시나리오를 설계해주세요.
-  로그인이 필요하면 제공된 계정으로 먼저 로그인해주세요.
-  """
-)
-```
-
-에이전트 결과를 `.dev/test-plan.md`에 저장한다.
-
----
-
-## Phase 4: 테스트 생성
-
-`playwright-test-generator` 에이전트에게 테스트 코드 생성을 위임한다.
-
-```
-Agent(
-  subagent_type="playwright-test-generator",
-  prompt="""
-  다음 테스트 계획을 기반으로 Playwright 테스트 코드를 생성해주세요.
-
-  테스트 계획:
-  {.dev/test-plan.md 내용}
-
+  시나리오: {시나리오 설명}
+  기존 테스트: {있으면 파일 경로 목록, 없으면 "없음"}
+  모드: {MODE}
   테스트 디렉토리: {테스트 디렉토리 경로}
-  대상 URL: {URL}
-  테스트 계정: {ID/PW 또는 "로그인 불필요"}
-
-  각 시나리오를 개별 .spec.ts 파일로 생성해주세요.
-  테스트 스텝은 한국어 주석으로 작성해주세요.
-  로그인이 필요한 테스트는 beforeEach에서 로그인 처리해주세요.
   """
 )
 ```
 
----
+web-tester 에이전트가 내부적으로 모드에 따라 처리:
+- **실행만**: test_run → 실패 시 test_debug + 수정 → 재실행 (1회)
+- **생성+실행**: browser_navigate + browser_snapshot → generator_write_test → test_run → 실패 시 수정 (1회)
 
-## Phase 5: 테스트 실행 + 수정 루프
-
-`playwright-test-healer` 에이전트에게 테스트 실행과 수정을 위임한다.
-
-```
-heal_count = 0
-max_heal = 3
-
-while heal_count < max_heal:
-    heal_count++
-
-    Agent(
-      subagent_type="playwright-test-healer",
-      prompt="""
-      Playwright 테스트를 실행하고 실패하는 테스트를 수정해주세요.
-
-      테스트 디렉토리: {테스트 디렉토리 경로}
-
-      규칙:
-      - 테스트 코드 문제는 직접 수정
-      - 앱 코드 문제는 보고만 (수정하지 않음)
-      - 수정 불가능한 실패는 test.fixme()로 마킹
-      """
-    )
-
-    # 결과 확인
-    if 모든 테스트 통과 또는 남은 실패가 모두 fixme:
-        break
-```
-
-3회 루프 후에도 실패가 남으면 실패 목록을 사용자에게 보고한다.
+에이전트 결과를 `.dev/test-result.md`에 저장한다.
 
 ---
 
