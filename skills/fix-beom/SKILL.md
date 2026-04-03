@@ -32,7 +32,7 @@ ARGS 없이 호출 시: "수정할 버그를 설명해주세요. 예: `/fix-beom
 `/dev-beom`의 Phase 1과 동일:
 0. 이전 세션 마커 정리: `Bash(command="rm -f .dev/web-test-required .dev/web-test-passed")`
 1. Jira 조회 (URL/키 감지 시)
-2. Git 환경 준비 (브랜치명: `fix/{이슈키}/{설명}` 또는 `fix/{설명}`)
+2. Git 환경 준비 (브랜치명: `fix/{설명}`, 이슈 키는 커밋 메시지에서 관리)
 3. 프로젝트 정보 수집 + 코드 맵 생성
 
 ## Phase 2: Plan (버그 분석 모드)
