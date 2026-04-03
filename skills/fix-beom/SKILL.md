@@ -15,6 +15,7 @@ argument-hint: "[Jira URL 또는 이슈키] <버그 설명>"
 3. **plan 파일을 반드시 생성한다.** `docs/plan/plan_{작업내용}.md`가 없으면 작업을 시작하지 않는다.
 4. **qa-manager 호출을 생략하지 않는다.** Phase 5는 변경 크기, 파일 수, 줄 수와 무관하게 반드시 실행한다. "1줄 수정이라 직접 확인했다"는 이유로 생략 불가.
 5. **TeamCreate 직후 tmux-team-agent를 호출한다.** `Skill("oh-my-beom:tmux-team-agent")`를 생략하지 않는다.
+6. **`[WEB-TEST-REQUIRED]` 마커 발견 시 즉시 실행한다.** qa-manager 리뷰에 이 마커가 있으면 질문 없이 서버 기동 → 웹 테스트 → 서버 종료를 수행한다. 절차는 Phase 5의 "웹 테스트 실행" 참조.
 
 ## 인자
 
@@ -29,6 +30,7 @@ ARGS 없이 호출 시: "수정할 버그를 설명해주세요. 예: `/fix-beom
 ## Phase 1: Setup
 
 `/dev-beom`의 Phase 1과 동일:
+0. 이전 세션 마커 정리: `Bash(command="rm -f .dev/web-test-required .dev/web-test-passed")`
 1. Jira 조회 (URL/키 감지 시)
 2. Git 환경 준비 (브랜치명: `fix/{이슈키}/{설명}` 또는 `fix/{설명}`)
 3. 프로젝트 정보 수집 + 코드 맵 생성

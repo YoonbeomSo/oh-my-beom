@@ -17,6 +17,7 @@ oh-my-beom 플러그인의 최상위 지침.
 - **QA 호출 생략 금지.** 모든 구현/수정 후 반드시 qa-manager를 spawn하여 리뷰. "변경이 작다", "직접 확인했다", "1개 파일이다" 등의 이유로 생략 불가. 오케스트레이터가 자체 리뷰로 대체하는 것도 금지
 - **tmux-team-agent 호출 생략 금지.** TeamCreate 직후 반드시 `Skill("oh-my-beom:tmux-team-agent")` 호출. 에이전트가 정상 작동하는 것처럼 보여도 생략 불가
 - **QA 루프 생략 금지.** qa-manager가 Critical 발견 시 반드시 수정 루프 진입
+- **[WEB-TEST-REQUIRED] 무시 금지.** qa-manager가 `[WEB-TEST-REQUIRED]` 마커를 남기면 오케스트레이터는 질문 없이 즉시 서버 기동 → 웹 테스트 실행 → 서버 종료를 수행한다. "서버를 실행할까요?", "진행할까요?" 등의 질문은 금지
 - **민감 파일 커밋 금지.** .env*, *.key, *.pem, credentials*, *secret*
 - **환각 금지.** 존재하지 않는 API, 패키지, 파일 경로를 지어내지 않기
 

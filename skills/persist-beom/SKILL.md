@@ -17,6 +17,7 @@ argument-hint: "[Jira URL 또는 이슈키] <작업 설명>"
 5. **멈추지 않는다.** 에러가 발생해도 대안을 찾아 계속 진행한다.
 6. **qa-manager 호출을 생략하지 않는다.** Phase 5는 변경 크기와 무관하게 반드시 실행한다. 자율 실행 모드에서도 QA 리뷰를 건너뛸 수 없다.
 7. **TeamCreate 직후 tmux-team-agent를 호출한다.** `Skill("oh-my-beom:tmux-team-agent")`를 생략하지 않는다.
+8. **`[WEB-TEST-REQUIRED]` 마커 발견 시 즉시 실행한다.** qa-manager 리뷰에 이 마커가 있으면 질문 없이 서버 기동 → 웹 테스트 → 서버 종료를 수행한다. 절차는 dev-beom Phase 5의 "웹 테스트 실행"과 동일.
 
 ## 인자
 
@@ -59,7 +60,7 @@ argument-hint: "[Jira URL 또는 이슈키] <작업 설명>"
 # Phase 상세
 
 ## Phase 1: Setup
-`/dev-beom` Phase 1과 동일. 단, 베이스 브랜치 선택 시 질문하지 않고 `main` → `master` → `develop` 순으로 자동 선택.
+`/dev-beom` Phase 1과 동일 (이전 세션 마커 정리 포함). 단, 베이스 브랜치 선택 시 질문하지 않고 `main` → `master` → `develop` 순으로 자동 선택.
 
 ## Phase 2: Plan
 `/dev-beom` Phase 2와 동일. planner 질문은 자동 가정으로 처리.

@@ -301,6 +301,15 @@ web-tester 에이전트가 내부적으로 모드에 따라 처리:
 
 ---
 
+## Phase 5: 웹 테스트 통과 마커 생성
+
+Phase 4 완료 후, 커밋 게이트용 통과 마커를 생성한다:
+```
+Bash(command="date +%Y%m%dT%H%M%S > .dev/web-test-passed")
+```
+
+이 마커가 없으면 `pre-tool-guard` 훅이 `git commit`을 차단한다.
+
 ## Phase 6: 정리 (서버 종료 + OTP 원복 + 결과 보고)
 
 **이 Phase는 어떤 상황에서도 반드시 실행한다.**
