@@ -15,6 +15,7 @@ argument-hint: "[Jira URL 또는 이슈키] <작업 설명>"
 3. **plan 파일을 반드시 생성한다.** `docs/plan/plan_{작업내용}.md`가 없으면 작업을 시작하지 않는다.
 4. **qa-manager 호출을 생략하지 않는다.** Phase 5는 변경 크기, 파일 수, 줄 수와 무관하게 반드시 실행한다. 오케스트레이터가 직접 리뷰하여 대체하는 것은 금지한다.
 5. **TeamCreate 직후 tmux-team-agent를 호출한다.** `Skill("oh-my-beom:tmux-team-agent")`를 생략하지 않는다.
+6. **`[WEB-TEST-REQUIRED]` 마커 발견 시 즉시 실행한다.** qa-manager 리뷰에 이 마커가 있으면 질문 없이 서버 기동 → 웹 테스트 → 서버 종료를 수행한다. 절차는 Phase 5의 "웹 테스트 실행" 참조.
 
 ## 인자
 
@@ -30,6 +31,11 @@ ARGS 없이 호출 시: "개발할 기능을 설명해주세요. 예: `/dev-beom
 
 ## Phase 1: Setup
 
+### 1-0. 이전 세션 마커 정리
+```
+Bash(command="rm -f .dev/web-test-required .dev/web-test-passed")
+```
+
 ### 1-1. Jira 조회 (선택)
 ARGS에서 Jira URL 또는 이슈 키 패턴(`[A-Z]+-[0-9]+`)을 감지하면:
 - `Skill("oh-my-beom:fetch-jira-issue", args="{URL 또는 이슈키}")` 호출
@@ -39,7 +45,7 @@ ARGS에서 Jira URL 또는 이슈 키 패턴(`[A-Z]+-[0-9]+`)을 감지하면:
 1. `git status`로 현재 상태 확인
 2. 베이스 브랜치 감지: `git branch --list main master develop` → 첫 번째 존재하는 브랜치 선택. 없으면 사용자에게 질문
 3. 베이스 브랜치 최신화: `git pull origin {base}`
-4. 작업 브랜치 생성: 이슈 키가 있으면 `feat/{이슈키}/{설명}`, 없으면 `feat/{설명}`
+4. 작업 브랜치 생성: `feat/{설명}` (이슈 키는 커밋 메시지에서 관리)
 5. `.gitignore`에 `.dev/` 추가 (없으면)
 
 ### 1-3. 프로젝트 정보 수집

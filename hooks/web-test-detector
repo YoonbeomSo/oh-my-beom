@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# PostToolUse: qa-manager 응답에서 [WEB-TEST-REQUIRED] 마커 감지
+# 감지 시 .dev/web-test-required 플래그 생성하여 커밋 전 웹 테스트를 강제한다.
+
+set -uo pipefail
+
+INPUT=$(cat /dev/stdin 2>/dev/null || echo '{}')
+
+# tool_result에서 [WEB-TEST-REQUIRED] 마커 확인
+HAS_MARKER=$(echo "$INPUT" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    result = str(data.get('tool_result', ''))
+    if '[WEB-TEST-REQUIRED]' in result:
+        print('yes')
+    else:
+        print('no')
+except:
+    print('no')
+" 2>/dev/null || echo "no")
+
+if [ "$HAS_MARKER" = "yes" ]; then
+  mkdir -p .dev 2>/dev/null
+  echo "$(date +%Y%m%dT%H%M%S)" > .dev/web-test-required
+  cat <<'EOF'
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PostToolUse",
+    "message": "[WEB-TEST-REQUIRED] 감지됨. 커밋 전에 웹 테스트를 반드시 실행하세요. 서버를 기동하고 Skill(\"oh-my-beom:web-test\")를 즉시 실행하세요."
+  }
+}
+EOF
+  exit 0
+fi
+
+echo '{"continue": true}'
+exit 0
