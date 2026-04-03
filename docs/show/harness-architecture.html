@@ -166,9 +166,9 @@
   <p>에이전트 팀 기반 개발 파이프라인 구조 시각화</p>
   <div class="stats-row">
     <div class="stat"><div class="stat-num" style="color:var(--accent)">4</div><div class="stat-label">진입점 스킬</div></div>
-    <div class="stat"><div class="stat-num" style="color:var(--green)">4</div><div class="stat-label">에이전트</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--green)">6</div><div class="stat-label">에이전트</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--yellow)">11</div><div class="stat-label">유틸리티 스킬</div></div>
-    <div class="stat"><div class="stat-num" style="color:var(--red)">2</div><div class="stat-label">안전 훅</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--red)">3</div><div class="stat-label">안전 훅</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--purple)">2</div><div class="stat-label">Rules</div></div>
   </div>
 </div>
@@ -228,6 +228,10 @@
           <div style="background:rgba(210,153,34,0.08); border:1px solid var(--border); border-left:3px solid var(--yellow); border-radius:8px; padding:10px 20px; text-align:left;">
             <div style="font-weight:700; font-size:0.85rem;">qa-manager</div>
             <div style="font-size:0.7rem; color:var(--text-muted);">코드 리뷰</div>
+          </div>
+          <div style="background:rgba(247,120,186,0.08); border:1px solid var(--border); border-left:3px solid var(--pink); border-radius:8px; padding:10px 20px; text-align:left;">
+            <div style="font-weight:700; font-size:0.85rem;">web-tester / runner</div>
+            <div style="font-size:0.7rem; color:var(--text-muted);">E2E 웹 테스트</div>
           </div>
         </div>
       </div>
@@ -470,10 +474,51 @@
           <li>코드 리뷰 6단계 (SCOPE~SPRING)</li>
           <li>plan TODO 충족 검증</li>
           <li>기본 보안 체크 (SQLi, XSS)</li>
+          <li>[WEB-TEST-REQUIRED] 마커 판정</li>
         </ul>
         <ul class="dont-list">
           <li>직접 코드 수정</li>
           <li>비즈니스 요구사항 재정의</li>
+        </ul>
+      </div>
+
+      <div class="agent-card" style="border-color:var(--pink);">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="role">web-tester</div>
+          <span class="model-badge">sonnet</span>
+        </div>
+        <div style="font-size:0.82rem; color:var(--text-muted); margin:6px 0;">E2E 테스트 생성+실행. 브라우저 탐색 &rarr; 테스트 생성 &rarr; 실행 &rarr; 수정</div>
+        <h3 style="color:var(--green); font-size:0.8rem;">Tools (16개)</h3>
+        <div style="font-size:0.78rem;">MCP 11개 (browser_navigate/click/type/snapshot, console_messages, generate_locator, evaluate, generator_write_test, test_run/list/debug) + Read, Write, Edit, Glob, Grep</div>
+        <h3 style="color:var(--green); font-size:0.8rem;">모드</h3>
+        <div style="font-size:0.78rem;"><span class="tag" style="background:rgba(247,120,186,0.15); color:var(--pink);">생성+실행</span> 기존 테스트 없을 때</div>
+        <ul class="do-list">
+          <li>브라우저 탐색 + 테스트 코드 생성</li>
+          <li>테스트 실행 + 실패 시 수정 (1회)</li>
+        </ul>
+        <ul class="dont-list">
+          <li>프로덕션 코드 수정</li>
+          <li>수정 재시도 2회 이상</li>
+        </ul>
+      </div>
+
+      <div class="agent-card" style="border-color:var(--pink);">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="role">web-test-runner</div>
+          <span class="model-badge">sonnet</span>
+        </div>
+        <div style="font-size:0.82rem; color:var(--text-muted); margin:6px 0;">기존 E2E 테스트 실행 전용. 경량 에이전트 (도구 8개)</div>
+        <h3 style="color:var(--green); font-size:0.8rem;">Tools (8개)</h3>
+        <div style="font-size:0.78rem;">MCP 3개 (test_run, test_list, test_debug) + Read, Write, Edit, Glob, Grep</div>
+        <h3 style="color:var(--green); font-size:0.8rem;">모드</h3>
+        <div style="font-size:0.78rem;"><span class="tag" style="background:rgba(247,120,186,0.15); color:var(--pink);">실행만</span> 기존 테스트 있을 때</div>
+        <ul class="do-list">
+          <li>기존 테스트 실행 + 실패 분석</li>
+          <li>테스트 코드만 수정 (1회)</li>
+        </ul>
+        <ul class="dont-list">
+          <li>브라우저 탐색, 테스트 생성</li>
+          <li>프로덕션 코드 수정</li>
         </ul>
       </div>
     </div>
@@ -550,7 +595,7 @@
         <tr><td><strong style="color:var(--green)">/fix-beom</strong></td><td>/fetch-jira-issue (선택) &rarr; /tmux-team-agent &rarr; <strong style="color:var(--green);">/tdd</strong> (coder 수정 시) &rarr; /commit</td></tr>
         <tr><td><strong style="color:var(--purple)">/persist-beom</strong></td><td>/fetch-jira-issue (선택) &rarr; /tmux-team-agent &rarr; <strong style="color:var(--green);">/tdd</strong> (coder 구현 시) &rarr; /commit (자동)</td></tr>
         <tr><td><strong style="color:var(--yellow)">/analysis-beom</strong></td><td>/fetch-jira-issue (선택)</td></tr>
-        <tr><td><strong style="color:var(--pink)">/web-test</strong></td><td>OTP 바이패스(조건부) &rarr; playwright-test-planner &rarr; playwright-test-generator &rarr; playwright-test-healer</td></tr>
+        <tr><td><strong style="color:var(--pink)">/web-test</strong></td><td>OTP 바이패스(조건부) &rarr; web-test-runner (실행만) 또는 web-tester (생성+실행)</td></tr>
       </tbody>
     </table>
   </div>
@@ -631,22 +676,22 @@
         <h3 style="color:var(--pink); margin-bottom:10px;">6 Phase 파이프라인</h3>
         <div style="display:flex; flex-direction:column; gap:6px; font-size:0.82rem;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <span class="tag tag-blue">1</span> Setup: URL + Playwright 확인 + 계정 조회
+            <span class="tag tag-blue">1</span> Setup: 서버 빌드/기동 + Playwright 확인 + 계정 조회
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <span class="tag tag-red">2</span> OTP 바이패스: 탐지 &rarr; 사용자 확인 &rarr; 주석 처리
+            <span class="tag tag-red">2</span> OTP 바이패스: 패턴 탐지 &rarr; 자동 주석 처리 (config 기반)
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <span class="tag tag-cyan">3</span> 테스트 계획: playwright-test-planner 에이전트
+            <span class="tag tag-cyan">3</span> 기존 테스트 확인: &rarr; MODE 결정 (실행만 / 생성+실행)
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <span class="tag tag-green">4</span> 테스트 생성: playwright-test-generator &rarr; .spec.ts
+            <span class="tag tag-green">4</span> 테스트 실행: <strong>web-test-runner</strong> (8 tools) 또는 <strong>web-tester</strong> (16 tools)
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <span class="tag tag-yellow">5</span> 실행 + 수정: playwright-test-healer (max 3회)
+            <span class="tag tag-yellow">5</span> 통과 마커 생성: .dev/web-test-passed (커밋 게이트)
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <span class="tag tag-purple">6</span> OTP 원복 + 결과 보고 <strong style="color:var(--red);">(무조건 실행)</strong>
+            <span class="tag tag-purple">6</span> 정리: 서버 종료 + OTP 원복 + 결과 보고 <strong style="color:var(--red);">(무조건 실행)</strong>
           </div>
         </div>
       </div>
@@ -677,14 +722,14 @@
 <!-- ===== HOOKS & RULES ===== -->
 <div class="section" id="hooks">
   <div class="card">
-    <h2>Safety Hooks (2)</h2>
-    <div class="grid-2">
+    <h2>Safety Hooks (3)</h2>
+    <div class="grid-3">
       <div class="hook-card">
         <div class="hook-name" style="color:var(--red);">pre-tool-guard</div>
         <div class="hook-event">PreToolUse / Bash &nbsp; | &nbsp; timeout: 2s</div>
         <div class="hook-desc">
           <strong>보호 브랜치 커밋 차단.</strong><br>
-          main, master, develop, test, dev에서 <code>git commit</code> 실행 시 exit 2로 차단하고 작업 브랜치 생성을 안내합니다.
+          main, master, develop, test, dev에서 <code>git commit</code> 실행 시 exit 2로 차단. [WEB-TEST-REQUIRED] 시 웹 테스트 통과 마커 없으면 커밋 차단.
         </div>
       </div>
       <div class="hook-card">
@@ -694,6 +739,14 @@
           <strong>보안 위험 감지 + 플러그인 보호.</strong><br>
           <span style="color:var(--red);">차단:</span> API 키 하드코딩, eval(), innerHTML, SQL 인젝션<br>
           <span style="color:var(--yellow);">확인:</span> hooks/, rules/, config/, agents/, skills/ 수정
+        </div>
+      </div>
+      <div class="hook-card">
+        <div class="hook-name" style="color:var(--pink);">web-test-detector</div>
+        <div class="hook-event">PostToolUse / Agent &nbsp; | &nbsp; timeout: 2s</div>
+        <div class="hook-desc">
+          <strong>[WEB-TEST-REQUIRED] 마커 감지.</strong><br>
+          qa-manager 응답에서 마커 탐지 시 <code>.dev/web-test-required</code> 플래그를 생성하여 커밋 게이트 활성화.
         </div>
       </div>
     </div>
@@ -708,6 +761,7 @@
       <li><strong>팀 실행 생략 금지</strong> &mdash; "간단하다"는 이유로 생략 불가</li>
       <li><strong>plan 파일 생략 금지</strong> &mdash; docs/plan/plan_{작업}.md 필수 생성</li>
       <li><strong>QA 루프 생략 금지</strong> &mdash; Critical 발견 시 반드시 수정</li>
+      <li><strong>[WEB-TEST-REQUIRED] 무시 금지</strong> &mdash; 마커 감지 시 질문 없이 즉시 웹 테스트 실행</li>
       <li><strong>민감 파일 커밋 금지</strong> &mdash; .env*, *.key, *.pem, credentials*</li>
       <li><strong>환각 금지</strong> &mdash; 존재하지 않는 API/패키지/경로 지어내기 금지</li>
     </ul>
@@ -822,6 +876,10 @@
         <tr><td><code>.dev/jira-context.md</code></td><td>Setup (Jira 감지 시)</td><td>Jira 이슈 정보</td></tr>
         <tr><td><code>.dev/test-plan.md</code></td><td>/web-test Phase 3</td><td>Playwright 테스트 계획</td></tr>
         <tr><td><code>.dev/otp-bypass-files.txt</code></td><td>/web-test Phase 2</td><td>OTP 바이패스 수정 파일 목록 (원복용)</td></tr>
+        <tr><td><code>.dev/server.pid</code></td><td>/web-test Phase 1</td><td>서버 프로세스 PID (종료용)</td></tr>
+        <tr><td><code>.dev/web-test-passed</code></td><td>/web-test Phase 5</td><td>웹 테스트 통과 마커 (커밋 게이트)</td></tr>
+        <tr><td><code>.dev/web-test-required</code></td><td>web-test-detector 훅</td><td>[WEB-TEST-REQUIRED] 감지 플래그</td></tr>
+        <tr><td><code>.dev/test-result.md</code></td><td>/web-test Phase 4</td><td>에이전트 테스트 결과</td></tr>
       </tbody>
     </table>
   </div>
@@ -834,11 +892,13 @@
     <pre class="tree">
 <span class="dir">oh-my-beom/</span>
 ├── <span class="highlight">CLAUDE.md</span>                         <span class="comment"># 최상위 지침 (금지 사항 + 워크플로우)</span>
-├── <span class="dir">agents/</span>                            <span class="comment"># 에이전트 4개</span>
+├── <span class="dir">agents/</span>                            <span class="comment"># 에이전트 6개</span>
 │   ├── <span class="file">planner.md</span>                    <span class="comment"># plan 관리, TODO, QA 이슈 수신</span>
 │   ├── <span class="file">architect.md</span>                  <span class="comment"># 기술 설계 + 비판적 자기검토</span>
 │   ├── <span class="file">coder.md</span>                      <span class="comment"># 코드 구현/수정, TDD</span>
-│   └── <span class="file">qa-manager.md</span>                 <span class="comment"># 코드 리뷰, 스펙 검증, PASS/FAIL</span>
+│   ├── <span class="file">qa-manager.md</span>                 <span class="comment"># 코드 리뷰, 스펙 검증, PASS/FAIL</span>
+│   ├── <span class="file">web-tester.md</span>                 <span class="comment"># E2E 테스트 생성+실행 (16 tools)</span>
+│   └── <span class="file">web-test-runner.md</span>            <span class="comment"># E2E 테스트 실행 전용 (8 tools)</span>
 ├── <span class="dir">skills/</span>                            <span class="comment"># 스킬 15개</span>
 │   ├── <span class="dir">dev-beom/</span>                      <span class="comment"># 기능 개발 (4명 팀 강제)</span>
 │   ├── <span class="dir">fix-beom/</span>                      <span class="comment"># 버그 수정 (3명 팀 강제)</span>
@@ -853,12 +913,14 @@
 │   ├── <span class="dir">humanizer/</span>                     <span class="comment"># AI 글쓰기 교정</span>
 │   ├── <span class="dir">tdd/</span>                           <span class="comment"># TDD 방법론 (Red-Green-Refactor)</span>
 │   ├── <span class="dir">web-test/</span>                      <span class="comment"># E2E 웹 테스트 (Playwright + OTP 바이패스)</span>
+│   │   └── <span class="dir">references/</span>                <span class="comment"># OTP 탐지 패턴 (외부 분리)</span>
 │   ├── <span class="dir">hecto-setup/</span>                   <span class="comment"># HectoProject 설정</span>
 │   └── <span class="dir">new-context/</span>                   <span class="comment"># 도메인 컨텍스트 생성</span>
-├── <span class="dir">hooks/</span>                             <span class="comment"># 안전 훅 2개</span>
-│   ├── <span class="file">hooks.json</span>                    <span class="comment"># PreToolUse: Bash, Write|Edit</span>
-│   ├── <span class="file">pre-tool-guard</span>                <span class="comment"># 보호 브랜치 커밋 차단</span>
+├── <span class="dir">hooks/</span>                             <span class="comment"># 안전 훅 3개</span>
+│   ├── <span class="file">hooks.json</span>                    <span class="comment"># PreToolUse + PostToolUse</span>
+│   ├── <span class="file">pre-tool-guard</span>                <span class="comment"># 보호 브랜치 커밋 차단 + 웹 테스트 게이트</span>
 │   ├── <span class="file">code-quality-gate</span>             <span class="comment"># 시크릿/보안 감지</span>
+│   ├── <span class="file">web-test-detector</span>             <span class="comment"># [WEB-TEST-REQUIRED] 마커 감지</span>
 │   └── <span class="file">README.md</span>                     <span class="comment"># 훅 설명</span>
 ├── <span class="dir">rules/</span>                             <span class="comment"># 행동 규칙 2개</span>
 │   ├── <span class="file">behavior.md</span>                   <span class="comment"># 6가지 행동 원칙</span>
