@@ -168,7 +168,7 @@
     <div class="stat"><div class="stat-num" style="color:var(--accent)">4</div><div class="stat-label">진입점 스킬</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--green)">6</div><div class="stat-label">에이전트</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--yellow)">10</div><div class="stat-label">유틸리티 스킬</div></div>
-    <div class="stat"><div class="stat-num" style="color:var(--red)">3</div><div class="stat-label">안전 훅</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--red)">4</div><div class="stat-label">안전 훅</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--purple)">2</div><div class="stat-label">Rules</div></div>
   </div>
 </div>
@@ -193,7 +193,7 @@
 <div class="section active" id="overview">
   <div class="card">
     <h2>Architecture Overview</h2>
-    <p style="color:var(--text-muted); margin-bottom:20px;">4개 진입점 스킬이 에이전트 팀을 강제 실행하여, plan 작성부터 커밋까지 전체 개발 사이클을 자동화합니다.</p>
+    <p style="color:var(--text-muted); margin-bottom:20px;">4개 진입점 스킬이 에이전트 팀을 강제 실행하여, plan 작성부터 커밋까지 전체 개발 사이클을 자동화합니다. 빌드/테스트 실패 시 자동 교정 루프, 에러 자동 기록, 위험 명령 물리적 차단으로 구조적 안전을 보장합니다.</p>
 
     <div style="display:flex; flex-wrap:wrap; gap:16px; justify-content:center; margin:30px 0;">
       <!-- Entry Points -->
@@ -294,7 +294,7 @@
 <div class="section" id="pipeline">
   <div class="card">
     <h2>/dev-beom Pipeline Flow</h2>
-    <p style="color:var(--text-muted); margin-bottom:20px;">6단계 Phase를 순서대로 실행. Phase를 건너뛰지 않습니다.</p>
+    <p style="color:var(--text-muted); margin-bottom:20px;">8단계 Phase를 순서대로 실행. Phase를 건너뛰지 않습니다.</p>
 
     <div class="flow">
       <div class="flow-step setup" style="border-left:4px solid var(--text-muted);">
@@ -321,8 +321,13 @@
           <span style="color:var(--red);">RED</span> 실패 테스트 &rarr;
           <span style="color:var(--green);">GREEN</span> 최소 구현 &rarr;
           <span style="color:var(--accent);">REFACTOR</span> 정리
-          &rarr; git add &rarr; diff 수집(.dev/diff.txt)
         </div>
+      </div>
+      <div class="flow-arrow">&darr;</div>
+
+      <div class="flow-step" style="border-left:4px solid var(--orange); border-color:var(--orange); background:rgba(240,136,62,0.05);">
+        <div class="step-title">Phase 4.5: Auto-Correction <span class="tag tag-yellow">max 3</span></div>
+        <div class="step-detail">빌드/테스트 실행 &rarr; 실패 시 coder에게 자동 수정 요청 (최대 3회) &rarr; git add &rarr; diff 수집</div>
       </div>
       <div class="flow-arrow">&darr;</div>
 
@@ -340,6 +345,11 @@
           <div class="flow-step commit" style="border-left:4px solid var(--purple); min-width:200px;">
             <div class="step-title">Phase 6: Commit</div>
             <div class="step-detail">/commit &rarr; result 보고 &rarr; COMPLETED</div>
+          </div>
+          <div class="flow-arrow">&darr;</div>
+          <div class="flow-step setup" style="border-left:4px solid var(--text-muted); min-width:200px;">
+            <div class="step-title">Phase 7: Cleanup</div>
+            <div class="step-detail">임시파일 정리 + 에러로그 분석 + 중복 경고</div>
           </div>
         </div>
         <div style="text-align:center;">
@@ -710,7 +720,7 @@
       <thead><tr><th>항목</th><th>dev-beom / fix-beom</th><th>persist-beom</th></tr></thead>
       <tbody>
         <tr><td>QA 5회 초과</td><td>issue 보고 + <strong>중단</strong></td><td>issue 보고 + <strong>접근 변경 후 재시도</strong></td></tr>
-        <tr><td>에러 복구</td><td>사용자에게 보고</td><td>coder 자동 수정 (최대 3회)</td></tr>
+        <tr><td>에러 복구</td><td>자동 교정 3회 &rarr; 사용자 보고</td><td>자동 교정 3회 &rarr; 접근 변경 재시도</td></tr>
         <tr><td>질문</td><td>사용자에게 질문</td><td>합리적 가정으로 진행</td></tr>
         <tr><td>커밋</td><td>사용자 확인 후</td><td>자동 커밋</td></tr>
       </tbody>
@@ -721,14 +731,15 @@
 <!-- ===== HOOKS & RULES ===== -->
 <div class="section" id="hooks">
   <div class="card">
-    <h2>Safety Hooks (3)</h2>
-    <div class="grid-3">
+    <h2>Safety Hooks (4)</h2>
+    <div class="grid-2">
       <div class="hook-card">
         <div class="hook-name" style="color:var(--red);">pre-tool-guard</div>
         <div class="hook-event">PreToolUse / Bash &nbsp; | &nbsp; timeout: 2s</div>
         <div class="hook-desc">
-          <strong>보호 브랜치 커밋 차단.</strong><br>
-          main, master, develop, test, dev에서 <code>git commit</code> 실행 시 exit 2로 차단. [WEB-TEST-REQUIRED] 시 웹 테스트 통과 마커 없으면 커밋 차단.
+          <strong>보호 브랜치 커밋 차단 + 위험 명령 차단.</strong><br>
+          <span style="color:var(--red);">차단:</span> 보호 브랜치 git commit/push, force push, <code>rm -rf /</code>, <code>chmod 777</code><br>
+          <span style="color:var(--red);">차단:</span> [WEB-TEST-REQUIRED] 시 웹 테스트 미통과 커밋
         </div>
       </div>
       <div class="hook-card">
@@ -736,13 +747,21 @@
         <div class="hook-event">PreToolUse / Write|Edit &nbsp; | &nbsp; timeout: 3s</div>
         <div class="hook-desc">
           <strong>보안 위험 감지 + 플러그인 보호.</strong><br>
-          <span style="color:var(--red);">차단:</span> API 키 하드코딩, eval(), innerHTML, SQL 인젝션<br>
+          <span style="color:var(--red);">차단:</span> API 키, eval(), innerHTML, SQL 인젝션, DROP TABLE, exec(), subprocess shell=True, console.log 민감정보<br>
           <span style="color:var(--yellow);">확인:</span> hooks/, rules/, config/, agents/, skills/ 수정
         </div>
       </div>
       <div class="hook-card">
+        <div class="hook-name" style="color:var(--cyan);">error-learner</div>
+        <div class="hook-event">PostToolUse / Bash &nbsp; | &nbsp; timeout: 3s</div>
+        <div class="hook-desc">
+          <strong>에러 자동 기록 + 반복 감지.</strong><br>
+          Bash 실패 시 에러 시그니처를 <code>.dev/error-log.md</code>에 기록. 동일 에러 2회 반복 시 <code>additionalContext</code>로 "다른 접근 방식 사용" 경고 주입.
+        </div>
+      </div>
+      <div class="hook-card">
         <div class="hook-name" style="color:var(--pink);">web-test-detector</div>
-        <div class="hook-event">PostToolUse / Agent &nbsp; | &nbsp; timeout: 2s</div>
+        <div class="hook-event">PostToolUse / SendMessage &nbsp; | &nbsp; timeout: 2s</div>
         <div class="hook-desc">
           <strong>[WEB-TEST-REQUIRED] 마커 감지.</strong><br>
           qa-manager 응답에서 마커 탐지 시 <code>.dev/web-test-required</code> 플래그를 생성하여 커밋 게이트 활성화.
@@ -759,6 +778,8 @@
       <li><strong>Co-Authored-By 금지</strong></li>
       <li><strong>팀 실행 생략 금지</strong> &mdash; "간단하다"는 이유로 생략 불가</li>
       <li><strong>plan 파일 생략 금지</strong> &mdash; docs/plan/plan_{작업}.md 필수 생성</li>
+      <li><strong>QA 호출 생략 금지</strong> &mdash; 모든 구현 후 반드시 qa-manager 리뷰. 오케스트레이터 자체 리뷰 대체 금지</li>
+      <li><strong>tmux-team-agent 호출 생략 금지</strong> &mdash; TeamCreate 직후 반드시 호출</li>
       <li><strong>QA 루프 생략 금지</strong> &mdash; Critical 발견 시 반드시 수정</li>
       <li><strong>[WEB-TEST-REQUIRED] 무시 금지</strong> &mdash; 마커 감지 시 질문 없이 즉시 웹 테스트 실행</li>
       <li><strong>민감 파일 커밋 금지</strong> &mdash; .env*, *.key, *.pem, credentials*</li>
@@ -791,7 +812,11 @@
       </div>
       <div style="background:var(--surface2); border-radius:8px; padding:14px;">
         <div style="font-weight:700; margin-bottom:4px;">6. 피드백 반영</div>
-        <div style="font-size:0.8rem; color:var(--text-muted);">1회 → MEMORY, 2회 → rules 승격</div>
+        <div style="font-size:0.8rem; color:var(--text-muted);">1회 → MEMORY, 2회 → rules 승격. error-log 사전 회피. 3회 반복 → 대안 탐색</div>
+      </div>
+      <div style="background:var(--surface2); border-radius:8px; padding:14px;">
+        <div style="font-weight:700; margin-bottom:4px;">7. 프로세스 생략 금지</div>
+        <div style="font-size:0.8rem; color:var(--text-muted);">"변경이 작다" 등의 합리화로 QA/tmux-agent 생략 불가</div>
       </div>
     </div>
   </div>
@@ -879,6 +904,8 @@
         <tr><td><code>.dev/web-test-passed</code></td><td>/web-test Phase 5</td><td>웹 테스트 통과 마커 (커밋 게이트)</td></tr>
         <tr><td><code>.dev/web-test-required</code></td><td>web-test-detector 훅</td><td>[WEB-TEST-REQUIRED] 감지 플래그</td></tr>
         <tr><td><code>.dev/test-result.md</code></td><td>/web-test Phase 4</td><td>에이전트 테스트 결과</td></tr>
+        <tr><td><code>.dev/error-log.md</code></td><td>error-learner 훅</td><td>Bash 실패 에러 시그니처 자동 기록 (반복 감지)</td></tr>
+        <tr><td><code>.dev/cleanup-report.md</code></td><td>Phase 7 (persist-beom)</td><td>자율 실행 시 마무리 점검 보고서</td></tr>
       </tbody>
     </table>
   </div>
@@ -891,13 +918,15 @@
     <pre class="tree">
 <span class="dir">oh-my-beom/</span>
 ├── <span class="highlight">CLAUDE.md</span>                         <span class="comment"># 최상위 지침 (금지 사항 + 워크플로우)</span>
-├── <span class="dir">agents/</span>                            <span class="comment"># 에이전트 6개</span>
+├── <span class="dir">agents/</span>                            <span class="comment"># 에이전트 6개 + 컨벤션</span>
 │   ├── <span class="file">planner.md</span>                    <span class="comment"># plan 관리, TODO, QA 이슈 수신</span>
 │   ├── <span class="file">architect.md</span>                  <span class="comment"># 기술 설계 + 비판적 자기검토</span>
 │   ├── <span class="file">coder.md</span>                      <span class="comment"># 코드 구현/수정, TDD</span>
 │   ├── <span class="file">qa-manager.md</span>                 <span class="comment"># 코드 리뷰, 스펙 검증, PASS/FAIL</span>
 │   ├── <span class="file">web-tester.md</span>                 <span class="comment"># E2E 테스트 생성+실행 (16 tools)</span>
-│   └── <span class="file">web-test-runner.md</span>            <span class="comment"># E2E 테스트 실행 전용 (8 tools)</span>
+│   ├── <span class="file">web-test-runner.md</span>            <span class="comment"># E2E 테스트 실행 전용 (8 tools)</span>
+│   └── <span class="dir">conventions/</span>                   <span class="comment"># 프로젝트별 컨벤션 (조건부 로드)</span>
+│       └── <span class="highlight">spring-boot.md</span>            <span class="comment"># Spring Boot/JPA/QueryDSL (설계+구현+리뷰 통합)</span>
 ├── <span class="dir">skills/</span>                            <span class="comment"># 스킬 14개</span>
 │   ├── <span class="dir">dev-beom/</span>                      <span class="comment"># 기능 개발 (4명 팀 강제)</span>
 │   ├── <span class="dir">fix-beom/</span>                      <span class="comment"># 버그 수정 (3명 팀 강제)</span>
@@ -914,17 +943,18 @@
 │   ├── <span class="dir">web-test/</span>                      <span class="comment"># E2E 웹 테스트 (Playwright + OTP 바이패스)</span>
 │   │   └── <span class="dir">references/</span>                <span class="comment"># OTP 탐지 패턴 (외부 분리)</span>
 │   └── <span class="dir">new-context/</span>                   <span class="comment"># 도메인 컨텍스트 생성</span>
-├── <span class="dir">hooks/</span>                             <span class="comment"># 안전 훅 3개</span>
+├── <span class="dir">hooks/</span>                             <span class="comment"># 안전 훅 4개</span>
 │   ├── <span class="file">hooks.json</span>                    <span class="comment"># PreToolUse + PostToolUse</span>
-│   ├── <span class="file">pre-tool-guard</span>                <span class="comment"># 보호 브랜치 커밋 차단 + 웹 테스트 게이트</span>
-│   ├── <span class="file">code-quality-gate</span>             <span class="comment"># 시크릿/보안 감지</span>
+│   ├── <span class="file">pre-tool-guard</span>                <span class="comment"># 보호 브랜치 커밋/push + 위험 명령(rm -rf, chmod 777) 차단</span>
+│   ├── <span class="file">code-quality-gate</span>             <span class="comment"># 시크릿/보안/위험SQL/exec/subprocess 감지</span>
+│   ├── <span class="highlight">error-learner</span>                 <span class="comment"># Bash 실패 에러 기록 + 반복 감지 → 접근 변경 유도</span>
 │   ├── <span class="file">web-test-detector</span>             <span class="comment"># [WEB-TEST-REQUIRED] 마커 감지</span>
 │   └── <span class="file">README.md</span>                     <span class="comment"># 훅 설명</span>
 ├── <span class="dir">rules/</span>                             <span class="comment"># 행동 규칙 2개</span>
-│   ├── <span class="file">behavior.md</span>                   <span class="comment"># 6가지 행동 원칙</span>
+│   ├── <span class="file">behavior.md</span>                   <span class="comment"># 7가지 행동 원칙</span>
 │   └── <span class="file">git-workflow.md</span>               <span class="comment"># Git 브랜치/커밋/PR 규칙</span>
 ├── <span class="dir">config/</span>
-│   └── <span class="file">config.json</span>                   <span class="comment"># 프로젝트 타입, 민감파일, 타임아웃</span>
+│   └── <span class="file">config.json</span>                   <span class="comment"># 프로젝트 타입, 민감파일, 타임아웃, 자동교정, 위험패턴</span>
 ├── <span class="dir">docs/</span>                              <span class="comment"># 산출물</span>
 │   ├── <span class="dir">plan/</span>                          <span class="comment"># plan_{작업}.md (작업 계획)</span>
 │   ├── <span class="dir">result/</span>                        <span class="comment"># result_{작업}.md (최종 보고)</span>

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# PostToolUse: Bash 실패 시 에러를 .dev/error-log.md에 기록
+# 동일 에러 2회 이상 반복 시 additionalContext로 경고 주입
+set -uo pipefail
+
+INPUT=$(cat /dev/stdin 2>/dev/null || echo '{}')
+
+# exit_code 추출
+EXIT_CODE=$(echo "$INPUT" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    print(data.get('tool_result', {}).get('exit_code', 0))
+except: print(0)
+" 2>/dev/null || echo "0")
+
+[ "$EXIT_CODE" = "0" ] && { echo '{"continue":true}'; exit 0; }
+
+# 에러 시그니처 추출 (stderr 또는 stdout 첫 3줄)
+SIGNATURE=$(echo "$INPUT" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    r = data.get('tool_result', {})
+    text = r.get('stderr','') or r.get('stdout','')
+    lines = text.strip().split('\n')[:3]
+    sig = '|'.join(l.strip() for l in lines if l.strip())
+    print(sig[:200])
+except: print('')
+" 2>/dev/null || echo "")
+
+[ -z "$SIGNATURE" ] && { echo '{"continue":true}'; exit 0; }
+
+# .dev/error-log.md에 기록 + 반복 감지
+mkdir -p .dev
+LOG=".dev/error-log.md"
+COUNT=0
+if [ -f "$LOG" ]; then
+  COUNT=$(grep -cF "$SIGNATURE" "$LOG" 2>/dev/null || echo 0)
+fi
+
+DATE=$(date '+%Y-%m-%d %H:%M')
+echo "- [$DATE] (${COUNT}회차) $SIGNATURE" >> "$LOG"
+
+if [ "$COUNT" -ge 1 ]; then
+  cat <<EOF
+{
+  "hookSpecificOutput": {
+    "additionalContext": "동일 에러가 $((COUNT+1))회 반복되고 있습니다. 이전과 다른 접근 방식을 사용하세요. .dev/error-log.md를 확인하세요."
+  }
+}
+EOF
+else
+  echo '{"continue":true}'
+fi
+exit 0

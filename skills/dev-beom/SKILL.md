@@ -10,12 +10,8 @@ argument-hint: "[Jira URL 또는 이슈키] <작업 설명>"
 
 ## 절대 원칙
 
-1. **오케스트레이터는 직접 코드를 작성하지 않는다.** 모든 산출물은 에이전트(SendMessage)를 통해 생성한다.
-2. **팀 실행을 생략하지 않는다.** 작업 규모와 무관하게 반드시 TeamCreate → 에이전트 실행을 수행한다.
-3. **plan 파일을 반드시 생성한다.** `docs/plan/plan_{작업내용}.md`가 없으면 작업을 시작하지 않는다.
-4. **qa-manager 호출을 생략하지 않는다.** Phase 5는 변경 크기, 파일 수, 줄 수와 무관하게 반드시 실행한다. 오케스트레이터가 직접 리뷰하여 대체하는 것은 금지한다.
-5. **TeamCreate 직후 tmux-team-agent를 호출한다.** `Skill("oh-my-beom:tmux-team-agent")`를 생략하지 않는다.
-6. **`[WEB-TEST-REQUIRED]` 마커 발견 시 즉시 실행한다.** qa-manager 리뷰에 이 마커가 있으면 질문 없이 서버 기동 → 웹 테스트 → 서버 종료를 수행한다. 절차는 Phase 5의 "웹 테스트 실행" 참조.
+CLAUDE.md "금지 사항"을 전부 준수한다. 추가로:
+- **오케스트레이터는 직접 코드를 작성하지 않는다.** 모든 산출물은 에이전트(SendMessage)를 통해 생성한다.
 
 ## 인자
 
@@ -33,7 +29,7 @@ ARGS 없이 호출 시: "개발할 기능을 설명해주세요. 예: `/dev-beom
 
 ### 1-0. 이전 세션 마커 정리
 ```
-Bash(command="rm -f .dev/web-test-required .dev/web-test-passed")
+Bash(command="rm -f .dev/web-test-required .dev/web-test-passed .dev/diff.txt .dev/design.md .dev/codemap.md .dev/jira-context.md .dev/cleanup-report.md .dev/*.pid")
 ```
 
 ### 1-1. Jira 조회 (선택)
@@ -119,7 +115,19 @@ TDD 규칙 (/tdd 스킬):
 """)
 ```
 
-coder 완료 후:
+### Phase 4.5: 빌드/테스트 자동 교정
+
+coder 구현 완료 후, QA 리뷰 전에 빌드/테스트를 실행한다. **실패 시 coder에게 자동 수정을 요청한다. 최대 3회.**
+
+1. 프로젝트 타입별 테스트 명령 실행 (`config/config.json` projectTypes 참조)
+2. 성공 → Phase 5로 진행
+3. 실패 시:
+   - 에러 출력을 캡처
+   - `SendMessage(to="coder", message="빌드/테스트 실패. 에러: {에러 출력 앞 50줄}. 수정해주세요.")`
+   - 수정 후 재실행
+4. 동일 에러 3회 반복 → 사용자에게 보고하고 지시 요청
+
+### coder 완료 후 정리:
 1. `git add`로 변경 파일 스테이징
 2. `git diff --cached > .dev/diff.txt` (500줄 이상이면 `--stat`으로 대체)
 3. plan 파일의 "변경 사항" 섹션에 변경 파일 목록 기록
@@ -224,6 +232,15 @@ docs/result/result_{작업내용}.md에 작성해주세요.
 ```
 
 4. plan 파일의 상태를 `COMPLETED`로 갱신
+
+## Phase 7: 마무리 점검
+
+커밋 완료 후 다음을 수행한다:
+
+1. **임시 파일 정리**: `rm -f .dev/diff.txt .dev/design.md .dev/codemap.md .dev/jira-context.md`
+2. **에러 로그 분석**: `.dev/error-log.md`에 반복 에러(3회+)가 있으면 사용자에게 안내:
+   "반복 에러 패턴이 감지되었습니다. rules 승격을 고려하세요: {패턴 요약}"
+3. **중복 코드 경고**: 변경 파일이 10개 이상이면, 동일 로직 복사 여부를 간단히 확인하고 경고
 
 ---
 

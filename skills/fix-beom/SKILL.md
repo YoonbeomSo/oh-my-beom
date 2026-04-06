@@ -10,12 +10,8 @@ argument-hint: "[Jira URL 또는 이슈키] <버그 설명>"
 
 ## 절대 원칙
 
-1. **오케스트레이터는 직접 코드를 작성하지 않는다.** 모든 산출물은 에이전트(SendMessage)를 통해 생성한다.
-2. **팀 실행을 생략하지 않는다.** 버그 규모와 무관하게 반드시 TeamCreate → 에이전트 실행을 수행한다.
-3. **plan 파일을 반드시 생성한다.** `docs/plan/plan_{작업내용}.md`가 없으면 작업을 시작하지 않는다.
-4. **qa-manager 호출을 생략하지 않는다.** Phase 5는 변경 크기, 파일 수, 줄 수와 무관하게 반드시 실행한다. "1줄 수정이라 직접 확인했다"는 이유로 생략 불가.
-5. **TeamCreate 직후 tmux-team-agent를 호출한다.** `Skill("oh-my-beom:tmux-team-agent")`를 생략하지 않는다.
-6. **`[WEB-TEST-REQUIRED]` 마커 발견 시 즉시 실행한다.** qa-manager 리뷰에 이 마커가 있으면 질문 없이 서버 기동 → 웹 테스트 → 서버 종료를 수행한다. 절차는 Phase 5의 "웹 테스트 실행" 참조.
+CLAUDE.md "금지 사항"을 전부 준수한다. 추가로:
+- **오케스트레이터는 직접 코드를 작성하지 않는다.** 모든 산출물은 에이전트(SendMessage)를 통해 생성한다.
 
 ## 인자
 
@@ -30,7 +26,7 @@ ARGS 없이 호출 시: "수정할 버그를 설명해주세요. 예: `/fix-beom
 ## Phase 1: Setup
 
 `/dev-beom`의 Phase 1과 동일:
-0. 이전 세션 마커 정리: `Bash(command="rm -f .dev/web-test-required .dev/web-test-passed")`
+0. 이전 세션 마커 정리: `Bash(command="rm -f .dev/web-test-required .dev/web-test-passed .dev/diff.txt .dev/design.md .dev/codemap.md .dev/jira-context.md .dev/cleanup-report.md .dev/*.pid")`
 1. Jira 조회 (URL/키 감지 시)
 2. Git 환경 준비 (브랜치명: `fix/{설명}`, 이슈 키는 커밋 메시지에서 관리)
 3. 프로젝트 정보 수집 + 코드 맵 생성
@@ -88,6 +84,18 @@ plan: {docs/plan/plan_{작업내용}.md 내용}
 """)
 ```
 
+### Phase 4.5: 빌드/테스트 자동 교정
+
+coder 수정 완료 후, QA 리뷰 전에 빌드/테스트를 실행한다. **실패 시 coder에게 자동 수정을 요청한다. 최대 3회.**
+
+1. 프로젝트 타입별 테스트 명령 실행 (`config/config.json` projectTypes 참조)
+2. 성공 → Phase 5로 진행
+3. 실패 시:
+   - 에러 출력을 캡처
+   - `SendMessage(to="coder", message="빌드/테스트 실패. 에러: {에러 출력 앞 50줄}. 수정해주세요.")`
+   - 수정 후 재실행
+4. 동일 에러 3회 반복 → 사용자에게 보고하고 지시 요청
+
 완료 후 diff 수집: `git diff --cached > .dev/diff.txt`
 
 ## Phase 5: QA 리뷰 + 루프
@@ -97,32 +105,23 @@ plan: {docs/plan/plan_{작업내용}.md 내용}
 - FAIL 시 QA 루프 (최대 5회)
 - 5회 초과 시 issue 보고서 생성
 
-### 웹 테스트 실행 (필수 — 조건 충족 시 자동 실행)
+### 웹 테스트 실행
 
-qa-manager 리뷰 결과에 **`[WEB-TEST-REQUIRED]`** 마커가 포함되어 있으면, QA PASS 후 커밋 전에 **질문 없이 즉시** 웹 테스트를 실행한다. "진행할까요?", "서버가 필요합니다" 등의 질문은 금지.
-
-**실행 절차:**
-1. **서버 기동**: 프로젝트의 dev 서버를 직접 기동한다
-   - `package.json`의 `scripts`에서 dev/start 명령 감지 (`dev`, `start`, `serve`)
-   - `Bash(command="npm run dev &", run_in_background=true)` 또는 해당 런타임 명령
-   - 서버가 ready 될 때까지 대기 (URL 접근 가능 확인, 최대 30초)
-   - `playwright.config.ts`에 `webServer` 설정이 있으면 Playwright가 자동 기동하므로 이 단계 생략
-2. **URL 자동 결정**: 다음 우선순위로 결정 (사용자 질문 금지)
-   - `playwright.config.ts`의 `use.baseURL` 값
-   - `package.json`의 dev 스크립트에서 포트 추출 → `http://localhost:{port}`
-   - 기본값: `http://localhost:3000`
-3. **웹 테스트 실행**:
-   ```
-   Skill("oh-my-beom:web-test", args="{결정된 URL} {변경 사항 기반 시나리오}")
-   ```
-4. **서버 정리**: 웹 테스트 완료 후 기동한 서버 프로세스를 종료한다
-
-`[WEB-TEST-REQUIRED]`가 있는데 실행하지 않는 것은 **절대 금지**.
+`[WEB-TEST-REQUIRED]` 마커 감지 시 dev-beom Phase 5 "웹 테스트 실행" 절차와 동일하게 즉시 실행한다. 질문 없이 서버 기동 → 웹 테스트 → 서버 종료.
 
 ## Phase 6: 커밋
 
 `/dev-beom`의 Phase 6과 동일:
 - 사용자 확인 → `/commit` → result 보고 → plan 상태 COMPLETED
+
+## Phase 7: 마무리 점검
+
+커밋 완료 후 다음을 수행한다:
+
+1. **임시 파일 정리**: `rm -f .dev/diff.txt .dev/design.md .dev/codemap.md .dev/jira-context.md`
+2. **에러 로그 분석**: `.dev/error-log.md`에 반복 에러(3회+)가 있으면 사용자에게 안내:
+   "반복 에러 패턴이 감지되었습니다. rules 승격을 고려하세요: {패턴 요약}"
+3. **중복 코드 경고**: 변경 파일이 10개 이상이면, 동일 로직 복사 여부를 간단히 확인하고 경고
 
 ---
 
