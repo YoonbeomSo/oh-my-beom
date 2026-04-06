@@ -6,6 +6,31 @@ oh-my-beom 플러그인의 최상위 지침.
 
 ---
 
+## 전체 흐름 (Quick Map)
+
+```
+사용자 요청 → 진입점 선택 (/dev-beom | /fix-beom | /persist-beom)
+  → Phase 1: Setup (Git, 코드 맵)
+  → Phase 2: Plan (planner → docs/plan/)
+  → Phase 3: 설계 (architect)
+  → Phase 4: 구현 (coder, TDD)
+  → Phase 4.5: 빌드/테스트 자동 교정 (최대 3회)
+  → Phase 5: QA 리뷰 (qa-manager, 최대 5회 루프)
+  → Phase 6: 커밋 (/commit)
+  → Phase 7: 마무리 점검 (임시 파일 정리, 에러 로그 분석)
+```
+
+**안전장치 (훅):**
+
+| 시점 | 훅 | 역할 |
+|------|-----|------|
+| Write/Edit 전 | `code-quality-gate` | 시크릿, 보안 취약점, 위험 SQL 차단 |
+| Bash 실행 전 | `pre-tool-guard` | 보호 브랜치 커밋/push, 위험 명령 차단 |
+| Bash 실행 후 | `error-learner` | 에러 기록 + 반복 감지 → 접근 방식 변경 유도 |
+| SendMessage 후 | `web-test-detector` | [WEB-TEST-REQUIRED] 감지 |
+
+상세: `rules/behavior.md`, `rules/git-workflow.md`, `config/config.json`
+
 ## 금지 사항 (절대)
 
 - **PR 머지 금지.** `gh pr merge` 실행 금지. PR 링크를 제공하여 사용자가 직접 머지
@@ -33,6 +58,8 @@ oh-my-beom 플러그인의 최상위 지침.
 | `/persist-beom` | 자율 실행 (끝까지) | 전체 팀 (질문 없이) |
 
 ## 에이전트 역할 경계
+
+> 코드를 쓰는 AI(coder)와 검토하는 AI(qa-manager)를 분리하여 품질을 높인다. 자기 코드를 자기가 리뷰하지 않는다.
 
 | 역할 | 한다 | 하지 않는다 |
 |------|------|-----------|

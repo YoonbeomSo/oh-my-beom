@@ -37,10 +37,6 @@
 - 민감 파일(`.env*`, `*.key`, `*.pem`, `credentials*`, `*secret*`)은 절대 커밋하지 마라. `config/config.json`의 `sensitiveFilePatterns`를 참조한다.
 - 빌드 산출물(`build/`, `node_modules/`, `dist/` 등)을 커밋하지 마라. `config/config.json`의 `buildArtifactPatterns`를 참조한다.
 
-### Co-Authored-By 금지
-
-커밋 메시지에 `Co-Authored-By` 트레일러를 추가하지 마라. 이 플러그인의 커밋은 사용자 단독 저작이다.
-
 ## 최신 상태 유지
 
 **매 요청 시작 전** 아래를 순서대로 실행하라:

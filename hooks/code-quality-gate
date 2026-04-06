@@ -119,6 +119,28 @@ if echo "$NEW_CONTENT" | grep -qE "(SELECT|INSERT|UPDATE|DELETE|DROP).*\+\s*(req
   ISSUES+=("SQL 문자열 연결 감지 — SQL 인젝션 위험. 파라미터 바인딩 사용 권장")
 fi
 
+# 위험 SQL 명령 감지 (DROP TABLE, TRUNCATE, 무조건 DELETE)
+if echo "$NEW_CONTENT" | grep -qiE '\b(DROP\s+TABLE|TRUNCATE\s+TABLE|DELETE\s+FROM\s+\w+\s*;)' 2>/dev/null; then
+  ISSUES+=("위험 SQL 명령 감지 (DROP/TRUNCATE/무조건 DELETE)")
+fi
+
+# exec() 사용 (Python — 코드 인젝션 위험)
+if echo "$NEW_CONTENT" | grep -qE '\bexec\s*\(' 2>/dev/null; then
+  case "$FILE_PATH" in
+    *.py) ISSUES+=("exec() 사용 감지 — 코드 인젝션 위험") ;;
+  esac
+fi
+
+# subprocess shell=True (명령 인젝션 위험)
+if echo "$NEW_CONTENT" | grep -qE 'subprocess\.(call|run|Popen).*shell\s*=\s*True' 2>/dev/null; then
+  ISSUES+=("subprocess shell=True 감지 — 명령 인젝션 위험")
+fi
+
+# console.log 민감 정보 노출
+if echo "$NEW_CONTENT" | grep -qE 'console\.log.*(password|token|secret)' 2>/dev/null; then
+  ISSUES+=("console.log에 민감 정보 출력 감지")
+fi
+
 # 결과 출력
 if [ ${#ISSUES[@]} -eq 0 ]; then
   echo '{"continue": true}'

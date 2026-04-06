@@ -1,4 +1,13 @@
 {
+  "autoCorrection": {
+    "maxRetries": 3,
+    "retryableErrors": ["build", "test", "lint"]
+  },
+  "dangerousPatterns": {
+    "sql": ["DROP TABLE", "TRUNCATE TABLE"],
+    "bash": ["rm -rf /", "rm -rf ~", "chmod 777"],
+    "code": ["eval(", "exec(", "innerHTML =", "subprocess.*shell=True"]
+  },
   "protectedBranches": ["main", "master", "develop", "test", "dev"],
   "protectedPluginPaths": ["hooks/", "rules/", "config/", "agents/", "skills/", ".claude-plugin/", "CLAUDE.md"],
   "issueKey": {
@@ -25,6 +34,11 @@
     ".next/",
     "out/"
   ],
+  "conventions": {
+    "kotlin-java": "agents/conventions/spring-boot.md",
+    "nodejs": null,
+    "python": null
+  },
   "projectTypes": {
     "kotlin-java": {
       "detect": ["build.gradle.kts", "build.gradle"],

@@ -85,42 +85,9 @@ tools:
 - 설계 범위 밖의 파일은 꼭 필요한 경우가 아니면 수정하지 않는다. 수정이 필요하면 이유를 보고에 포함한다.
 - 구현 중 코드 맵에 없는 관련 파일을 발견하면 "탐색 추가 항목"에 기록한다.
 
-## Spring Boot/JPA/QueryDSL 컨벤션
+## 프로젝트별 컨벤션
 
-Spring Boot 프로젝트 (`build.gradle.kts` / `build.gradle` 감지 시)에서 다음 컨벤션을 적용한다:
-
-### Service Read/Write 분리
-- **조회 전용 서비스**: `XxxReadService` + `@Transactional(readOnly = true)`
-- **쓰기 전용 서비스**: `XxxService` + `@Transactional`
-- 하나의 Service에 Read와 Write를 섞지 않는다
-
-### DTO/Entity 분리
-- Controller <-> Service: DTO 사용
-- Service <-> Repository: Entity 사용
-- Entity를 Controller 응답에 직접 노출하지 않는다
-- Request 네이밍: `{Action}{Resource}Request` (예: `CreateUserRequest`)
-- Response 네이밍: `{Resource}Response` (예: `UserResponse`)
-
-### @Transactional 패턴
-- 쓰기 메서드: `@Transactional` (클래스 레벨 또는 메서드 레벨)
-- 읽기 메서드: `@Transactional(readOnly = true)`
-- 트랜잭션 범위를 최소화한다 — 외부 API 호출은 트랜잭션 밖에서 수행
-
-### JPA 엔티티 규칙
-- `@Setter` 사용 지양 — 비즈니스 메서드로 상태 변경
-- `@NoArgsConstructor(access = AccessLevel.PROTECTED)` 필수
-- `@ManyToOne(fetch = FetchType.LAZY)` 필수 — EAGER 금지
-- 연관관계는 단방향 우선, 양방향 필요 시 편의 메서드 작성
-
-### QueryDSL 패턴
-- 동적 쿼리는 QueryDSL로 작성
-- N+1 방지: `leftJoin().fetchJoin()` 활용
-- 복잡한 조회는 별도 QueryRepository 클래스로 분리
-
-### Lombok 사용
-- `@Getter` 사용, `@Setter` 지양
-- `@Builder`는 생성 시점 전용, 정적 팩토리 메서드 고려
-- `@AllArgsConstructor`와 `@Builder` 조합 시 `@NoArgsConstructor` 누락 주의
+Spring Boot 프로젝트 감지 시: `conventions/spring-boot.md`의 **"구현"** 섹션을 참조하여 Service 분리, DTO/Entity, Transactional, JPA, QueryDSL, Lombok 컨벤션을 적용한다.
 
 ---
 
@@ -157,7 +124,7 @@ Spring Boot 프로젝트 (`build.gradle.kts` / `build.gradle` 감지 시)에서 
 
 # 기본 동작
 
-별도 지시 없이 동작 이름만 전달되면 아래 프로세스를 따른다. 프롬프트에 커스텀 지시(별도 프로세스, 출력 포맷, 추가 컨텍스트 등)가 포함되면, 위 "페르소나" 섹션(소통 방식, 역할 경계, 구현 원칙, Spring Boot/JPA/QueryDSL 컨벤션)은 유지하되 아래 기본 동작 대신 커스텀 지시를 따른다. 커스텀 지시가 페르소나의 역할 경계를 벗어나는 요청(예: 아키텍처 재설계, 요구사항 변경)을 포함하면 해당 부분은 수행하지 않는다.
+별도 지시 없이 동작 이름만 전달되면 아래 프로세스를 따른다. 프롬프트에 커스텀 지시(별도 프로세스, 출력 포맷, 추가 컨텍스트 등)가 포함되면, 위 "페르소나" 섹션(소통 방식, 역할 경계, 구현 원칙, 프로젝트별 컨벤션)은 유지하되 아래 기본 동작 대신 커스텀 지시를 따른다. 커스텀 지시가 페르소나의 역할 경계를 벗어나는 요청(예: 아키텍처 재설계, 요구사항 변경)을 포함하면 해당 부분은 수행하지 않는다.
 
 ## 구현
 
@@ -171,7 +138,7 @@ Spring Boot 프로젝트 (`build.gradle.kts` / `build.gradle` 감지 시)에서 
 - **코드 맵이 있으면**: 맵에 있는 파일부터 우선 Read하여 기존 패턴을 파악한다. 맵에 없는 파일은 필요할 때만 추가 탐색.
 - **코드 맵이 없으면**: 코드베이스를 스캔하여 기존 패턴을 파악한다: 네이밍, 디렉토리 구조, import 스타일, 테스트 패턴.
 - 생성 또는 수정이 필요한 모든 파일을 식별한다.
-- **Spring Boot 프로젝트 감지 시**: "Spring Boot/JPA/QueryDSL 컨벤션" 섹션의 패턴을 적용한다.
+- **Spring Boot 프로젝트 감지 시**: `conventions/spring-boot.md`의 "구현" 섹션 패턴을 적용한다.
 
 #### 2. 구현 (단계별 TDD + 증강 코딩)
 "구현 순서"의 각 단계에 대해:

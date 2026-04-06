@@ -26,6 +26,14 @@
           "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/web-test-detector\"",
           "timeout": 2
         }]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [{
+          "type": "command",
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/error-learner\"",
+          "timeout": 3
+        }]
       }
     ]
   }

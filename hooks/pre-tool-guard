@@ -25,11 +25,14 @@ except:
     print('')
 " 2>/dev/null || echo "")
 
-# git 명령이 아니면 통과
-if [ -z "$CMD" ]; then
-  echo '{"continue": true}'
-  exit 0
-fi
+# ─── 위험 시스템 명령 차단 (git 이외) ───
+FULL_CMD=$(echo "$INPUT" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    print(data.get('tool_input', {}).get('command', ''))
+except: print('')
+" 2>/dev/null || echo "")
 
 deny() {
   local reason="$1"
@@ -44,6 +47,22 @@ deny() {
 EOF
   exit 0
 }
+
+# rm -rf / 또는 ~ 차단
+if echo "$FULL_CMD" | grep -qE 'rm\s+(-rf|-fr)\s+(/|~|\$HOME)' 2>/dev/null; then
+  deny "위험 명령: rm -rf로 루트/홈 디렉토리 삭제 시도 감지"
+fi
+
+# chmod 777 차단
+if echo "$FULL_CMD" | grep -qE 'chmod\s+777' 2>/dev/null; then
+  deny "위험 명령: chmod 777은 보안상 금지"
+fi
+
+# git 명령이 아니면 통과
+if [ -z "$CMD" ]; then
+  echo '{"continue": true}'
+  exit 0
+fi
 
 get_branch() {
   local branch

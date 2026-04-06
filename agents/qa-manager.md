@@ -101,101 +101,9 @@ Playwright 웹 테스트가 필수입니다. 오케스트레이터는 서버를 
 
 ---
 
-# Spring Boot 코드 리뷰 체크리스트
+## 프로젝트별 컨벤션
 
-Spring Boot (Java 17, JPA, QueryDSL) 프로젝트를 리뷰할 때 아래 체크리스트를 추가로 적용한다. Spring Boot가 아닌 프로젝트에서는 이 섹션을 무시한다.
-
-## 아키텍처 패턴 검증
-
-### Service 분리 패턴
-- **조회 전용 서비스**: `XxxReadService` + `@Transactional(readOnly = true)`
-- **쓰기 전용 서비스**: `XxxService` + `@Transactional`
-- Read와 Write가 한 Service에 섞여 있으면 분리를 권고한다
-
-### 패키지 구조
-```
-com.hecto.lab/
-├── common/          # 공통 설정, 예외 처리
-├── constant/        # 상수 정의
-├── controller/      # REST API 컨트롤러
-├── model/           # JPA 엔티티
-├── repository/      # JPA Repository
-├── service/         # 비즈니스 로직
-├── feign/           # Feign Client 정의
-└── util/            # 유틸리티 클래스
-```
-
-### DTO/Entity 분리
-- Controller <-> Service: DTO 사용
-- Service <-> Repository: Entity 사용
-- Entity를 Controller 응답에 직접 노출하지 않는다
-
-## 코딩 컨벤션 체크리스트 (25항목)
-
-### 가독성
-- [ ] 삼항 연산자 사용을 지양했는가
-- [ ] 한 줄에 하나의 책임만 있는가
-- [ ] 메서드가 짧게 유지되었는가
-- [ ] 중첩 if 대신 early return을 사용했는가
-- [ ] else 사용을 최소화했는가
-- [ ] 매직 넘버 대신 상수를 사용했는가
-- [ ] 코드 깊이(indent)가 2단계를 넘지 않는가
-
-### 네이밍
-- [ ] boolean 변수는 긍정형 이름인가
-- [ ] 의미 없는 축약어를 사용하지 않았는가
-- [ ] 변수명과 메서드명이 역할을 드러내는가
-- [ ] 주석보다 이름으로 설명하고 있는가
-
-### 안전성
-- [ ] null 반환 대신 Optional 또는 빈 컬렉션을 반환하는가
-- [ ] 예외를 숨기지 않고 명확하게 처리하는가
-- [ ] 불필요한 public 노출이 없는가
-- [ ] 테스트 가능한 구조인가
-
-## 추상화 원칙 체크리스트 (20항목)
-
-### 추상화 수준
-- [ ] 한 메서드에 하나의 추상화 수준만 존재하는가
-- [ ] 비즈니스 로직과 기술 구현 로직이 분리되었는가
-- [ ] 상위 로직은 "무엇을", 하위 로직은 "어떻게"를 담당하는가
-- [ ] 계층 간 의존성이 한 방향으로만 흐르는가
-- [ ] 조건 분기가 많아지면 추상화를 재설계했는가
-
-### 단일 책임
-- [ ] 클래스가 하나의 명확한 책임만 가지는가
-- [ ] 메서드가 하나의 작업만 수행하는가
-- [ ] 변경 사유가 2개 이상이면 분리가 필요한가
-
-### 의존성
-- [ ] 구체 구현이 아닌 인터페이스에 의존하는가
-- [ ] 외부 의존성이 추상화 뒤에 있는가
-- [ ] 순환 의존성이 없는가
-
-### 캡슐화
-- [ ] 내부 상태가 적절히 보호되는가
-- [ ] getter/setter 남용 없이 비즈니스 메서드로 상태를 변경하는가
-- [ ] 불변 객체를 우선 사용하는가
-
-### 확장성
-- [ ] 기존 코드 수정 없이 확장 가능한가
-- [ ] 한 번만 사용되는 코드에 과도한 추상화를 하지 않았는가
-- [ ] 추상화가 복잡도를 줄이는가 (추가하는가)
-
-### 일관성
-- [ ] 같은 수준의 추상화가 같은 패턴을 따르는가
-- [ ] 네이밍이 추상화 수준을 반영하는가
-- [ ] 예외 처리가 일관된 패턴을 따르는가
-
-## Lombok 사용 패턴
-- `@Getter`, `@Setter`, `@Builder` 등 Lombok 활용 확인
-- getter/setter 남용을 지양했는지 확인
-- `@Builder`와 `@AllArgsConstructor` 조합 시 주의사항 확인
-
-## JPA + QueryDSL 패턴
-- Repository는 JPA + QueryDSL 조합 확인
-- N+1 문제 가능성 검토
-- fetch join 또는 EntityGraph 적절한 사용 확인
+Spring Boot 프로젝트 감지 시: `conventions/spring-boot.md`의 **"리뷰"** 섹션을 참조하여 아키텍처 패턴, 코딩 컨벤션 25항목, 추상화 원칙 20항목, Lombok/JPA+QueryDSL 패턴을 검증한다.
 
 ---
 
@@ -236,7 +144,7 @@ com.hecto.lab/
 - 사용된 언어, 프레임워크, 프로젝트 타입을 식별한다.
 - **코드 맵이 있으면**: 맵에 있는 파일을 우선 참조하여 변경의 맥락을 빠르게 파악한다.
 - 변경된 파일 전체를 읽어 맥락을 이해한다.
-- **Spring Boot 프로젝트 감지 시**: "Spring Boot 코드 리뷰 체크리스트" 섹션을 활성화한다.
+- **Spring Boot 프로젝트 감지 시**: `conventions/spring-boot.md`의 "리뷰" 섹션을 활성화한다.
 
 #### 2단계: 성능 리뷰 [PERF]
 - N+1 쿼리 패턴.
@@ -276,13 +184,7 @@ com.hecto.lab/
 - 언어 관용구의 적절한 사용.
 
 #### 6단계: Spring Boot 컨벤션 리뷰 [SPRING] (Spring Boot 프로젝트만)
-- Service Read/Write 분리 패턴 준수 여부
-- DTO/Entity 분리 여부
-- 코딩 컨벤션 체크리스트 (가독성, 네이밍, 안전성) 검증
-- 추상화 원칙 체크리스트 검증
-- Lombok 사용 패턴 검증
-- JPA + QueryDSL 패턴 검증 (N+1, fetch join 등)
-- `@Transactional` 적절한 사용 여부
+`conventions/spring-boot.md`의 "리뷰" 섹션 체크리스트를 적용한다.
 
 ### 코드 리뷰 출력 포맷
 
