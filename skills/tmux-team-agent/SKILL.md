@@ -1,13 +1,13 @@
 ---
 name: tmux-team-agent
-description: Use after spawning team agents with Agent tool when agents fail to start in tmux panes. Detects empty tmux panes and manually re-launches Claude Code CLI in them. Use proactively whenever TeamCreate + Agent spawning is used.
+description: Use after spawning team agents with Agent tool when agents fail to start in tmux panes or cmux surfaces. Detects empty panes/surfaces and manually re-launches Claude Code CLI in them. Use proactively whenever TeamCreate + Agent spawning is used.
 ---
 
-# tmux Team Agent Recovery
+# Team Agent Recovery
 
 ## Overview
 
-TeamCreate로 팀을 생성하고 Agent tool로 에이전트를 spawn할 때, tmux pane은 생성되지만 Claude Code CLI가 실제로 시작되지 않는 문제가 발생할 수 있다. 이 스킬은 해당 문제를 감지하고 자동 복구한다.
+TeamCreate로 팀을 생성하고 Agent tool로 에이전트를 spawn할 때, tmux pane 또는 cmux surface는 생성되지만 Claude Code CLI가 실제로 시작되지 않는 문제가 발생할 수 있다. 이 스킬은 해당 문제를 감지하고 자동 복구한다. **tmux와 cmux 환경을 자동 감지**하여 적절한 명령을 사용한다.
 
 ## When to Use
 
@@ -18,20 +18,29 @@ TeamCreate로 팀을 생성하고 Agent tool로 에이전트를 spawn할 때, tm
 ## 문제 원인
 
 Agent tool로 에이전트를 spawn하면:
-1. 팀 config에 `backendType: "tmux"`, `tmuxPaneId`가 설정됨
-2. tmux pane이 생성됨
-3. **Claude Code CLI 명령이 pane에 전송되지만 즉시 종료될 수 있음**
-4. pane에는 빈 zsh 셸만 남음 (종료 코드 0으로 프롬프트 복귀)
+1. 팀 config에 `backendType: "tmux"`, `tmuxPaneId`가 설정됨 (cmux에서는 surface가 대응)
+2. tmux pane 또는 cmux surface가 생성됨
+3. **Claude Code CLI 명령이 pane/surface에 전송되지만 즉시 종료될 수 있음**
+4. pane/surface에는 빈 zsh 셸만 남음 (종료 코드 0으로 프롬프트 복귀)
 
 ## 복구 절차
 
-### Step 0: 대기 (타이밍 안정화)
+### Step 0: 환경 감지 + 대기 (타이밍 안정화)
 
-Agent spawn 직후에는 pane이 아직 초기화 중일 수 있다. **3초 대기** 후 상태를 확인한다.
+Agent spawn 직후에는 pane/surface가 아직 초기화 중일 수 있다. **3초 대기** 후 상태를 확인한다.
 
 ```bash
 sleep 3
 ```
+
+환경 감지:
+```bash
+if [ -n "$CMUX_SOCKET" ]; then echo "cmux"; elif [ -n "$TMUX" ]; then echo "tmux"; else echo "none"; fi
+```
+
+- `cmux` → 이하 모든 단계에서 **cmux 명령** 사용
+- `tmux` → 이하 모든 단계에서 **tmux 명령** 사용
+- `none` → 터미널 멀티플렉서 없음. **fallback** (Agent tool 직접 사용)으로 전환하고 복구 절차를 중단한다
 
 ### Step 1: 팀 config 읽기
 
@@ -41,8 +50,11 @@ Read ~/.claude/teams/{team-name}/config.json
 
 각 멤버의 `agentId`, `name`, `agentType`, `model`, `tmuxPaneId`, `color`, `cwd`를 확인한다.
 
-### Step 2: tmux pane 상태 확인
+> **참고:** cmux 환경에서도 config의 `tmuxPaneId` 필드에 surface ID가 저장된다. 필드명은 하위 호환성을 위해 동일하게 유지된다.
 
+### Step 2: pane/surface 상태 확인
+
+#### tmux 환경:
 ```bash
 tmux list-panes -a -F "#{pane_id} #{pane_current_command}" 2>/dev/null
 ```
@@ -50,13 +62,30 @@ tmux list-panes -a -F "#{pane_id} #{pane_current_command}" 2>/dev/null
 `pane_current_command`가 `zsh` 또는 `bash`이면 Claude가 실행되지 않은 것이다.
 `claude` 또는 `node`이면 정상 동작 중이므로 복구 불필요.
 
-### Step 3: 빈 pane에 Claude Code CLI 수동 실행
+#### cmux 환경:
+```bash
+cmux read-screen --surface {surfaceId} --lines 5
+```
 
-team-lead를 제외한 각 멤버에 대해, `tmuxPaneId`가 비어있지 않고 Claude가 실행 중이지 않은 pane에 다음 명령을 전송한다:
+마지막 줄을 확인하여 상태를 판별한다:
+- 셸 프롬프트 패턴(`$`, `%`, `❯`, `➜`)이 보이면 → **idle** (Claude 미실행)
+- `claude` 또는 `node` 문자열이 포함되어 있으면 → **정상 동작 중** (복구 불필요)
 
+### Step 3: 빈 pane/surface에 Claude Code CLI 수동 실행
+
+team-lead를 제외한 각 멤버에 대해, `tmuxPaneId`가 비어있지 않고 Claude가 실행 중이지 않은 pane/surface에 다음 명령을 전송한다:
+
+#### tmux 환경:
 ```bash
 tmux send-keys -t {tmuxPaneId} 'cd {cwd} && env CLAUDECODE=1 CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 {claude-binary-path} --agent-id {agentId} --agent-name {name} --team-name {team-name} --agent-color {color} --parent-session-id {leadSessionId} --agent-type {agentType} --permission-mode acceptEdits --model {model}' Enter
 ```
+
+#### cmux 환경:
+```bash
+cmux send --surface {tmuxPaneId} "cd {cwd} && env CLAUDECODE=1 CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 {claude-binary-path} --agent-id {agentId} --agent-name {name} --team-name {team-name} --agent-color {color} --parent-session-id {leadSessionId} --agent-type {agentType} --permission-mode acceptEdits --model {model}\n"
+```
+
+> **cmux 참고:** `cmux send`는 문자열 끝의 `\n`을 Enter 키로 해석한다. tmux의 `Enter` 인자 대신 `\n`을 사용한다.
 
 #### 변수 매핑 (config.json -> 명령어):
 | config 필드 | 명령어 플래그 |
@@ -68,7 +97,7 @@ tmux send-keys -t {tmuxPaneId} 'cd {cwd} && env CLAUDECODE=1 CLAUDE_CODE_EXPERIM
 | `leadSessionId` | `--parent-session-id` |
 | `members[].agentType` | `--agent-type` |
 | `members[].model` | `--model` |
-| `members[].tmuxPaneId` | tmux send-keys의 `-t` 타겟 |
+| `members[].tmuxPaneId` | tmux: `send-keys`의 `-t` 타겟 / cmux: `send`의 `--surface` 타겟 |
 | `members[].cwd` | `cd` 대상 경로 |
 
 #### Claude 바이너리 경로 찾기:
@@ -78,30 +107,36 @@ which claude
 일반적으로 `/opt/homebrew/Caskroom/claude-code/{version}/claude` 또는 `$(which claude)`
 
 #### agentType/agentId 특수문자 처리:
-- `--agent-type` 값에 `:`가 포함될 수 있다 (예: `oh-my-beom:architect`). tmux send-keys 내 단일 따옴표로 감싸져 있으므로 **이스케이프하지 않는다**.
+- `--agent-type` 값에 `:`가 포함될 수 있다 (예: `oh-my-beom:architect`). **이스케이프하지 않는다**.
 - `--agent-id` 값에 `@`가 포함된다 (예: `architect@team-name`). 마찬가지로 **이스케이프하지 않는다**.
 
 ### Step 4: 실행 확인 + 재시도
 
-각 pane에 대해 **5초 대기** 후 확인:
+각 pane/surface에 대해 **5초 대기** 후 확인:
+
+#### tmux 환경:
 ```bash
 sleep 5 && tmux list-panes -a -F "#{pane_id} #{pane_current_command}" 2>/dev/null
 ```
 
-해당 pane의 `pane_current_command`가 여전히 `zsh`/`bash`이면:
+#### cmux 환경:
+```bash
+sleep 5 && cmux read-screen --surface {surfaceId} --lines 5
+```
+
+해당 pane/surface가 여전히 idle 상태이면:
 
 #### 재시도 (1회):
-1. pane 내용을 캡처하여 에러 확인:
-   ```bash
-   tmux capture-pane -t {tmuxPaneId} -p | tail -20
-   ```
+1. pane/surface 내용을 캡처하여 에러 확인:
+   - tmux: `tmux capture-pane -t {tmuxPaneId} -p | tail -20`
+   - cmux: `cmux read-screen --surface {tmuxPaneId} --lines 20`
 2. 프롬프트가 보이면 (명령이 실행되었으나 종료됨) → 동일 명령을 다시 전송
 3. **5초 추가 대기** 후 재확인
 
 #### 재시도 후에도 실패:
 사용자에게 다음을 안내한다:
 ```
-⚠️ tmux pane {tmuxPaneId}에서 에이전트 {name}이 시작되지 않습니다.
+⚠️ {환경} pane/surface {tmuxPaneId}에서 에이전트 {name}이 시작되지 않습니다.
 Fallback: Agent tool로 직접 에이전트를 호출합니다 (non-team 모드).
 ```
 
@@ -113,19 +148,30 @@ Fallback: Agent tool로 직접 에이전트를 호출합니다 (non-team 모드)
 
 복구 시도 결과를 요약 보고:
 
-| pane | agent | 상태 |
-|------|-------|------|
-| %N | {name} | 복구 성공 / 재시도 성공 / fallback 전환 |
+| pane/surface | agent | 환경 | 상태 |
+|------|-------|------|------|
+| {id} | {name} | tmux/cmux | 복구 성공 / 재시도 성공 / fallback 전환 |
 
 ## 예방적 사용 (Proactive)
 
 TeamCreate + Agent spawn 직후 아래 체크를 자동 수행:
 
 ```bash
-sleep 3 && tmux list-panes -a -F "#{pane_id} #{pane_current_command}"
+sleep 3
 ```
 
+#### tmux 환경:
+```bash
+tmux list-panes -a -F "#{pane_id} #{pane_current_command}"
+```
 `zsh`/`bash`만 실행 중인 에이전트 pane이 있으면 즉시 Step 3을 수행한다.
+
+#### cmux 환경:
+각 멤버의 surface에 대해:
+```bash
+cmux read-screen --surface {surfaceId} --lines 5
+```
+셸 프롬프트만 보이는 surface가 있으면 즉시 Step 3을 수행한다.
 
 ## 주의사항
 
