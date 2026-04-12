@@ -61,7 +61,7 @@ CLAUDE.md "금지 사항"을 전부 준수한다. 추가로:
 ## Phase 2: Plan
 `/dev-beom` Phase 2와 동일. planner 질문은 자동 가정으로 처리.
 
-**TeamCreate 직후 반드시 `Skill("oh-my-beom:tmux-team-agent")` 호출하여 빈 pane을 복구한다.**
+**TeamCreate 직후 반드시 `Skill("oh-my-beom:tmux-team-agent")` 호출하여 빈 pane/surface를 복구한다 (tmux/cmux 자동 감지).**
 
 ## Phase 3: 설계
 `/dev-beom` Phase 3과 동일. architect 질문은 안전한 선택지로 자동 결정.

@@ -38,7 +38,7 @@ ARGS 없이 호출 시: "수정할 버그를 설명해주세요. 예: `/fix-beom
 TeamCreate(agents=["planner", "coder", "qa-manager"])
 ```
 
-**팀 생성 후 반드시 `Skill("oh-my-beom:tmux-team-agent")` 호출.**
+**팀 생성 후 반드시 `Skill("oh-my-beom:tmux-team-agent")` 호출 (tmux/cmux 자동 감지).**
 
 planner에게 **버그 분석 모드**로 plan 작성을 요청한다:
 

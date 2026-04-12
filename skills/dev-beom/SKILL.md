@@ -57,7 +57,7 @@ ARGS에서 Jira URL 또는 이슈 키 패턴(`[A-Z]+-[0-9]+`)을 감지하면:
 TeamCreate(agents=["planner", "architect", "coder", "qa-manager"])
 ```
 
-**팀 생성 후 반드시 `Skill("oh-my-beom:tmux-team-agent")` 호출하여 빈 pane을 복구한다.**
+**팀 생성 후 반드시 `Skill("oh-my-beom:tmux-team-agent")` 호출하여 빈 pane/surface를 복구한다 (tmux/cmux 자동 감지).**
 
 ```
 SendMessage(to="planner", message="""
