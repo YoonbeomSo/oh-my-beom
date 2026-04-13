@@ -6,7 +6,7 @@
 ## 설치
 
 ```bash
-claude plugin add syb1224/oh-my-beom
+claude plugin install oh-my-beom@syb1224
 ```
 
 ---
@@ -23,7 +23,7 @@ oh-my-beom/
 │   ├── qa-manager.md                 # 코드 리뷰, 스펙 검증, 기본 보안 체크
 │   ├── web-tester.md                 # E2E 테스트 생성+실행 (16 tools)
 │   └── web-test-runner.md            # E2E 테스트 실행 전용 (8 tools)
-├── skills/                           # 스킬 14개 (메인 4 + 유틸 10)
+├── skills/                           # 스킬 16개 (메인 4 + 유틸 12)
 │   ├── dev-beom/                     # 기능 개발
 │   ├── fix-beom/                     # 버그 수정
 │   ├── analysis-beom/                # 코드/정책 분석
@@ -35,13 +35,15 @@ oh-my-beom/
 │   ├── fetch-jira-issue/             # Jira 이슈 조회 (내부 유틸리티)
 │   ├── fetch-jenkins/                # Jenkins 빌드 관리
 │   ├── worktree/                     # Git worktree 자동화
-│   ├── tmux-team-agent/              # tmux pane / cmux surface 복구
+│   ├── tmux-team-agent/              # tmux pane 복구 (tmux 전용)
+│   ├── cmux-team-agent/              # cmux surface 복구 (cmux 전용)
 │   ├── humanizer/                    # AI 글쓰기 패턴 제거
 │   └── new-context/                  # 도메인 컨텍스트 생성
-├── hooks/                            # 안전 훅 3개
+├── hooks/                            # 안전 훅 4개
 │   ├── hooks.json                    # 훅 설정
 │   ├── pre-tool-guard                # 보호 브랜치 커밋 차단 + 웹 테스트 게이트
 │   ├── code-quality-gate             # 시크릿/보안 감지
+│   ├── error-learner                 # 에러 기록 + 반복 감지 → 접근 방식 변경 유도
 │   └── web-test-detector             # [WEB-TEST-REQUIRED] 마커 감지
 ├── rules/                            # 행동 규칙 2개
 │   ├── behavior.md                   # 행동 원칙 (읽기 우선, 단순함, 외과적 변경)
@@ -71,16 +73,16 @@ oh-my-beom/
 
 ```bash
 # 기능 개발 (Jira 이슈 연동)
-/dev-beom https://hh.hectoqnm.kr/browse/PROJ-123 로그인 기능 추가
+/dev-beom https://jira.example.com/browse/PROJ-123 로그인 기능 추가
 
 # 버그 수정
-/fix-beom https://hh.hectoqnm.kr/browse/PROJ-456 결제 오류 수정
+/fix-beom https://jira.example.com/browse/PROJ-456 결제 오류 수정
 
 # 코드 분석
 /analysis-beom 결제 모듈 아키텍처 분석
 
 # 자율 실행 (질문 없이 끝까지)
-/persist-beom https://hh.hectoqnm.kr/browse/PROJ-789 사용자 인증 개선
+/persist-beom https://jira.example.com/browse/PROJ-789 사용자 인증 개선
 ```
 
 ### 유틸리티 스킬
@@ -196,13 +198,14 @@ QA 루프 5회 초과 시 자동 생성. 미해결 이슈, 시도 이력, 권장
 
 ## 안전 장치
 
-### 훅 (3개)
+### 훅 (4개)
 
 | 훅 | 이벤트 | 역할 |
 |----|--------|------|
 | `pre-tool-guard` | Bash 실행 전 | 보호 브랜치 커밋 차단 + [WEB-TEST-REQUIRED] 시 웹 테스트 통과 게이트 |
 | `code-quality-gate` | Write/Edit 전 | 시크릿 하드코딩, eval(), SQL 인젝션 감지 + 플러그인 파일 보호 |
-| `web-test-detector` | Agent 실행 후 | qa-manager 응답에서 [WEB-TEST-REQUIRED] 마커 감지 |
+| `error-learner` | Bash 실행 후 | 에러 기록 + 반복 감지 → 접근 방식 변경 유도 |
+| `web-test-detector` | SendMessage 후 | qa-manager 응답에서 [WEB-TEST-REQUIRED] 마커 감지 |
 
 ### 금지 사항 (CLAUDE.md)
 
