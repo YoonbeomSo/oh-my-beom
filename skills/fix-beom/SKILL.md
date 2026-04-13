@@ -38,7 +38,13 @@ ARGS 없이 호출 시: "수정할 버그를 설명해주세요. 예: `/fix-beom
 TeamCreate(agents=["planner", "coder", "qa-manager"])
 ```
 
-**팀 생성 후 반드시 `Skill("oh-my-beom:tmux-team-agent")` 호출 (tmux/cmux 자동 감지).**
+**팀 생성 후 환경을 감지하여 적절한 복구 스킬을 호출한다:**
+```bash
+if [ -n "$CMUX_SOCKET" ]; then echo "cmux"; elif [ -n "$TMUX" ]; then echo "tmux"; else echo "none"; fi
+```
+- `cmux` → `Skill("oh-my-beom:cmux-team-agent")`
+- `tmux` → `Skill("oh-my-beom:tmux-team-agent")`
+- `none` → 스킬 호출 생략 (에이전트는 mailbox 모드로 동작)
 
 planner에게 **버그 분석 모드**로 plan 작성을 요청한다:
 

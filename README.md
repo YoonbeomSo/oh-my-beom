@@ -35,7 +35,8 @@ oh-my-beom/
 │   ├── fetch-jira-issue/             # Jira 이슈 조회 (내부 유틸리티)
 │   ├── fetch-jenkins/                # Jenkins 빌드 관리
 │   ├── worktree/                     # Git worktree 자동화
-│   ├── tmux-team-agent/              # tmux pane / cmux surface 복구
+│   ├── tmux-team-agent/              # tmux pane 복구 (tmux 전용)
+│   ├── cmux-team-agent/              # cmux surface 복구 (cmux 전용)
 │   ├── humanizer/                    # AI 글쓰기 패턴 제거
 │   └── new-context/                  # 도메인 컨텍스트 생성
 ├── hooks/                            # 안전 훅 3개
