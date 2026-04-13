@@ -6,7 +6,7 @@
 ## 설치
 
 ```bash
-claude plugin add syb1224/oh-my-beom
+claude plugin install oh-my-beom@syb1224
 ```
 
 ---
