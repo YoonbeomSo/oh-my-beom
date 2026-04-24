@@ -10,6 +10,14 @@
         }]
       },
       {
+        "matcher": "Bash",
+        "hooks": [{
+          "type": "command",
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/pre-commit-build-check\"",
+          "timeout": 120
+        }]
+      },
+      {
         "matcher": "Write|Edit",
         "hooks": [{
           "type": "command",
