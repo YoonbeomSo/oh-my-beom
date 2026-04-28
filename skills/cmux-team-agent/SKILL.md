@@ -21,9 +21,15 @@ TeamCreate로 팀을 생성하고 Agent tool로 에이전트를 spawn할 때, cm
 
 Agent tool로 에이전트를 spawn하면:
 1. 팀 config에 `backendType: "tmux"`, `tmuxPaneId`가 설정됨 (cmux에서는 surface ID가 이 필드에 저장됨)
-2. cmux surface가 생성됨
+2. cmux surface가 생성됨 — **다만 `new-surface`는 새 탭(tab)을 만들 뿐 화면을 분할하지 않는다**
 3. **Claude Code CLI 명령이 surface에 전송되지만 즉시 종료될 수 있음**
 4. surface에는 빈 zsh 셸만 남음 (종료 코드 0으로 프롬프트 복귀)
+
+이로 인해 두 가지 문제가 발생한다:
+- **(A) 화면 분할 실패**: 에이전트 surface가 모두 탭으로 쌓여 동시에 보이지 않는다.
+- **(B) Claude 미실행**: surface는 생겼지만 Claude CLI가 실행되지 않은 빈 셸 상태.
+
+이 스킬은 두 문제를 **모두** 해결한다.
 
 ## 복구 절차
 
@@ -56,6 +62,37 @@ cmux read-screen --surface {tmuxPaneId} --lines 5
 마지막 줄을 확인하여 상태를 판별한다:
 - 셸 프롬프트 패턴(`$`, `%`, `❯`, `➜`)만 보이면 → **idle** (Claude 미실행, 복구 필요)
 - `claude` 또는 `node` 문자열이 포함되어 있으면 → **정상 동작 중** (복구 불필요)
+
+### Step 2.5: 화면 분할 강제 적용 (cmux 전용)
+
+`new-surface`로 생성된 surface는 기본적으로 **같은 pane 안에 탭으로 추가**되므로 동시에 보이지 않는다. 각 에이전트 surface를 **독립된 split**으로 옮겨야 화면이 분할되어 보인다.
+
+> **⚠️ 중요: `drag-surface-to-split`은 short ref (`surface:N`)로 호출하면 `Surface not found` 에러가 나고, 반드시 UUID로 호출해야 한다.** (검증됨 — 2026-04-29)
+> `cmux send` / `cmux read-screen`은 short ref / UUID 둘 다 동작하지만, **drag만 UUID 전용**이다.
+
+1. 현재 레이아웃 확인:
+   ```bash
+   cmux tree
+   cmux --id-format both list-pane-surfaces
+   ```
+   `--id-format both`로 `surface:N`과 UUID를 함께 출력시켜 매핑 테이블을 만든다.
+
+2. config.json에 저장된 `tmuxPaneId` 값별로 UUID를 확보한다:
+   - 값이 이미 UUID 형식(`[A-F0-9-]{36}`)이면 그대로 사용
+   - 값이 short ref (`surface:N`)나 다른 형식이면 위 매핑에서 UUID로 변환
+
+3. team-lead를 제외한 각 멤버 surface에 대해 분할:
+   ```bash
+   cmux drag-surface-to-split --surface {UUID} {direction}
+   ```
+   - `direction` 순서: 첫 번째 멤버는 `right`, 두 번째는 `down`, 세 번째는 다시 `right`, ... 교대 적용 (2×2 / 2×3 그리드)
+   - 각 명령 사이에 `sleep 0.3`로 레이아웃 안정화 시간 확보
+
+4. 분할 실패 감지:
+   - 이미 분리된 pane에 있는 surface에 적용하면 에러나 무동작이 발생할 수 있다. 경고만 출력하고 진행한다.
+   - `cmux tree`로 재확인 후에도 모든 에이전트 surface가 한 pane에 모여 있으면, 사용자에게 "cmux 화면 분할에 실패했습니다. `cmux tree`로 레이아웃 확인 후 수동으로 드래그하세요."라고 안내한다.
+
+> **cmux `send`/`read-screen`은 surface short ref로도 동작하므로 분할 여부와 관계없이 Step 3 이후의 Claude 재실행은 시도할 수 있다.**
 
 ### Step 3: 빈 surface에 Claude Code CLI 수동 실행
 
@@ -127,19 +164,25 @@ Fallback: Agent tool로 직접 에이전트를 호출합니다 (non-team 모드)
 
 ## 예방적 사용 (Proactive)
 
-TeamCreate + Agent spawn 직후 각 멤버의 surface에 대해 체크를 자동 수행:
+TeamCreate + Agent spawn 직후 모든 멤버 surface에 대해 **항상** 다음을 자동 수행한다:
 
 ```bash
 sleep 3
-cmux read-screen --surface {surfaceId} --lines 5
+cmux tree                                          # 레이아웃 확인
+cmux read-screen --surface {surfaceId} --lines 5   # 각 surface의 상태 확인
 ```
 
-셸 프롬프트만 보이는 surface가 있으면 즉시 Step 3을 수행한다.
+- 에이전트 surface들이 같은 pane 안 탭으로 쌓여 있으면 → **Step 2.5** (drag-surface-to-split)를 즉시 수행
+- 셸 프롬프트만 보이는 surface가 있으면 → **Step 3** (Claude 수동 실행)을 즉시 수행
+
+두 체크는 독립적으로 수행한다. 분할은 됐지만 Claude가 안 뜬 경우, 그 반대 경우 모두 대응해야 한다.
 
 ## 주의사항
 
-- `team-lead` 멤버는 현재 세션이므로 복구 대상에서 **제외**한다
+- `team-lead` 멤버는 현재 세션이므로 복구/분할 대상에서 **제외**한다
 - `tmuxPaneId`가 빈 문자열인 멤버도 제외한다
 - 에이전트가 이미 작업을 완료하고 정상 종료된 경우에는 재시작하지 않는다
 - 복구 후에도 에이전트의 task 상태는 TaskList/TaskUpdate로 별도 관리해야 한다
 - `cwd`가 worktree 경로인 경우, 해당 경로로 `cd`해야 에이전트가 올바른 컨텍스트에서 동작한다
+- **화면 분할은 cmux 전용이다.** tmux는 TeamCreate가 직접 pane을 split하므로 분할 단계가 필요 없다.
+- `drag-surface-to-split`는 이미 분할된 surface에 재적용하면 실패할 수 있다. 에러는 무시하고 진행한다.
