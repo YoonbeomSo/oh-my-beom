@@ -18,6 +18,14 @@
         }]
       },
       {
+        "matcher": "Bash",
+        "hooks": [{
+          "type": "command",
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/version-sync-check\"",
+          "timeout": 3
+        }]
+      },
+      {
         "matcher": "Write|Edit",
         "hooks": [{
           "type": "command",
