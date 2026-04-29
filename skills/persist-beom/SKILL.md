@@ -1,6 +1,6 @@
 ---
 name: persist-beom
-description: "자율 실행. 에이전트 팀을 실행하여 질문 없이 끝까지 설계→구현→리뷰→커밋을 수행한다."
+description: "자율 실행. 에이전트 팀(planner+architect+coder)을 실행하여 질문 없이 끝까지 설계→구현→리뷰(Codex QA)→커밋을 수행한다."
 argument-hint: "[Jira URL 또는 이슈키] <작업 설명>"
 ---
 
@@ -76,9 +76,22 @@ if [ -n "$CMUX_SOCKET" ]; then echo "cmux"; elif [ -n "$TMUX" ]; then echo "tmux
 `/dev-beom` Phase 4와 동일.
 
 ## Phase 5: QA 리뷰 + 루프
-`/dev-beom` Phase 5와 동일하나 루프 확장 (위 참조).
 
-**웹 테스트 필수 시:** qa-manager 리뷰에 `[WEB-TEST-REQUIRED]` 마커가 있으면, QA PASS 후 즉시 서버를 기동하고 웹 테스트를 실행한다. dev-beom의 "웹 테스트 실행" 절차와 동일 (서버 기동 → URL 자동 결정 → 웹 테스트 → 서버 종료).
+> **변경 (2026-04-29):** QA 리뷰는 토큰 절감을 위해 **Codex로 분리**한다. qa-manager는 더 이상 팀 멤버가 아니며, `Agent(subagent_type="codex:codex-rescue")`로 호출한다. 페르소나/프로세스는 `agents/qa-manager.md`를 Codex가 직접 Read하여 참조한다.
+
+### Phase 5 사전 점검 (QA 엔진 결정)
+
+`/dev-beom` Phase 5의 "사전 점검 (QA 엔진 결정)" 절차를 동일하게 수행한다. 단, **자율 실행 모드**이므로 미준비 시 사용자에게 묻지 않고 자동으로 fallback한다:
+
+1. `Skill("codex:setup")` 1회 시도
+2. 결과에 따라 `.dev/.qa-engine` 마커 작성:
+   - 준비 완료 → `codex`
+   - 미설치/미인증 → `claude` (Claude qa-manager로 자동 fallback)
+3. fallback 시 `.dev/issue/codex-unavailable.md`에 사유 기록 (사용자 보고용)
+
+이후 QA 호출은 `/dev-beom`의 4-tier 디스패처(cmux split / tmux split / Agent codex / Claude qa-manager)를 그대로 사용. 자율 모드라 surface/pane 정리는 Phase 7에서 일괄 수행. `/dev-beom` Phase 5와 동일하나 루프 확장 (위 참조).
+
+**웹 테스트 필수 시:** Codex QA 리뷰에 `[WEB-TEST-REQUIRED]` 마커가 있으면, QA PASS 후 즉시 서버를 기동하고 웹 테스트를 실행한다. dev-beom의 "웹 테스트 실행" 절차와 동일 (서버 기동 → URL 자동 결정 → 웹 테스트 → 서버 종료).
 
 ## Phase 6: 커밋
 사용자 확인 없이 자동 커밋:
@@ -107,4 +120,4 @@ if [ -n "$CMUX_SOCKET" ]; then echo "cmux"; elif [ -n "$TMUX" ]; then echo "tmux
 | planner | ARGS + 코드 맵 + Jira 컨텍스트 |
 | architect | plan + 코드 맵 + 프로젝트 컨벤션 |
 | coder | 설계서 + 코드 맵 |
-| qa-manager | diff(파일 경로) + plan 완료 기준 + 코드 맵 |
+| Codex (QA) | agents/qa-manager.md(페르소나) + diff(파일 경로) + plan 완료 기준 + 코드 맵 |
