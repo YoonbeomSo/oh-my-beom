@@ -168,7 +168,7 @@
     <div class="stat"><div class="stat-num" style="color:var(--accent)">4</div><div class="stat-label">진입점 스킬</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--green)">6</div><div class="stat-label">에이전트</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--yellow)">10</div><div class="stat-label">유틸리티 스킬</div></div>
-    <div class="stat"><div class="stat-num" style="color:var(--red)">7</div><div class="stat-label">안전 훅</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--red)">8</div><div class="stat-label">안전 훅</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--purple)">2</div><div class="stat-label">Rules</div></div>
   </div>
 </div>
@@ -733,7 +733,7 @@
 <!-- ===== HOOKS & RULES ===== -->
 <div class="section" id="hooks">
   <div class="card">
-    <h2>Safety Hooks (7)</h2>
+    <h2>Safety Hooks (8)</h2>
     <div class="grid-2">
       <div class="hook-card">
         <div class="hook-name" style="color:var(--red);">pre-tool-guard</div>
@@ -796,6 +796,15 @@
         <div class="hook-desc">
           <strong>[WEB-TEST-REQUIRED] 마커 감지.</strong><br>
           QA 디스패처 응답에서 마커 탐지 시 <code>.dev/web-test-required</code> 플래그를 생성하여 커밋 게이트 활성화.
+        </div>
+      </div>
+      <div class="hook-card">
+        <div class="hook-name" style="color:var(--cyan);">team-recovery-reminder</div>
+        <div class="hook-event">PostToolUse / TeamCreate &nbsp; | &nbsp; timeout: 2s</div>
+        <div class="hook-desc">
+          <strong>팀 생성 후 화면 분할 강제.</strong><br>
+          <code>$CMUX_SOCKET</code> / <code>$TMUX</code> 환경 감지 후 <code>cmux-team-agent</code> 또는 <code>tmux-team-agent</code> 스킬 호출 명령을 <code>additionalContext</code>로 자동 주입. 오케스트레이터가 환경 감지 단계를 빠뜨리는 사고 방지.<br>
+          <span style="color:var(--text-muted);">우회:</span> <code>SKIP_TEAM_RECOVERY_REMINDER=1</code>.
         </div>
       </div>
     </div>
@@ -975,7 +984,7 @@
 │   ├── <span class="dir">web-test/</span>                      <span class="comment"># E2E 웹 테스트 (Playwright + OTP 바이패스)</span>
 │   │   └── <span class="dir">references/</span>                <span class="comment"># OTP 탐지 패턴 (외부 분리)</span>
 │   └── <span class="dir">new-context/</span>                   <span class="comment"># 도메인 컨텍스트 생성</span>
-├── <span class="dir">hooks/</span>                             <span class="comment"># 안전 훅 7개</span>
+├── <span class="dir">hooks/</span>                             <span class="comment"># 안전 훅 8개</span>
 │   ├── <span class="file">hooks.json</span>                    <span class="comment"># PreToolUse + PostToolUse</span>
 │   ├── <span class="file">pre-tool-guard</span>                <span class="comment"># 보호 브랜치 커밋/push + 위험 명령(rm -rf, chmod 777) 차단</span>
 │   ├── <span class="file">pre-commit-build-check</span>        <span class="comment"># 커밋 전 빌드/타입체크 통과 검증 (Gradle/TS/Python)</span>
@@ -984,6 +993,7 @@
 │   ├── <span class="file">code-quality-gate</span>             <span class="comment"># 시크릿/보안/위험SQL/exec/subprocess 감지</span>
 │   ├── <span class="highlight">error-learner</span>                 <span class="comment"># Bash 실패 에러 기록 + 반복 감지 → 접근 변경 유도</span>
 │   ├── <span class="file">web-test-detector</span>             <span class="comment"># [WEB-TEST-REQUIRED] 마커 감지</span>
+│   ├── <span class="file">team-recovery-reminder</span>        <span class="comment"># TeamCreate 후 환경 감지 + 복구 스킬 호출 컨텍스트 자동 주입</span>
 │   └── <span class="file">README.md</span>                     <span class="comment"># 훅 설명</span>
 ├── <span class="dir">rules/</span>                             <span class="comment"># 행동 규칙 2개</span>
 │   ├── <span class="file">behavior.md</span>                   <span class="comment"># 7가지 행동 원칙</span>

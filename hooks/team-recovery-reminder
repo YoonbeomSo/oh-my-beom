@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# PostToolUse on TeamCreate
+# 팀 생성 직후 환경(cmux/tmux)을 감지하고 복구 스킬 호출을 강제하는
+# additionalContext를 오케스트레이터에 주입한다.
+#
+# 동작 원리:
+#   - PostToolUse 훅의 출력 hookSpecificOutput.additionalContext가
+#     다음 LLM 턴에 컨텍스트로 주입됨
+#   - 환경에 맞는 정확한 스킬 호출 명령을 명시
+#
+# 발동 조건:
+#   - tool_name == "TeamCreate"
+# 건너뛰기 조건:
+#   - 다른 도구
+#   - 환경 변수 SKIP_TEAM_RECOVERY_REMINDER=1
+
+set -uo pipefail
+
+INPUT=$(cat /dev/stdin 2>/dev/null || echo '{}')
+
+TOOL_NAME=$(echo "$INPUT" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    print(data.get('tool_name', ''))
+except: print('')
+" 2>/dev/null || echo "")
+
+pass() { echo '{"continue": true}'; exit 0; }
+
+[ "$TOOL_NAME" != "TeamCreate" ] && pass
+[ "${SKIP_TEAM_RECOVERY_REMINDER:-0}" = "1" ] && pass
+
+# 환경 감지
+if [ -n "${CMUX_SOCKET:-}" ]; then
+  ENV_NAME="cmux"
+  RECOVERY_SKILL="oh-my-beom:cmux-team-agent"
+  CONSEQUENCE="에이전트가 별도 claude-swarm tmux 서버에서 동작하지만 cmux 화면에는 표시되지 않음"
+elif [ -n "${TMUX:-}" ]; then
+  ENV_NAME="tmux"
+  RECOVERY_SKILL="oh-my-beom:tmux-team-agent"
+  CONSEQUENCE="pane은 만들어졌지만 Claude CLI가 시작되지 않아 빈 셸로 남음"
+else
+  # 멀티플렉서 없는 환경 — 복구 스킬 불필요
+  pass
+fi
+
+# additionalContext 페이로드 생성 (JSON 안전 인코딩)
+MESSAGE="🖥️ 환경: ${ENV_NAME} 감지됨. **다음 턴에 반드시 \`Skill(\"${RECOVERY_SKILL}\")\`를 호출하세요.** 생략 시 ${CONSEQUENCE}. 사용자에게 묻지 말고 즉시 수행. (CLAUDE.md 금지사항: 팀 에이전트 복구 스킬 호출 생략 금지)"
+
+ENCODED=$(printf '%s' "$MESSAGE" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))")
+
+cat <<EOF
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PostToolUse",
+    "additionalContext": ${ENCODED}
+  }
+}
+EOF

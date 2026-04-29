@@ -57,13 +57,27 @@ ARGS에서 Jira URL 또는 이슈 키 패턴(`[A-Z]+-[0-9]+`)을 감지하면:
 TeamCreate(agents=["planner", "architect", "coder"])
 ```
 
-**팀 생성 후 환경을 감지하여 적절한 복구 스킬을 호출한다:**
-```bash
-if [ -n "$CMUX_SOCKET" ]; then echo "cmux"; elif [ -n "$TMUX" ]; then echo "tmux"; else echo "none"; fi
-```
-- `cmux` → `Skill("oh-my-beom:cmux-team-agent")`
-- `tmux` → `Skill("oh-my-beom:tmux-team-agent")`
-- `none` → 스킬 호출 생략 (에이전트는 mailbox 모드로 동작)
+### 🛑 필수 1단계 — 환경 감지 + 복구 스킬 호출 (생략 절대 금지)
+
+TeamCreate 직후 **다음 SendMessage보다 먼저** 이 단계를 수행한다. 사용자에게 묻거나 "필요하면 나중에"라는 식의 지연은 금지. PostToolUse 훅(`team-recovery-reminder`)이 자동으로 환경을 알려주지만, 그 컨텍스트 무시도 금지.
+
+1. 환경 감지 후 **사용자에게 announcement 출력**:
+   ```bash
+   if [ -n "$CMUX_SOCKET" ]; then ENV=cmux
+   elif [ -n "$TMUX" ]; then ENV=tmux
+   else ENV=none
+   fi
+   echo "🖥️ 환경: $ENV"
+   ```
+2. 환경별 스킬 호출 (즉시):
+
+   | 환경 | 호출 | 생략 시 |
+   |------|------|---------|
+   | `cmux` | `Skill("oh-my-beom:cmux-team-agent")` | 화면 분할 실패. surface가 탭으로 쌓임 |
+   | `tmux` | `Skill("oh-my-beom:tmux-team-agent")` | pane이 빈 셸로 남음, 에이전트 미시작 |
+   | `none` | 호출 생략 (mailbox 모드) | — |
+
+> **반복 강조**: 사용자가 "왜 화면 분할 안 했어?" 라고 묻는 시점에는 이미 늦었다. TeamCreate → **즉시** 이 단계 → 그 다음에 SendMessage.
 
 ```
 SendMessage(to="planner", message="""
@@ -186,18 +200,31 @@ fi
 #### Tier A — cmux 분할 surface
 
 > 첫 호출 시 surface를 만들고 UUID를 `.dev/.qa-surface-uuid`에 저장. 후속 호출(QA 루프)은 마커 파일을 읽어 같은 surface를 재사용. Phase 7에서 일괄 close.
+>
+> **`drag-surface-to-split`은 attach 직후 또는 일부 상황에서 "Surface not found" 에러가 발생** (cmux-team-agent에서 검증됨). 그래서 `new-pane + move-surface` 경로를 우선 사용한다.
 
 ```bash
 # === 첫 호출만 실행 ===
 if [ ! -f .dev/.qa-surface-uuid ]; then
-  # 1. 새 surface 생성
-  cmux new-surface --type terminal
-  # --id-format both로 UUID 매핑 (drag/close에서 UUID 필수)
-  QA_SURFACE_UUID=$(cmux --id-format both list-pane-surfaces | tail -1 | awk '{print $2}')
+  # 1. 새 surface 생성 (현재 workspace에)
+  cmux new-surface --workspace "${CMUX_WORKSPACE_ID}" --type terminal
+  sleep 0.3
+  # --id-format both로 UUID 매핑
+  QA_SURFACE_UUID=$(cmux --id-format both list-pane-surfaces \
+    | tail -1 | awk '{print $2}')
   echo "$QA_SURFACE_UUID" > .dev/.qa-surface-uuid
 
-  # 2. 분할 (UUID 필수 — short ref는 'Surface not found' 에러 발생)
-  cmux drag-surface-to-split --surface "$QA_SURFACE_UUID" right
+  # 2. 분할: drag-surface-to-split 1차 시도 → 실패 시 new-pane + move-surface fallback
+  if cmux drag-surface-to-split --surface "$QA_SURFACE_UUID" right 2>/dev/null; then
+    echo "drag-surface-to-split 성공"
+  else
+    # Fallback: workspace 활성화 + 새 pane 생성 후 surface 이동
+    cmux select-workspace --workspace "${CMUX_WORKSPACE_ID}" 2>/dev/null
+    TARGET_PANE=$(cmux new-pane --workspace "${CMUX_WORKSPACE_ID}" --direction right 2>&1 | awk '{print $2}')
+    sleep 0.3
+    cmux move-surface --surface "$QA_SURFACE_UUID" --pane "$TARGET_PANE" --focus true
+    echo "$TARGET_PANE" > .dev/.qa-fallback-pane
+  fi
   sleep 0.5
 fi
 QA_SURFACE_UUID=$(cat .dev/.qa-surface-uuid)
@@ -205,7 +232,7 @@ QA_SURFACE_UUID=$(cat .dev/.qa-surface-uuid)
 # === 매 호출 실행 ===
 # 3. QA 프롬프트 작성
 cat > .dev/qa-prompt.md <<'EOF'
-페르소나/프로세스: /Users/.../oh-my-beom/agents/qa-manager.md를 Read하여 그대로 따른다.
+페르소나/프로세스: <PROJECT_ROOT>/agents/qa-manager.md를 Read하여 그대로 따른다.
 리뷰 입력:
 - diff: .dev/diff.txt
 - plan: docs/plan/plan_{작업내용}.md
@@ -216,14 +243,20 @@ EOF
 # 4. codex exec 실행 (cmux send는 \n을 Enter로 해석)
 cmux send --surface "$QA_SURFACE_UUID" "codex exec --color never \"\$(cat .dev/qa-prompt.md)\"\n"
 
-# 5. 판정 라인 폴링 (Monitor 도구 권장)
-#    until cmux read-screen --surface "$QA_SURFACE_UUID" --scrollback --lines 200 | grep -E '## 판정:|tokens used'; do sleep 3; done
+# 5. 판정 라인 폴링 (Monitor 도구 권장 — 진짜 "## 판정:" 라인이 출력될 때까지)
+#    until cmux read-screen --surface "$QA_SURFACE_UUID" --scrollback --lines 300 \
+#          | grep -E '^## 판정:|tokens used'; do sleep 3; done
 
 # 6. 결과 캡처
-qa_result=$(cmux read-screen --surface "$QA_SURFACE_UUID" --scrollback --lines 200)
+qa_result=$(cmux read-screen --surface "$QA_SURFACE_UUID" --scrollback --lines 300)
 
 # 7. surface는 Phase 7에서 일괄 close (루프 중 재사용)
 ```
+
+> **검증 실패 시**: `cmux read-screen`이 빈 결과를 주거나 codex 출력이 화면에 보이지 않으면 다음 순서로 디버깅한다:
+> 1. `cmux tree`로 surface가 실제로 분할 영역에 위치하는지 확인
+> 2. `which codex` 확인 (codex CLI 미설치면 자동으로 Tier D fallback이 적절한 시점에 동작했어야 함)
+> 3. surface tty가 살아있는지 확인. 죽었으면 `.dev/.qa-surface-uuid`와 `.dev/.qa-fallback-pane` 삭제 후 재시도
 
 #### Tier B — tmux 분할 pane
 
@@ -380,8 +413,21 @@ docs/result/result_{작업내용}.md에 작성해주세요.
 
 1. **임시 파일 정리**: `rm -f .dev/diff.txt .dev/design.md .dev/codemap.md .dev/jira-context.md .dev/qa-prompt.md`
 2. **QA surface/pane 정리** (Tier A/B 사용 시):
-   - cmux: `cmux close-surface --surface "$(cat .dev/.qa-surface-uuid)"` 후 `rm -f .dev/.qa-surface-uuid`
-   - tmux: `tmux kill-pane -t "$(cat .dev/.qa-pane-id)"` 후 `rm -f .dev/.qa-pane-id`
+   - cmux:
+     ```bash
+     [ -f .dev/.qa-surface-uuid ] && cmux close-surface --surface "$(cat .dev/.qa-surface-uuid)" 2>/dev/null
+     rm -f .dev/.qa-surface-uuid .dev/.qa-fallback-pane
+     ```
+   - tmux:
+     ```bash
+     [ -f .dev/.qa-pane-id ] && tmux kill-pane -t "$(cat .dev/.qa-pane-id)" 2>/dev/null
+     rm -f .dev/.qa-pane-id
+     ```
+   - 팀 surface도 함께:
+     ```bash
+     [ -f .dev/.team-surface-uuid ] && cmux close-surface --surface "$(cat .dev/.team-surface-uuid)" 2>/dev/null
+     rm -f .dev/.team-surface-uuid
+     ```
    - `.dev/.qa-engine`은 다음 세션에서 재사용 가능하므로 **남긴다** (Codex 가용성은 안정적이라 재검증 비용 절감)
 3. **에러 로그 분석**: `.dev/error-log.md`에 반복 에러(3회+)가 있으면 사용자에게 안내:
    "반복 에러 패턴이 감지되었습니다. rules 승격을 고려하세요: {패턴 요약}"
