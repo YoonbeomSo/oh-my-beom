@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# PreToolUse build-check hook
+# git commit 실행 전, 프로젝트 빌드/타입체크가 통과하는지 확인한다.
+#
+# 건너뛰기 조건:
+#   - git commit이 아닌 경우
+#   - --amend 커밋
+#   - SKIP_BUILD_CHECK=1 환경 변수
+#   - 스테이징된 소스 파일이 없는 경우 (docs/config만 변경)
+#   - 빌드 시스템(Gradle/Node+tsconfig/Python)이 감지되지 않는 경우
+
+set -uo pipefail
+
+INPUT=$(cat /dev/stdin 2>/dev/null || echo '{}')
+
+FULL_CMD=$(echo "$INPUT" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    print(data.get('tool_input', {}).get('command', ''))
+except: print('')
+" 2>/dev/null || echo "")
+
+pass() { echo '{"continue": true}'; exit 0; }
+
+# ─── 대상 명령 필터링 ───
+# git commit 명령이 아니면 통과 (git log, git show 등은 무관)
+if ! echo "$FULL_CMD" | grep -qE '(^|[;&|]\s*)git\s+commit(\s|$)' 2>/dev/null; then
+  pass
+fi
+
+# --amend는 건너뛴다 (기존 커밋 수정은 사용자 의도)
+if echo "$FULL_CMD" | grep -qE -- '--amend' 2>/dev/null; then
+  pass
+fi
+
+# 환경 변수로 명시적으로 비활성화한 경우
+if [ "${SKIP_BUILD_CHECK:-0}" = "1" ]; then
+  pass
+fi
+
+deny() {
+  local reason="$1"
+  # JSON 문자열에 들어가지 못하는 문자 정리: 큰따옴표/개행 처리
+  reason=$(printf '%s' "$reason" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))")
+  cat <<EOF
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": ${reason}
+  }
+}
+EOF
+  exit 0
+}
+
+# ─── 프로젝트 루트 이동 ───
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
+if [ -z "$PROJECT_ROOT" ]; then
+  pass
+fi
+cd "$PROJECT_ROOT" || pass
+
+# ─── 스테이징된 파일 확인 ───
+STAGED=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || echo "")
+if [ -z "$STAGED" ]; then
+  pass
+fi
+
+# 소스 파일이 섞여 있을 때만 빌드 검증 (docs/config-only는 빠르게 통과)
+if ! echo "$STAGED" | grep -qE '\.(kt|java|ts|tsx|js|jsx|mjs|cjs|py|go|rs|c|cpp|h|hpp|swift|scala)$' 2>/dev/null; then
+  pass
+fi
+
+LOG=$(mktemp)
+trap 'rm -f "$LOG"' EXIT
+
+# ─── 프로젝트 타입별 빌드 검증 ───
+if [ -f "build.gradle.kts" ] || [ -f "build.gradle" ]; then
+  if [ -x "./gradlew" ]; then
+    if ! ./gradlew compileKotlin compileTestKotlin -q >"$LOG" 2>&1; then
+      ERR=$(tail -30 "$LOG" | head -c 800)
+      deny "빌드 실패 (Gradle 컴파일). 커밋 전 에러를 수정하세요. (SKIP_BUILD_CHECK=1로 건너뛸 수 있음) | ${ERR}"
+    fi
+  fi
+elif [ -f "package.json" ] && [ -f "tsconfig.json" ]; then
+  if command -v bunx >/dev/null 2>&1; then
+    TSC_CMD="bunx tsc --noEmit"
+  elif command -v npx >/dev/null 2>&1; then
+    TSC_CMD="npx --no-install tsc --noEmit"
+  else
+    pass
+  fi
+  if ! $TSC_CMD >"$LOG" 2>&1; then
+    ERR=$(tail -30 "$LOG" | head -c 800)
+    deny "타입 체크 실패 (tsc). 커밋 전 에러를 수정하세요. (SKIP_BUILD_CHECK=1로 건너뛸 수 있음) | ${ERR}"
+  fi
+elif [ -f "pyproject.toml" ] || [ -f "setup.py" ]; then
+  while IFS= read -r py; do
+    [ -z "$py" ] && continue
+    if ! python3 -m py_compile "$py" 2>"$LOG"; then
+      ERR=$(head -c 500 "$LOG")
+      deny "Python 문법 에러 (${py}): ${ERR}"
+    fi
+  done < <(echo "$STAGED" | grep '\.py$' || true)
+fi
+
+pass
