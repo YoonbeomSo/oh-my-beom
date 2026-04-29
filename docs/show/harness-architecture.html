@@ -168,7 +168,7 @@
     <div class="stat"><div class="stat-num" style="color:var(--accent)">4</div><div class="stat-label">진입점 스킬</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--green)">6</div><div class="stat-label">에이전트</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--yellow)">10</div><div class="stat-label">유틸리티 스킬</div></div>
-    <div class="stat"><div class="stat-num" style="color:var(--red)">4</div><div class="stat-label">안전 훅</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--red)">5</div><div class="stat-label">안전 훅</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--purple)">2</div><div class="stat-label">Rules</div></div>
   </div>
 </div>
@@ -226,8 +226,8 @@
             <div style="font-size:0.7rem; color:var(--text-muted);">코드 구현</div>
           </div>
           <div style="background:rgba(210,153,34,0.08); border:1px solid var(--border); border-left:3px solid var(--yellow); border-radius:8px; padding:10px 20px; text-align:left;">
-            <div style="font-weight:700; font-size:0.85rem;">qa-manager</div>
-            <div style="font-size:0.7rem; color:var(--text-muted);">코드 리뷰</div>
+            <div style="font-weight:700; font-size:0.85rem;">QA 디스패처 (Codex)</div>
+            <div style="font-size:0.7rem; color:var(--text-muted);">코드 리뷰 (4-tier)</div>
           </div>
           <div style="background:rgba(247,120,186,0.08); border:1px solid var(--border); border-left:3px solid var(--pink); border-radius:8px; padding:10px 20px; text-align:left;">
             <div style="font-weight:700; font-size:0.85rem;">web-tester / runner</div>
@@ -260,14 +260,14 @@
         <tr>
           <td><strong style="color:var(--accent)">/dev-beom</strong></td>
           <td>기능 개발</td>
-          <td>planner + architect + coder + qa</td>
+          <td>planner + architect + coder <span class="tag tag-yellow">+ Codex QA</span></td>
           <td><span class="tag tag-green">질문 O</span></td>
           <td>issue 보고 + 중단</td>
         </tr>
         <tr>
           <td><strong style="color:var(--green)">/fix-beom</strong></td>
           <td>버그 수정</td>
-          <td>planner + coder + qa</td>
+          <td>planner + coder <span class="tag tag-yellow">+ Codex QA</span></td>
           <td><span class="tag tag-green">질문 O</span></td>
           <td>issue 보고 + 중단</td>
         </tr>
@@ -281,7 +281,7 @@
         <tr>
           <td><strong style="color:var(--purple)">/persist-beom</strong></td>
           <td>자율 실행</td>
-          <td>planner + architect + coder + qa</td>
+          <td>planner + architect + coder <span class="tag tag-yellow">+ Codex QA</span></td>
           <td><span class="tag tag-red">질문 X (자율)</span></td>
           <td>접근 변경 + 재시도</td>
         </tr>
@@ -332,8 +332,8 @@
       <div class="flow-arrow">&darr;</div>
 
       <div class="flow-step review" style="border-left:4px solid var(--yellow);">
-        <div class="step-title">Phase 5: QA Review <span class="tag tag-yellow">qa-manager</span></div>
-        <div class="step-detail">diff + plan 완료 기준 대조 &rarr; PASS / FAIL 판정</div>
+        <div class="step-title">Phase 5: QA Review <span class="tag tag-yellow">4-tier 디스패처</span></div>
+        <div class="step-detail">cmux/tmux split + codex exec → 가시성 ✅ / Agent codex → 백그라운드 / Claude qa-manager → fallback. diff + plan 완료 기준 대조 → PASS / FAIL 판정</div>
       </div>
 
       <div class="flow-arrow">&darr;</div>
@@ -357,7 +357,7 @@
           <div class="flow-arrow">&darr;</div>
           <div class="flow-step loop" style="min-width:200px;">
             <div class="step-title">QA Loop (max 5)</div>
-            <div class="step-detail">planner &rarr; coder &rarr; qa &rarr; 반복</div>
+            <div class="step-detail">planner &rarr; coder &rarr; QA 디스패처 &rarr; 반복 (split surface 재사용)</div>
           </div>
           <div class="flow-arrow">&darr;</div>
           <div class="flow-step fail" style="min-width:200px;">
@@ -390,9 +390,9 @@
       <div style="font-size:0.75rem; color:var(--text-muted);">2000 lines</div>
     </div>
     <div class="ctx-bar">
-      <div class="label" style="color:var(--yellow);">qa-manager</div>
-      <div class="bar" style="background:rgba(210,153,34,0.12); width:75%;">Diff(file) + Plan TODO + CodeMap</div>
-      <div style="font-size:0.75rem; color:var(--text-muted);">1500 lines</div>
+      <div class="label" style="color:var(--yellow);">QA (Codex/Claude)</div>
+      <div class="bar" style="background:rgba(210,153,34,0.12); width:75%;">qa-manager.md 페르소나 + Diff(file) + Plan TODO + CodeMap</div>
+      <div style="font-size:0.75rem; color:var(--text-muted);">메인 토큰 영향 없음 (Codex Tier A~C)</div>
     </div>
   </div>
 </div>
@@ -472,12 +472,12 @@
 
       <div class="agent-card qa">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div class="role">qa-manager</div>
-          <span class="model-badge">sonnet</span>
+          <div class="role">qa-manager (페르소나)</div>
+          <span class="model-badge">Codex 우선 / Sonnet fallback</span>
         </div>
-        <div style="font-size:0.82rem; color:var(--text-muted); margin:6px 0;">코드 리뷰, 스펙 검증, plan 완료 기준 대조</div>
-        <h3 style="color:var(--green); font-size:0.8rem;">Tools</h3>
-        <div style="font-size:0.78rem;">Read, Glob, Grep (읽기 전용)</div>
+        <div style="font-size:0.82rem; color:var(--text-muted); margin:6px 0;">팀 멤버 ❌ — 4-tier 디스패처로 호출. 페르소나는 agents/qa-manager.md 그대로 유지</div>
+        <h3 style="color:var(--green); font-size:0.8rem;">호출 Tier</h3>
+        <div style="font-size:0.78rem;">A: cmux split + codex exec / B: tmux split + codex exec / C: Agent codex / D: Agent qa-manager (Sonnet)</div>
         <h3 style="color:var(--green); font-size:0.8rem;">판정 형식</h3>
         <div style="font-size:0.78rem;"><span class="tag tag-green">PASS</span> 또는 <span class="tag tag-red">FAIL (Critical N건)</span></div>
         <ul class="do-list">
@@ -489,6 +489,7 @@
         <ul class="dont-list">
           <li>직접 코드 수정</li>
           <li>비즈니스 요구사항 재정의</li>
+          <li>팀 멤버로 참여 (메인 토큰 절감 목적)</li>
         </ul>
       </div>
 
@@ -542,13 +543,13 @@
     <div class="grid-2">
       <div class="skill-card" style="border-color:var(--accent);">
         <div class="name" style="color:var(--accent);">/dev-beom</div>
-        <div class="desc">기능 개발. planner+architect+coder+qa-manager 팀을 실행하여 설계&rarr;구현&rarr;리뷰&rarr;커밋까지 수행</div>
+        <div class="desc">기능 개발. planner+architect+coder 팀 + Codex QA 디스패처. 설계&rarr;구현&rarr;리뷰&rarr;커밋까지 수행</div>
         <span class="badge badge-main">TeamCreate 강제</span>
         <div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">내부 호출: fetch-jira-issue, tmux-team-agent, <strong>tdd</strong>, commit</div>
       </div>
       <div class="skill-card" style="border-color:var(--green);">
         <div class="name" style="color:var(--green);">/fix-beom</div>
-        <div class="desc">버그 수정. planner+coder+qa-manager 팀. 버그 분석 모드 + 최소 변경 원칙</div>
+        <div class="desc">버그 수정. planner+coder 팀 + Codex QA 디스패처. 버그 분석 모드 + 최소 변경 원칙</div>
         <span class="badge badge-main">TeamCreate 강제</span>
         <div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">architect 없음 (필요 시 추가). 버그 재현 테스트 TDD</div>
       </div>
@@ -615,12 +616,12 @@
 <div class="section" id="qaloop">
   <div class="card">
     <h2>QA Loop Protocol</h2>
-    <p style="color:var(--text-muted); margin-bottom:20px;">qa-manager가 Critical 이슈를 발견하면 수정 루프가 시작됩니다. <strong>생략 불가.</strong></p>
+    <p style="color:var(--text-muted); margin-bottom:20px;">QA 디스패처(Codex 우선 / Claude fallback)가 Critical 이슈를 발견하면 수정 루프가 시작됩니다. <strong>생략 불가.</strong></p>
 
     <div style="text-align:center; margin: 20px 0;">
       <div class="flow-step review" style="display:inline-block; border-left:4px solid var(--yellow);">
-        <div class="step-title">qa-manager 리뷰</div>
-        <div class="step-detail">diff + plan 완료 기준 대조</div>
+        <div class="step-title">QA 4-tier 디스패처</div>
+        <div class="step-detail">cmux/tmux split + codex exec → Agent codex → Claude qa-manager (fallback)</div>
       </div>
     </div>
 
@@ -651,8 +652,8 @@
             </div>
             <div style="color:var(--text-muted);">&rarr;</div>
             <div class="flow-step review" style="border-left:3px solid var(--yellow); min-width:160px;">
-              <div class="step-title" style="font-size:0.82rem;">3. qa-manager</div>
-              <div class="step-detail">재리뷰 &rarr; PASS/FAIL</div>
+              <div class="step-title" style="font-size:0.82rem;">3. QA 디스패처</div>
+              <div class="step-detail">재리뷰 (split surface 재사용) &rarr; PASS/FAIL</div>
             </div>
           </div>
         </div>
@@ -668,7 +669,7 @@
 
   <div class="card">
     <h2>Web Test Integration <span class="tag" style="background:rgba(247,120,186,0.15); color:var(--pink);">/web-test</span></h2>
-    <p style="color:var(--text-muted); margin-bottom:16px;">qa-manager가 코드 리뷰 PASS 후, 프론트엔드/어드민 프로젝트에서 E2E 웹 테스트를 권고합니다.</p>
+    <p style="color:var(--text-muted); margin-bottom:16px;">QA 디스패처가 코드 리뷰 PASS 후, 프론트엔드/어드민 프로젝트에서 E2E 웹 테스트를 권고합니다.</p>
 
     <div style="display:flex; flex-wrap:wrap; gap:16px; margin:20px 0;">
       <div style="flex:1; min-width:280px;">
@@ -732,7 +733,7 @@
 <!-- ===== HOOKS & RULES ===== -->
 <div class="section" id="hooks">
   <div class="card">
-    <h2>Safety Hooks (4)</h2>
+    <h2>Safety Hooks (5)</h2>
     <div class="grid-2">
       <div class="hook-card">
         <div class="hook-name" style="color:var(--red);">pre-tool-guard</div>
@@ -741,6 +742,15 @@
           <strong>보호 브랜치 커밋 차단 + 위험 명령 차단.</strong><br>
           <span style="color:var(--red);">차단:</span> 보호 브랜치 git commit/push, force push, <code>rm -rf /</code>, <code>chmod 777</code><br>
           <span style="color:var(--red);">차단:</span> [WEB-TEST-REQUIRED] 시 웹 테스트 미통과 커밋
+        </div>
+      </div>
+      <div class="hook-card">
+        <div class="hook-name" style="color:var(--red);">pre-commit-build-check</div>
+        <div class="hook-event">PreToolUse / Bash (git commit) &nbsp; | &nbsp; timeout: 120s</div>
+        <div class="hook-desc">
+          <strong>커밋 전 빌드/타입체크 통과 확인.</strong><br>
+          Gradle (compileKotlin), Node+TS (tsc --noEmit), Python (py_compile) 자동 감지 및 실행.<br>
+          <span style="color:var(--red);">차단:</span> 빌드 실패 시 (마지막 800자 에러 로그 표시). docs/config-only 변경, --amend, <code>SKIP_BUILD_CHECK=1</code>는 건너뜀.
         </div>
       </div>
       <div class="hook-card">
@@ -765,7 +775,7 @@
         <div class="hook-event">PostToolUse / SendMessage &nbsp; | &nbsp; timeout: 2s</div>
         <div class="hook-desc">
           <strong>[WEB-TEST-REQUIRED] 마커 감지.</strong><br>
-          qa-manager 응답에서 마커 탐지 시 <code>.dev/web-test-required</code> 플래그를 생성하여 커밋 게이트 활성화.
+          QA 디스패처 응답에서 마커 탐지 시 <code>.dev/web-test-required</code> 플래그를 생성하여 커밋 게이트 활성화.
         </div>
       </div>
     </div>
@@ -779,7 +789,7 @@
       <li><strong>Co-Authored-By 금지</strong></li>
       <li><strong>팀 실행 생략 금지</strong> &mdash; "간단하다"는 이유로 생략 불가</li>
       <li><strong>plan 파일 생략 금지</strong> &mdash; docs/plan/plan_{작업}.md 필수 생성</li>
-      <li><strong>QA 호출 생략 금지</strong> &mdash; 모든 구현 후 반드시 qa-manager 리뷰. 오케스트레이터 자체 리뷰 대체 금지</li>
+      <li><strong>QA 호출 생략 금지</strong> &mdash; 모든 구현 후 반드시 QA 디스패처(Codex 또는 Claude qa-manager)로 리뷰. 오케스트레이터 자체 리뷰 대체 금지</li>
       <li><strong>팀 에이전트 복구 스킬 호출 생략 금지</strong> &mdash; TeamCreate 직후 환경 감지 후 tmux-team-agent 또는 cmux-team-agent 호출</li>
       <li><strong>QA 루프 생략 금지</strong> &mdash; Critical 발견 시 반드시 수정</li>
       <li><strong>[WEB-TEST-REQUIRED] 무시 금지</strong> &mdash; 마커 감지 시 질문 없이 즉시 웹 테스트 실행</li>
@@ -923,14 +933,14 @@
 │   ├── <span class="file">planner.md</span>                    <span class="comment"># plan 관리, TODO, QA 이슈 수신</span>
 │   ├── <span class="file">architect.md</span>                  <span class="comment"># 기술 설계 + 비판적 자기검토</span>
 │   ├── <span class="file">coder.md</span>                      <span class="comment"># 코드 구현/수정, TDD</span>
-│   ├── <span class="file">qa-manager.md</span>                 <span class="comment"># 코드 리뷰, 스펙 검증, PASS/FAIL</span>
+│   ├── <span class="file">qa-manager.md</span>                 <span class="comment"># 코드 리뷰 페르소나 (팀 멤버 ❌, Codex/Claude QA 디스패처가 Read하여 사용)</span>
 │   ├── <span class="file">web-tester.md</span>                 <span class="comment"># E2E 테스트 생성+실행 (16 tools)</span>
 │   ├── <span class="file">web-test-runner.md</span>            <span class="comment"># E2E 테스트 실행 전용 (8 tools)</span>
 │   └── <span class="dir">conventions/</span>                   <span class="comment"># 프로젝트별 컨벤션 (조건부 로드)</span>
 │       └── <span class="highlight">spring-boot.md</span>            <span class="comment"># Spring Boot/JPA/QueryDSL (설계+구현+리뷰 통합)</span>
-├── <span class="dir">skills/</span>                            <span class="comment"># 스킬 14개</span>
-│   ├── <span class="dir">dev-beom/</span>                      <span class="comment"># 기능 개발 (4명 팀 강제)</span>
-│   ├── <span class="dir">fix-beom/</span>                      <span class="comment"># 버그 수정 (3명 팀 강제)</span>
+├── <span class="dir">skills/</span>                            <span class="comment"># 스킬 16개</span>
+│   ├── <span class="dir">dev-beom/</span>                      <span class="comment"># 기능 개발 (3명 팀 + Codex QA)</span>
+│   ├── <span class="dir">fix-beom/</span>                      <span class="comment"># 버그 수정 (2명 팀 + Codex QA)</span>
 │   ├── <span class="dir">analysis-beom/</span>                 <span class="comment"># 코드/정책 분석</span>
 │   ├── <span class="dir">persist-beom/</span>                  <span class="comment"># 자율 실행 (끝까지)</span>
 │   ├── <span class="dir">commit/</span>                        <span class="comment"># Git 커밋 (이슈키 파싱, pre-check)</span>
@@ -945,9 +955,10 @@
 │   ├── <span class="dir">web-test/</span>                      <span class="comment"># E2E 웹 테스트 (Playwright + OTP 바이패스)</span>
 │   │   └── <span class="dir">references/</span>                <span class="comment"># OTP 탐지 패턴 (외부 분리)</span>
 │   └── <span class="dir">new-context/</span>                   <span class="comment"># 도메인 컨텍스트 생성</span>
-├── <span class="dir">hooks/</span>                             <span class="comment"># 안전 훅 4개</span>
+├── <span class="dir">hooks/</span>                             <span class="comment"># 안전 훅 5개</span>
 │   ├── <span class="file">hooks.json</span>                    <span class="comment"># PreToolUse + PostToolUse</span>
 │   ├── <span class="file">pre-tool-guard</span>                <span class="comment"># 보호 브랜치 커밋/push + 위험 명령(rm -rf, chmod 777) 차단</span>
+│   ├── <span class="file">pre-commit-build-check</span>        <span class="comment"># 커밋 전 빌드/타입체크 통과 검증 (Gradle/TS/Python)</span>
 │   ├── <span class="file">code-quality-gate</span>             <span class="comment"># 시크릿/보안/위험SQL/exec/subprocess 감지</span>
 │   ├── <span class="highlight">error-learner</span>                 <span class="comment"># Bash 실패 에러 기록 + 반복 감지 → 접근 변경 유도</span>
 │   ├── <span class="file">web-test-detector</span>             <span class="comment"># [WEB-TEST-REQUIRED] 마커 감지</span>

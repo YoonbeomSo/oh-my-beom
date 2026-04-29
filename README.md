@@ -66,9 +66,10 @@ oh-my-beom/
 │   ├── cmux-team-agent/              # cmux surface 복구 (cmux 전용)
 │   ├── humanizer/                    # AI 글쓰기 패턴 제거
 │   └── new-context/                  # 도메인 컨텍스트 생성
-├── hooks/                            # 안전 훅 4개
+├── hooks/                            # 안전 훅 5개
 │   ├── hooks.json                    # 훅 설정
 │   ├── pre-tool-guard                # 보호 브랜치 커밋 차단 + 웹 테스트 게이트
+│   ├── pre-commit-build-check        # 커밋 전 빌드/타입체크 검증
 │   ├── code-quality-gate             # 시크릿/보안 감지
 │   ├── error-learner                 # 에러 기록 + 반복 감지 → 접근 방식 변경 유도
 │   └── web-test-detector             # [WEB-TEST-REQUIRED] 마커 감지
@@ -89,12 +90,14 @@ oh-my-beom/
 
 ### 4개 진입점
 
-| 명령 | 용도 | 에이전트 팀 |
-|------|------|-----------|
-| `/dev-beom` | 기능 개발 | planner + architect + coder + qa-manager |
-| `/fix-beom` | 버그 수정 | planner + coder + qa-manager |
-| `/analysis-beom` | 코드/정책 분석 | Explore 에이전트 |
-| `/persist-beom` | 자율 실행 | 전체 팀 (질문 없이 끝까지) |
+| 명령 | 용도 | 에이전트 팀 (Claude) | QA |
+|------|------|---------------------|----|
+| `/dev-beom` | 기능 개발 | planner + architect + coder | Codex 4-tier 디스패처 |
+| `/fix-beom` | 버그 수정 | planner + coder | Codex 4-tier 디스패처 |
+| `/analysis-beom` | 코드/정책 분석 | Explore 에이전트 | — |
+| `/persist-beom` | 자율 실행 | planner + architect + coder (질문 없이 끝까지) | Codex 4-tier 디스패처 |
+
+> QA 리뷰는 토큰 절감을 위해 Codex로 분리되어 있으며, Codex 미설치 시 Claude `qa-manager`(Sonnet)로 자동 fallback됩니다. 자세한 내용은 위 "권장 의존성: Codex 플러그인" 섹션 참조.
 
 ### 기본 사용 예시
 
@@ -133,7 +136,7 @@ oh-my-beom/
 ```
 입력 → Jira 조회 → Git 준비 → 코드 맵 생성
   ↓
-TeamCreate (planner + architect + coder + qa-manager)
+TeamCreate (planner + architect + coder) ← 팀에서 qa-manager 분리
   ↓
 planner: plan 작성 (docs/plan/plan_{작업내용}.md)
   ↓
@@ -141,22 +144,22 @@ architect: 기술 설계 (.dev/design.md)
   ↓
 coder: 구현
   ↓
-qa-manager: 리뷰 → PASS / FAIL 판정
+QA 4-tier 디스패처 (Codex 우선, Claude fallback) → PASS / FAIL 판정
   ├── PASS → /commit → result 보고
   └── FAIL → QA 루프 (최대 5회)
               ↓
-         planner: plan 수정 → coder: 수정 → qa-manager: 재리뷰
+         planner: plan 수정 → coder: 수정 → QA 디스패처 재호출
               ↓
          5회 초과 → issue 보고서 (docs/issue/) → 사용자에게 보고
 ```
 
 ### QA 루프
 
-qa-manager가 **Critical** 이슈를 발견하면 수정 루프가 시작됩니다:
+QA 디스패처가 **Critical** 이슈를 발견하면 수정 루프가 시작됩니다:
 
 1. **planner**: plan 파일에 이슈 기록 + 수정 방향 결정
 2. **coder**: 수정 방향에 따라 코드 수정
-3. **qa-manager**: 재리뷰
+3. **QA 디스패처**: 재리뷰 (같은 Tier 재사용 — cmux/tmux split surface는 재활용)
 4. PASS가 나올 때까지 반복 (최대 5회)
 5. 5회 초과 시 `docs/issue/issue_{작업내용}.md`에 미해결 보고서 생성
 
@@ -225,14 +228,15 @@ QA 루프 5회 초과 시 자동 생성. 미해결 이슈, 시도 이력, 권장
 
 ## 안전 장치
 
-### 훅 (4개)
+### 훅 (5개)
 
 | 훅 | 이벤트 | 역할 |
 |----|--------|------|
 | `pre-tool-guard` | Bash 실행 전 | 보호 브랜치 커밋 차단 + [WEB-TEST-REQUIRED] 시 웹 테스트 통과 게이트 |
+| `pre-commit-build-check` | Bash 실행 전 (git commit) | 커밋 전 빌드/타입체크 통과 확인 (Gradle/TS/Python) — 실패 시 차단 |
 | `code-quality-gate` | Write/Edit 전 | 시크릿 하드코딩, eval(), SQL 인젝션 감지 + 플러그인 파일 보호 |
 | `error-learner` | Bash 실행 후 | 에러 기록 + 반복 감지 → 접근 방식 변경 유도 |
-| `web-test-detector` | SendMessage 후 | qa-manager 응답에서 [WEB-TEST-REQUIRED] 마커 감지 |
+| `web-test-detector` | SendMessage 후 | QA 응답에서 [WEB-TEST-REQUIRED] 마커 감지 |
 
 ### 금지 사항 (CLAUDE.md)
 
