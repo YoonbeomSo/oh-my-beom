@@ -38,13 +38,17 @@ ARGS 없이 호출 시: "수정할 버그를 설명해주세요. 예: `/fix-beom
 TeamCreate(agents=["planner", "coder"])
 ```
 
-**팀 생성 후 환경을 감지하여 적절한 복구 스킬을 호출한다:**
-```bash
-if [ -n "$CMUX_SOCKET" ]; then echo "cmux"; elif [ -n "$TMUX" ]; then echo "tmux"; else echo "none"; fi
-```
-- `cmux` → `Skill("oh-my-beom:cmux-team-agent")`
-- `tmux` → `Skill("oh-my-beom:tmux-team-agent")`
-- `none` → 스킬 호출 생략 (에이전트는 mailbox 모드로 동작)
+### 🛑 필수 1단계 — 환경 감지 + 복구 스킬 호출 (생략 절대 금지)
+
+TeamCreate 직후 **다음 SendMessage보다 먼저** 이 단계를 수행한다. 자세한 절차는 `/dev-beom` Phase 2 "필수 1단계" 섹션 참조 — 동일하게 적용.
+
+1. 환경 감지 후 사용자에게 `🖥️ 환경: <cmux|tmux|none>` 출력
+2. 환경별 즉시 호출:
+   - `cmux` → `Skill("oh-my-beom:cmux-team-agent")`
+   - `tmux` → `Skill("oh-my-beom:tmux-team-agent")`
+   - `none` → 호출 생략 (mailbox 모드)
+
+PostToolUse 훅(`team-recovery-reminder`)이 자동 컨텍스트를 주입하므로 그 안내를 따른다. 사용자가 "왜 분할 안 했어?"라고 묻는 시점은 이미 늦었다.
 
 planner에게 **버그 분석 모드**로 plan 작성을 요청한다:
 

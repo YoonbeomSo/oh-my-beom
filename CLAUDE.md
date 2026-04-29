@@ -53,6 +53,7 @@ claude plugin install codex
 | Bash 실행 전 (git commit) | `pre-commit-build-check` | 커밋 전 빌드/타입체크 통과 확인 (실패 시 차단) |
 | Bash 실행 전 (git commit) | `version-sync-check` | (oh-my-beom 자체 개발 시) package.json/plugin.json/marketplace.json 버전 일치 확인 |
 | Bash 실행 전 (git commit) | `doc-sync-check` | (oh-my-beom 자체 개발 시) agents/skills/hooks/rules 구조 변경 시 HTML 문서 동반 갱신 강제 |
+| TeamCreate 후 | `team-recovery-reminder` | 환경(cmux/tmux) 감지 후 복구 스킬 호출 명령을 additionalContext로 자동 주입 |
 | Bash 실행 후 | `error-learner` | 에러 기록 + 반복 감지 → 접근 방식 변경 유도 |
 | SendMessage 후 | `web-test-detector` | [WEB-TEST-REQUIRED] 감지 |
 
@@ -67,7 +68,7 @@ claude plugin install codex
 - **팀 실행 생략 금지.** /dev-beom, /fix-beom, /persist-beom은 반드시 에이전트 팀을 생성하고 실행. "간단하다", "규모가 작다"는 이유로 생략 불가
 - **plan 파일 생략 금지.** 모든 개발/수정 작업은 `docs/plan/plan_{작업내용}.md` 생성 후 시작
 - **QA 호출 생략 금지.** 모든 구현/수정 후 반드시 Codex(`codex:codex-rescue`)를 호출하여 QA 리뷰 수행. "변경이 작다", "직접 확인했다", "1개 파일이다" 등의 이유로 생략 불가. 오케스트레이터가 자체 리뷰로 대체하는 것도 금지. (qa-manager 페르소나는 `agents/qa-manager.md` 참조)
-- **팀 에이전트 복구 스킬 호출 생략 금지.** TeamCreate 직후 환경을 감지하여 반드시 `Skill("oh-my-beom:cmux-team-agent")` 또는 `Skill("oh-my-beom:tmux-team-agent")`를 호출. 에이전트가 정상 작동하는 것처럼 보여도 생략 불가
+- **팀 에이전트 복구 스킬 호출 생략 금지.** TeamCreate 직후 **다음 SendMessage보다 먼저** 환경을 감지(`$CMUX_SOCKET`/`$TMUX`)하여 반드시 `Skill("oh-my-beom:cmux-team-agent")` 또는 `Skill("oh-my-beom:tmux-team-agent")`를 호출한다. PostToolUse 훅(`team-recovery-reminder`)이 자동으로 환경과 호출 명령을 컨텍스트로 주입하니 무조건 따를 것. 에이전트가 정상 작동하는 것처럼 보여도, 사용자가 묻기 전에는 알 수 없으므로 절대 생략 불가
 - **QA 루프 생략 금지.** Codex QA가 Critical 발견 시 반드시 수정 루프 진입 (planner→coder→Codex 재호출)
 - **[WEB-TEST-REQUIRED] 무시 금지.** Codex QA 결과에 `[WEB-TEST-REQUIRED]` 마커가 있으면 오케스트레이터는 질문 없이 즉시 서버 기동 → 웹 테스트 실행 → 서버 종료를 수행한다. "서버를 실행할까요?", "진행할까요?" 등의 질문은 금지
 - **민감 파일 커밋 금지.** .env*, *.key, *.pem, credentials*, *secret*

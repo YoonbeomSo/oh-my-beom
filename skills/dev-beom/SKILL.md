@@ -57,13 +57,27 @@ ARGS에서 Jira URL 또는 이슈 키 패턴(`[A-Z]+-[0-9]+`)을 감지하면:
 TeamCreate(agents=["planner", "architect", "coder"])
 ```
 
-**팀 생성 후 환경을 감지하여 적절한 복구 스킬을 호출한다:**
-```bash
-if [ -n "$CMUX_SOCKET" ]; then echo "cmux"; elif [ -n "$TMUX" ]; then echo "tmux"; else echo "none"; fi
-```
-- `cmux` → `Skill("oh-my-beom:cmux-team-agent")`
-- `tmux` → `Skill("oh-my-beom:tmux-team-agent")`
-- `none` → 스킬 호출 생략 (에이전트는 mailbox 모드로 동작)
+### 🛑 필수 1단계 — 환경 감지 + 복구 스킬 호출 (생략 절대 금지)
+
+TeamCreate 직후 **다음 SendMessage보다 먼저** 이 단계를 수행한다. 사용자에게 묻거나 "필요하면 나중에"라는 식의 지연은 금지. PostToolUse 훅(`team-recovery-reminder`)이 자동으로 환경을 알려주지만, 그 컨텍스트 무시도 금지.
+
+1. 환경 감지 후 **사용자에게 announcement 출력**:
+   ```bash
+   if [ -n "$CMUX_SOCKET" ]; then ENV=cmux
+   elif [ -n "$TMUX" ]; then ENV=tmux
+   else ENV=none
+   fi
+   echo "🖥️ 환경: $ENV"
+   ```
+2. 환경별 스킬 호출 (즉시):
+
+   | 환경 | 호출 | 생략 시 |
+   |------|------|---------|
+   | `cmux` | `Skill("oh-my-beom:cmux-team-agent")` | 화면 분할 실패. surface가 탭으로 쌓임 |
+   | `tmux` | `Skill("oh-my-beom:tmux-team-agent")` | pane이 빈 셸로 남음, 에이전트 미시작 |
+   | `none` | 호출 생략 (mailbox 모드) | — |
+
+> **반복 강조**: 사용자가 "왜 화면 분할 안 했어?" 라고 묻는 시점에는 이미 늦었다. TeamCreate → **즉시** 이 단계 → 그 다음에 SendMessage.
 
 ```
 SendMessage(to="planner", message="""

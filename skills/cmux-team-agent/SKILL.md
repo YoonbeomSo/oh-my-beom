@@ -1,188 +1,182 @@
 ---
 name: cmux-team-agent
-description: Use after spawning team agents with Agent tool when agents fail to start in cmux surfaces. Detects empty cmux surfaces and manually re-launches Claude Code CLI in them. Use proactively whenever TeamCreate + Agent spawning is used in cmux environment.
+description: Use after spawning team agents with Agent tool when running inside cmux. TeamCreate spawns agents in a separate claude-swarm tmux server; this skill creates a cmux surface that attaches to that swarm tmux so the agents become visible as a split. Use proactively whenever TeamCreate is used in cmux environment.
 ---
 
-# cmux Team Agent Recovery
+# cmux Team Agent Visualization
 
 ## Overview
 
-TeamCreate로 팀을 생성하고 Agent tool로 에이전트를 spawn할 때, cmux surface는 생성되지만 Claude Code CLI가 실제로 시작되지 않는 문제가 발생할 수 있다. 이 스킬은 해당 문제를 감지하고 자동 복구한다.
+TeamCreate는 **자체 tmux 서버**(`/tmp/tmux-501/claude-swarm-{PID}`)를 띄워 그 안에서 에이전트들을 실행한다. cmux는 이 별도 tmux 서버를 직접 보지 못하므로, 사용자에게 보이는 cmux 화면에는 에이전트가 나타나지 않는다.
 
-> **이 스킬은 cmux 환경 전용이다.** tmux 환경에서는 `tmux-team-agent` 스킬을 사용한다. 오케스트레이터가 환경을 감지하여 적절한 스킬을 호출한다.
+이 스킬은:
+1. claude-swarm tmux 서버를 감지
+2. cmux 안에 새 surface를 만들고 그 안에서 swarm tmux에 `tmux attach`
+3. 새 pane으로 분리하여 화면 분할 효과를 얻음
+
+> **이 스킬은 cmux 환경 전용이다.** tmux 환경에서는 `tmux-team-agent` 스킬을 사용한다.
 
 ## When to Use
 
-- TeamCreate로 팀 생성 후 Agent tool로 에이전트를 spawn한 직후
+- TeamCreate로 팀 생성 직후 (PostToolUse 훅 `team-recovery-reminder`가 자동 안내)
 - 사용자가 "cmux에 안 뜬다", "분할 화면이 비어있다" 등 보고 시
-- 팀 에이전트를 사용하는 모든 워크플로우에서 **항상 proactive하게** 실행
+- `$CMUX_SOCKET`가 set이고 `$TMUX`가 unset인 환경에서
 
-## 문제 원인
+## 문제 원인 (실제 동작 모델)
 
-Agent tool로 에이전트를 spawn하면:
-1. 팀 config에 `backendType: "tmux"`, `tmuxPaneId`가 설정됨 (cmux에서는 surface ID가 이 필드에 저장됨)
-2. cmux surface가 생성됨 — **다만 `new-surface`는 새 탭(tab)을 만들 뿐 화면을 분할하지 않는다**
-3. **Claude Code CLI 명령이 surface에 전송되지만 즉시 종료될 수 있음**
-4. surface에는 빈 zsh 셸만 남음 (종료 코드 0으로 프롬프트 복귀)
+| 가정 (잘못된 이전 모델) | 실제 동작 |
+|------------------------|-----------|
+| 각 에이전트마다 cmux surface가 따로 생긴다 | ❌ — TeamCreate는 하나의 swarm tmux 서버 안에 모두 띄움 |
+| `cmux drag-surface-to-split --surface {agentSurfaceUUID}` 호출 가능 | ❌ — 그런 surface는 존재하지 않음. "Surface not found" 발생 |
+| config의 `tmuxPaneId`가 cmux surface ID | ❌ — `tmuxPaneId`는 swarm tmux 안의 pane ID(`%0`, `%1` 등) |
 
-이로 인해 두 가지 문제가 발생한다:
-- **(A) 화면 분할 실패**: 에이전트 surface가 모두 탭으로 쌓여 동시에 보이지 않는다.
-- **(B) Claude 미실행**: surface는 생겼지만 Claude CLI가 실행되지 않은 빈 셸 상태.
-
-이 스킬은 두 문제를 **모두** 해결한다.
+따라서 cmux 분할은 **swarm tmux를 attach한 cmux surface를 만드는 방식**으로만 가능하다.
 
 ## 복구 절차
 
-### Step 0: 대기 (타이밍 안정화)
-
-Agent spawn 직후에는 surface가 아직 초기화 중일 수 있다. **3초 대기** 후 상태를 확인한다.
+### Step 0: 대기
 
 ```bash
-sleep 3
+sleep 2   # swarm tmux 서버가 띄워질 시간 확보
 ```
 
-### Step 1: 팀 config 읽기
+### Step 1: claude-swarm tmux 서버 찾기
 
-```
-Read ~/.claude/teams/{team-name}/config.json
-```
-
-각 멤버의 `agentId`, `name`, `agentType`, `model`, `tmuxPaneId` (surface ID), `color`, `cwd`를 확인한다.
-
-> **참고:** config의 `tmuxPaneId` 필드에 cmux surface ID가 저장된다. 필드명은 하위 호환성을 위해 `tmuxPaneId`로 유지된다.
-
-### Step 2: cmux surface 상태 확인
-
-team-lead를 제외한 각 멤버에 대해, `tmuxPaneId`가 비어있지 않은 surface의 화면을 읽는다:
+가장 최근에 생성된 socket을 사용한다 (보통 현재 세션의 것):
 
 ```bash
-cmux read-screen --surface {tmuxPaneId} --lines 5
+SWARM_SOCK=$(ls -t /tmp/tmux-${UID:-501}/claude-swarm-* 2>/dev/null | head -1)
+[ -z "$SWARM_SOCK" ] && { echo "claude-swarm tmux 서버를 찾지 못했습니다."; exit 1; }
+echo "swarm socket: $SWARM_SOCK"
 ```
 
-마지막 줄을 확인하여 상태를 판별한다:
-- 셸 프롬프트 패턴(`$`, `%`, `❯`, `➜`)만 보이면 → **idle** (Claude 미실행, 복구 필요)
-- `claude` 또는 `node` 문자열이 포함되어 있으면 → **정상 동작 중** (복구 불필요)
+세션 이름 확인 (보통 `claude-swarm`이지만 변할 수 있음):
 
-### Step 2.5: 화면 분할 강제 적용 (cmux 전용)
+```bash
+SWARM_SESSION=$(tmux -S "$SWARM_SOCK" list-sessions -F "#{session_name}" 2>/dev/null | head -1)
+echo "swarm session: $SWARM_SESSION"
+```
 
-`new-surface`로 생성된 surface는 기본적으로 **같은 pane 안에 탭으로 추가**되므로 동시에 보이지 않는다. 각 에이전트 surface를 **독립된 split**으로 옮겨야 화면이 분할되어 보인다.
+각 pane 정보도 한 번 확인 (멤버 수 = pane 수):
 
-> **⚠️ 중요: `drag-surface-to-split`은 short ref (`surface:N`)로 호출하면 `Surface not found` 에러가 나고, 반드시 UUID로 호출해야 한다.** (검증됨 — 2026-04-29)
-> `cmux send` / `cmux read-screen`은 short ref / UUID 둘 다 동작하지만, **drag만 UUID 전용**이다.
+```bash
+tmux -S "$SWARM_SOCK" list-panes -a -F "#{pane_id} #{pane_current_command} tty=#{pane_tty}"
+```
 
-1. 현재 레이아웃 확인:
-   ```bash
-   cmux tree
-   cmux --id-format both list-pane-surfaces
+### Step 2: 기존 attach surface 재사용 여부 확인
+
+이미 같은 swarm tmux에 attach된 cmux surface가 있으면 새로 만들지 않는다 (중복 분할 방지).
+
+```bash
+EXISTING=$(cmux tree 2>&1 | grep -F "$SWARM_SOCK attach" | head -1 || true)
+if [ -n "$EXISTING" ]; then
+  echo "이미 attach된 surface가 있어 재사용합니다."
+  # surface UUID는 .dev/.team-surface-uuid에 저장돼 있을 것
+fi
+```
+
+마커 파일 `.dev/.team-surface-uuid`에 UUID가 저장돼 있고 해당 surface가 살아있으면 재사용. 아니면 Step 3 진행.
+
+### Step 3: 새 cmux surface 생성
+
+현재 workspace에 surface 추가:
+
+```bash
+NEW_SURF=$(cmux new-surface --workspace "${CMUX_WORKSPACE_ID}" 2>&1 | awk '{print $2}')
+# 예: surface:20
+sleep 0.3
+```
+
+UUID 매핑 확보 (drag/move 명령은 UUID 필요):
+
+```bash
+NEW_SURF_UUID=$(cmux --id-format both list-pane-surfaces \
+  | awk -v s="$NEW_SURF" '$1==s || $2==s {print $2}' \
+  | head -1)
+echo "$NEW_SURF_UUID" > .dev/.team-surface-uuid
+```
+
+### Step 4: surface 안에서 swarm tmux에 attach
+
+```bash
+cmux send --surface "$NEW_SURF_UUID" "tmux -S $SWARM_SOCK attach -t $SWARM_SESSION\n"
+sleep 1.0
+# 검증
+cmux read-screen --surface "$NEW_SURF_UUID" --lines 5
+```
+
+`can't find session` 에러가 나오면 세션 이름이 다른 것이므로 Step 1에서 잡은 정확한 이름인지 재확인.
+
+### Step 5: 분할 (move-surface 우선, drag는 fallback)
+
+`drag-surface-to-split`이 attach 직후 "Surface not found"를 반환하는 케이스가 보고됨 (cmux 내부 상태 동기화 타이밍 추정). 안정적인 우회 경로는 새 pane을 만들고 surface를 그 pane으로 이동시키는 것:
+
+```bash
+# 5-1. workspace 활성화 + 새 pane 생성
+cmux select-workspace --workspace "${CMUX_WORKSPACE_ID}" 2>/dev/null
+TARGET_PANE=$(cmux new-pane --workspace "${CMUX_WORKSPACE_ID}" --direction right 2>&1 | awk '{print $2}')
+sleep 0.3
+
+# 5-2. 새로 만든 attach surface를 그 pane으로 이동
+cmux move-surface --surface "$NEW_SURF_UUID" --pane "$TARGET_PANE" --focus true
+sleep 0.3
+```
+
+**대안 (Tier 1 시도)**: 일부 cmux 버전에서는 `drag-surface-to-split`이 잘 동작한다. 먼저 시도하고 실패 시 위 move-surface 경로로 fallback할 수 있다:
+
+```bash
+if cmux drag-surface-to-split --surface "$NEW_SURF_UUID" right 2>/dev/null; then
+  echo "drag 성공"
+else
+  # 위 5-1, 5-2 실행
+  ...
+fi
+```
+
+### Step 6: 검증
+
+```bash
+cmux tree | grep -A2 "$NEW_SURF_UUID"
+cmux read-screen --surface "$NEW_SURF_UUID" --lines 30
+```
+
+화면에 `@planner`, `@coder` 등 에이전트 pane이 보이면 성공.
+
+### Step 7: 결과 보고
+
+```
+🖥️ cmux 분할 완료
+   - swarm socket: /tmp/tmux-501/claude-swarm-{PID}
+   - swarm session: claude-swarm
+   - cmux surface UUID: {UUID} (저장: .dev/.team-surface-uuid)
+   - 위치: workspace:N / pane:M
+   에이전트가 attach된 swarm tmux 안에 표시됩니다.
+```
+
+## 정리 (Phase 7)
+
+오케스트레이터는 메인 스킬(dev/fix/persist)의 Phase 7에서 다음을 수행한다:
+
+```bash
+# attach surface 닫기 (선택 — 다음 세션 위해 남길 수도 있음)
+TEAM_UUID=$(cat .dev/.team-surface-uuid 2>/dev/null)
+[ -n "$TEAM_UUID" ] && cmux close-surface --surface "$TEAM_UUID"
+rm -f .dev/.team-surface-uuid
+```
+
+## Fallback (분할 실패 시)
+
+위 절차로 분할에 실패하면:
+1. 사용자에게 swarm socket과 session 이름을 노출
+2. 수동 attach 안내:
    ```
-   `--id-format both`로 `surface:N`과 UUID를 함께 출력시켜 매핑 테이블을 만든다.
-
-2. config.json에 저장된 `tmuxPaneId` 값별로 UUID를 확보한다:
-   - 값이 이미 UUID 형식(`[A-F0-9-]{36}`)이면 그대로 사용
-   - 값이 short ref (`surface:N`)나 다른 형식이면 위 매핑에서 UUID로 변환
-
-3. team-lead를 제외한 각 멤버 surface에 대해 분할:
-   ```bash
-   cmux drag-surface-to-split --surface {UUID} {direction}
+   tmux -S /tmp/tmux-501/claude-swarm-{PID} attach -t claude-swarm
    ```
-   - `direction` 순서: 첫 번째 멤버는 `right`, 두 번째는 `down`, 세 번째는 다시 `right`, ... 교대 적용 (2×2 / 2×3 그리드)
-   - 각 명령 사이에 `sleep 0.3`로 레이아웃 안정화 시간 확보
-
-4. 분할 실패 감지:
-   - 이미 분리된 pane에 있는 surface에 적용하면 에러나 무동작이 발생할 수 있다. 경고만 출력하고 진행한다.
-   - `cmux tree`로 재확인 후에도 모든 에이전트 surface가 한 pane에 모여 있으면, 사용자에게 "cmux 화면 분할에 실패했습니다. `cmux tree`로 레이아웃 확인 후 수동으로 드래그하세요."라고 안내한다.
-
-> **cmux `send`/`read-screen`은 surface short ref로도 동작하므로 분할 여부와 관계없이 Step 3 이후의 Claude 재실행은 시도할 수 있다.**
-
-### Step 3: 빈 surface에 Claude Code CLI 수동 실행
-
-team-lead를 제외한 각 멤버에 대해, Claude가 실행 중이지 않은 surface에 다음 명령을 전송한다:
-
-```bash
-cmux send --surface {tmuxPaneId} "cd {cwd} && env CLAUDECODE=1 CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 {claude-binary-path} --agent-id {agentId} --agent-name {name} --team-name {team-name} --agent-color {color} --parent-session-id {leadSessionId} --agent-type {agentType} --permission-mode acceptEdits --model {model}\n"
-```
-
-> **cmux 참고:** `cmux send`는 문자열 끝의 `\n`을 Enter 키로 해석한다.
-
-#### 변수 매핑 (config.json -> 명령어):
-| config 필드 | 명령어 플래그 |
-|---|---|
-| `members[].agentId` | `--agent-id` |
-| `members[].name` | `--agent-name` |
-| `name` (팀 이름) | `--team-name` |
-| `members[].color` | `--agent-color` |
-| `leadSessionId` | `--parent-session-id` |
-| `members[].agentType` | `--agent-type` |
-| `members[].model` | `--model` |
-| `members[].tmuxPaneId` | cmux send의 `--surface` 타겟 |
-| `members[].cwd` | `cd` 대상 경로 |
-
-#### Claude 바이너리 경로 찾기:
-```bash
-which claude
-```
-
-#### agentType/agentId 특수문자 처리:
-- `--agent-type` 값에 `:`가 포함될 수 있다 (예: `oh-my-beom:architect`). **이스케이프하지 않는다**.
-- `--agent-id` 값에 `@`가 포함된다 (예: `architect@team-name`). 마찬가지로 **이스케이프하지 않는다**.
-
-### Step 4: 실행 확인 + 재시도
-
-각 surface에 대해 **5초 대기** 후 확인:
-```bash
-sleep 5 && cmux read-screen --surface {tmuxPaneId} --lines 5
-```
-
-해당 surface가 여전히 idle 상태이면:
-
-#### 재시도 (1회):
-1. surface 내용을 캡처하여 에러 확인:
-   ```bash
-   cmux read-screen --surface {tmuxPaneId} --lines 20
-   ```
-2. 프롬프트만 보이면 (명령이 실행되었으나 종료됨) → 동일 명령을 다시 전송
-3. **5초 추가 대기** 후 재확인
-
-#### 재시도 후에도 실패:
-사용자에게 다음을 안내한다:
-```
-⚠️ cmux surface {tmuxPaneId}에서 에이전트 {name}이 시작되지 않습니다.
-Fallback: Agent tool로 직접 에이전트를 호출합니다 (non-team 모드).
-```
-
-그리고 **해당 에이전트를 fallback으로 전환**한다:
-- 이후 Phase에서 `SendMessage(to="{name}")` 대신 `Agent(subagent_type="{agentType}")` 사용
-- 팀 task list는 오케스트레이터가 직접 관리
-
-### Step 5: 결과 보고
-
-복구 시도 결과를 요약 보고:
-
-| surface | agent | 상태 |
-|---------|-------|------|
-| {id} | {name} | 복구 성공 / 재시도 성공 / fallback 전환 |
-
-## 예방적 사용 (Proactive)
-
-TeamCreate + Agent spawn 직후 모든 멤버 surface에 대해 **항상** 다음을 자동 수행한다:
-
-```bash
-sleep 3
-cmux tree                                          # 레이아웃 확인
-cmux read-screen --surface {surfaceId} --lines 5   # 각 surface의 상태 확인
-```
-
-- 에이전트 surface들이 같은 pane 안 탭으로 쌓여 있으면 → **Step 2.5** (drag-surface-to-split)를 즉시 수행
-- 셸 프롬프트만 보이는 surface가 있으면 → **Step 3** (Claude 수동 실행)을 즉시 수행
-
-두 체크는 독립적으로 수행한다. 분할은 됐지만 Claude가 안 뜬 경우, 그 반대 경우 모두 대응해야 한다.
+3. 메인 워크플로우는 계속 진행 (분할은 가시성 도구일 뿐, 에이전트 동작과 무관)
 
 ## 주의사항
 
-- `team-lead` 멤버는 현재 세션이므로 복구/분할 대상에서 **제외**한다
-- `tmuxPaneId`가 빈 문자열인 멤버도 제외한다
-- 에이전트가 이미 작업을 완료하고 정상 종료된 경우에는 재시작하지 않는다
-- 복구 후에도 에이전트의 task 상태는 TaskList/TaskUpdate로 별도 관리해야 한다
-- `cwd`가 worktree 경로인 경우, 해당 경로로 `cd`해야 에이전트가 올바른 컨텍스트에서 동작한다
-- **화면 분할은 cmux 전용이다.** tmux는 TeamCreate가 직접 pane을 split하므로 분할 단계가 필요 없다.
-- `drag-surface-to-split`는 이미 분할된 surface에 재적용하면 실패할 수 있다. 에러는 무시하고 진행한다.
+- claude-swarm 디렉토리는 세션 종료 후에도 stale 상태로 남을 수 있다. 가장 최근 mtime의 socket을 우선 선택한다.
+- workspace를 vlock 상태로 두지 않는다 — `select-workspace`로 활성화 후 작업.
+- `drag-surface-to-split`은 short ref(`surface:N`)에서 "Surface not found" 발생, UUID 사용 필수. 그래도 실패 시 move-surface 경로로 fallback.
+- `team-lead` 멤버는 메인 세션이므로 별도 처리 불필요 — swarm tmux는 보조 에이전트만 포함.

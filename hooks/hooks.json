@@ -58,6 +58,14 @@
           "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/error-learner\"",
           "timeout": 3
         }]
+      },
+      {
+        "matcher": "TeamCreate",
+        "hooks": [{
+          "type": "command",
+          "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/team-recovery-reminder\"",
+          "timeout": 2
+        }]
       }
     ]
   }
