@@ -168,7 +168,7 @@
     <div class="stat"><div class="stat-num" style="color:var(--accent)">4</div><div class="stat-label">진입점 스킬</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--green)">6</div><div class="stat-label">에이전트</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--yellow)">10</div><div class="stat-label">유틸리티 스킬</div></div>
-    <div class="stat"><div class="stat-num" style="color:var(--red)">5</div><div class="stat-label">안전 훅</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--red)">7</div><div class="stat-label">안전 훅</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--purple)">2</div><div class="stat-label">Rules</div></div>
   </div>
 </div>
@@ -733,7 +733,7 @@
 <!-- ===== HOOKS & RULES ===== -->
 <div class="section" id="hooks">
   <div class="card">
-    <h2>Safety Hooks (5)</h2>
+    <h2>Safety Hooks (7)</h2>
     <div class="grid-2">
       <div class="hook-card">
         <div class="hook-name" style="color:var(--red);">pre-tool-guard</div>
@@ -751,6 +751,26 @@
           <strong>커밋 전 빌드/타입체크 통과 확인.</strong><br>
           Gradle (compileKotlin), Node+TS (tsc --noEmit), Python (py_compile) 자동 감지 및 실행.<br>
           <span style="color:var(--red);">차단:</span> 빌드 실패 시 (마지막 800자 에러 로그 표시). docs/config-only 변경, --amend, <code>SKIP_BUILD_CHECK=1</code>는 건너뜀.
+        </div>
+      </div>
+      <div class="hook-card">
+        <div class="hook-name" style="color:var(--red);">version-sync-check <span class="tag tag-yellow">oh-my-beom 자체 개발 전용</span></div>
+        <div class="hook-event">PreToolUse / Bash (git commit) &nbsp; | &nbsp; timeout: 3s</div>
+        <div class="hook-desc">
+          <strong>플러그인 메타 3개 파일 버전 일치 검증.</strong><br>
+          <code>package.json</code>, <code>.claude-plugin/plugin.json</code>, <code>.claude-plugin/marketplace.json</code>의 version 값을 비교.<br>
+          <span style="color:var(--red);">차단:</span> 드리프트 발견 시 + 3개 현재 값과 함께 <code>/version-bump</code> 안내.<br>
+          <span style="color:var(--text-muted);">발동 조건:</span> <code>plugin.json</code>의 <code>name == "oh-my-beom"</code>일 때만 (다른 플러그인 프로젝트는 통과).
+        </div>
+      </div>
+      <div class="hook-card">
+        <div class="hook-name" style="color:var(--red);">doc-sync-check <span class="tag tag-yellow">oh-my-beom 자체 개발 전용</span></div>
+        <div class="hook-event">PreToolUse / Bash (git commit) &nbsp; | &nbsp; timeout: 3s</div>
+        <div class="hook-desc">
+          <strong>구조 변경 시 HTML 문서 동반 갱신 강제.</strong><br>
+          <code>agents/</code>, <code>skills/</code>, <code>hooks/</code>, <code>rules/</code>에 파일 추가·삭제(A/D)가 있는데 <code>docs/show/harness-architecture.html</code>이 함께 스테이징되지 않으면 차단.<br>
+          <span style="color:var(--red);">차단:</span> 변경 파일 목록 표시 + <code>SKIP_DOC_SYNC=1</code>로 임시 우회 가능.<br>
+          <span style="color:var(--text-muted);">발동 조건:</span> <code>plugin.json</code>의 <code>name == "oh-my-beom"</code>일 때만.
         </div>
       </div>
       <div class="hook-card">
@@ -938,7 +958,7 @@
 │   ├── <span class="file">web-test-runner.md</span>            <span class="comment"># E2E 테스트 실행 전용 (8 tools)</span>
 │   └── <span class="dir">conventions/</span>                   <span class="comment"># 프로젝트별 컨벤션 (조건부 로드)</span>
 │       └── <span class="highlight">spring-boot.md</span>            <span class="comment"># Spring Boot/JPA/QueryDSL (설계+구현+리뷰 통합)</span>
-├── <span class="dir">skills/</span>                            <span class="comment"># 스킬 16개</span>
+├── <span class="dir">skills/</span>                            <span class="comment"># 스킬 17개</span>
 │   ├── <span class="dir">dev-beom/</span>                      <span class="comment"># 기능 개발 (3명 팀 + Codex QA)</span>
 │   ├── <span class="dir">fix-beom/</span>                      <span class="comment"># 버그 수정 (2명 팀 + Codex QA)</span>
 │   ├── <span class="dir">analysis-beom/</span>                 <span class="comment"># 코드/정책 분석</span>
@@ -955,10 +975,12 @@
 │   ├── <span class="dir">web-test/</span>                      <span class="comment"># E2E 웹 테스트 (Playwright + OTP 바이패스)</span>
 │   │   └── <span class="dir">references/</span>                <span class="comment"># OTP 탐지 패턴 (외부 분리)</span>
 │   └── <span class="dir">new-context/</span>                   <span class="comment"># 도메인 컨텍스트 생성</span>
-├── <span class="dir">hooks/</span>                             <span class="comment"># 안전 훅 5개</span>
+├── <span class="dir">hooks/</span>                             <span class="comment"># 안전 훅 7개</span>
 │   ├── <span class="file">hooks.json</span>                    <span class="comment"># PreToolUse + PostToolUse</span>
 │   ├── <span class="file">pre-tool-guard</span>                <span class="comment"># 보호 브랜치 커밋/push + 위험 명령(rm -rf, chmod 777) 차단</span>
 │   ├── <span class="file">pre-commit-build-check</span>        <span class="comment"># 커밋 전 빌드/타입체크 통과 검증 (Gradle/TS/Python)</span>
+│   ├── <span class="file">version-sync-check</span>            <span class="comment"># 커밋 전 플러그인 메타 3개 파일 버전 일치 검증</span>
+│   ├── <span class="file">doc-sync-check</span>                <span class="comment"># 커밋 전 구조 변경 시 HTML 문서 동반 갱신 강제</span>
 │   ├── <span class="file">code-quality-gate</span>             <span class="comment"># 시크릿/보안/위험SQL/exec/subprocess 감지</span>
 │   ├── <span class="highlight">error-learner</span>                 <span class="comment"># Bash 실패 에러 기록 + 반복 감지 → 접근 변경 유도</span>
 │   ├── <span class="file">web-test-detector</span>             <span class="comment"># [WEB-TEST-REQUIRED] 마커 감지</span>

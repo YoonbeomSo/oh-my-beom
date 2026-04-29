@@ -44,10 +44,14 @@ PKG="$ROOT/package.json"
 PLUGIN="$ROOT/.claude-plugin/plugin.json"
 MARKET="$ROOT/.claude-plugin/marketplace.json"
 
-# 3개 파일 모두 있을 때만 검증 (oh-my-beom 형태의 플러그인 프로젝트만 대상)
+# 3개 파일 모두 있을 때만 검증
 [ -f "$PKG" ] || pass
 [ -f "$PLUGIN" ] || pass
 [ -f "$MARKET" ] || pass
+
+# oh-my-beom 플러그인 자체 개발 시에만 발동 (다른 플러그인 프로젝트는 통과)
+PLUGIN_NAME=$(python3 -c "import json; print(json.load(open('$PLUGIN')).get('name',''))" 2>/dev/null || echo "")
+[ "$PLUGIN_NAME" = "oh-my-beom" ] || pass
 
 deny() {
   local reason="$1"

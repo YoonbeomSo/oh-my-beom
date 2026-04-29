@@ -67,11 +67,12 @@ oh-my-beom/
 │   ├── cmux-team-agent/              # cmux surface 복구 (cmux 전용)
 │   ├── humanizer/                    # AI 글쓰기 패턴 제거
 │   └── new-context/                  # 도메인 컨텍스트 생성
-├── hooks/                            # 안전 훅 6개
+├── hooks/                            # 안전 훅 7개
 │   ├── hooks.json                    # 훅 설정
 │   ├── pre-tool-guard                # 보호 브랜치 커밋 차단 + 웹 테스트 게이트
 │   ├── pre-commit-build-check        # 커밋 전 빌드/타입체크 검증
 │   ├── version-sync-check            # 커밋 전 플러그인 메타 3개 파일 버전 일치 검증
+│   ├── doc-sync-check                # 커밋 전 구조 변경 시 HTML 문서 동반 갱신 강제
 │   ├── code-quality-gate             # 시크릿/보안 감지
 │   ├── error-learner                 # 에러 기록 + 반복 감지 → 접근 방식 변경 유도
 │   └── web-test-detector             # [WEB-TEST-REQUIRED] 마커 감지
@@ -230,13 +231,14 @@ QA 루프 5회 초과 시 자동 생성. 미해결 이슈, 시도 이력, 권장
 
 ## 안전 장치
 
-### 훅 (6개)
+### 훅 (7개)
 
 | 훅 | 이벤트 | 역할 |
 |----|--------|------|
 | `pre-tool-guard` | Bash 실행 전 | 보호 브랜치 커밋 차단 + [WEB-TEST-REQUIRED] 시 웹 테스트 통과 게이트 |
 | `pre-commit-build-check` | Bash 실행 전 (git commit) | 커밋 전 빌드/타입체크 통과 확인 (Gradle/TS/Python) — 실패 시 차단 |
-| `version-sync-check` | Bash 실행 전 (git commit) | package.json / plugin.json / marketplace.json 버전 일치 확인 — 드리프트 시 차단 |
+| `version-sync-check` | Bash 실행 전 (git commit) | (oh-my-beom 자체 개발 시) package.json / plugin.json / marketplace.json 버전 일치 확인 — 드리프트 시 차단 |
+| `doc-sync-check` | Bash 실행 전 (git commit) | (oh-my-beom 자체 개발 시) agents/skills/hooks/rules 구조 변경(추가·삭제) 시 HTML 문서 동반 갱신 강제 |
 | `code-quality-gate` | Write/Edit 전 | 시크릿 하드코딩, eval(), SQL 인젝션 감지 + 플러그인 파일 보호 |
 | `error-learner` | Bash 실행 후 | 에러 기록 + 반복 감지 → 접근 방식 변경 유도 |
 | `web-test-detector` | SendMessage 후 | QA 응답에서 [WEB-TEST-REQUIRED] 마커 감지 |
