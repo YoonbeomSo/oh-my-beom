@@ -51,6 +51,8 @@ claude plugin install codex
 | Write/Edit 전 | `code-quality-gate` | 시크릿, 보안 취약점, 위험 SQL 차단 |
 | Bash 실행 전 | `pre-tool-guard` | 보호 브랜치 커밋/push, 위험 명령 차단 |
 | Bash 실행 전 (git commit) | `pre-commit-build-check` | 커밋 전 빌드/타입체크 통과 확인 (실패 시 차단) |
+| Bash 실행 전 (git commit) | `version-sync-check` | (oh-my-beom 자체 개발 시) package.json/plugin.json/marketplace.json 버전 일치 확인 |
+| Bash 실행 전 (git commit) | `doc-sync-check` | (oh-my-beom 자체 개발 시) agents/skills/hooks/rules 구조 변경 시 HTML 문서 동반 갱신 강제 |
 | Bash 실행 후 | `error-learner` | 에러 기록 + 반복 감지 → 접근 방식 변경 유도 |
 | SendMessage 후 | `web-test-detector` | [WEB-TEST-REQUIRED] 감지 |
 

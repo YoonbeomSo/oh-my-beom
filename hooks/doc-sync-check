@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# PreToolUse doc-sync-check hook
+# git commit 실행 전, agents/skills/hooks/rules/ 디렉토리에 파일이 추가/삭제될 때
+# docs/show/harness-architecture.html도 함께 커밋되도록 강제한다.
+#
+# 검사 대상 디렉토리:
+#   - agents/, skills/, hooks/, rules/
+# 변경 액션 (구조적 변경만):
+#   - A (추가), D (삭제) — 단순 M(수정)은 통과
+#
+# 건너뛰기 조건:
+#   - git commit이 아닌 경우
+#   - --amend 커밋
+#   - SKIP_DOC_SYNC=1 환경 변수
+#   - HTML 파일이 프로젝트에 없는 경우 (이 hook의 적용 대상이 아닌 프로젝트)
+
+set -uo pipefail
+
+INPUT=$(cat /dev/stdin 2>/dev/null || echo '{}')
+
+FULL_CMD=$(echo "$INPUT" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    print(data.get('tool_input', {}).get('command', ''))
+except: print('')
+" 2>/dev/null || echo "")
+
+pass() { echo '{"continue": true}'; exit 0; }
+
+# git commit이 아니면 통과
+if ! echo "$FULL_CMD" | grep -qE '(^|[;&|]\s*)git\s+commit(\s|$)' 2>/dev/null; then
+  pass
+fi
+
+# --amend 건너뜀
+if echo "$FULL_CMD" | grep -qE -- '--amend' 2>/dev/null; then
+  pass
+fi
+
+# 환경 변수로 비활성화
+if [ "${SKIP_DOC_SYNC:-0}" = "1" ]; then
+  pass
+fi
+
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
+[ -z "$ROOT" ] && pass
+
+HTML_FILE="docs/show/harness-architecture.html"
+[ -f "$ROOT/$HTML_FILE" ] || pass
+
+# oh-my-beom 플러그인 자체 개발 시에만 발동 (다른 프로젝트는 통과)
+PLUGIN_JSON="$ROOT/.claude-plugin/plugin.json"
+[ -f "$PLUGIN_JSON" ] || pass
+PLUGIN_NAME=$(python3 -c "import json; print(json.load(open('$PLUGIN_JSON')).get('name',''))" 2>/dev/null || echo "")
+[ "$PLUGIN_NAME" = "oh-my-beom" ] || pass
+
+deny() {
+  local reason="$1"
+  reason=$(printf '%s' "$reason" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))")
+  cat <<EOF
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": ${reason}
+  }
+}
+EOF
+  exit 0
+}
+
+# 스테이징된 구조적 변경 (A/D만 — 단순 수정 M은 통과)
+STAGED_STRUCT=$(git -C "$ROOT" diff --cached --name-only --diff-filter=AD 2>/dev/null | grep -E '^(agents|skills|hooks|rules)/' || true)
+
+# 구조적 변경 없음 → 통과
+[ -z "$STAGED_STRUCT" ] && pass
+
+# HTML이 같은 커밋에 포함되어 있는지 확인 (액션 무관 — A/M/D 모두 OK)
+HTML_STAGED=$(git -C "$ROOT" diff --cached --name-only 2>/dev/null | grep -Fx "$HTML_FILE" || true)
+
+if [ -n "$HTML_STAGED" ]; then
+  pass
+fi
+
+# 사용자에게 변경 파일 요약 (최대 5개)
+SUMMARY=$(echo "$STAGED_STRUCT" | head -5 | tr '\n' '|' | sed 's/|$//')
+COUNT=$(echo "$STAGED_STRUCT" | wc -l | tr -d ' ')
+
+deny "구조적 변경(agents/skills/hooks/rules 파일 추가·삭제)이 ${COUNT}건 감지되었지만 ${HTML_FILE}이 커밋에 포함되지 않았습니다. | 변경 파일: ${SUMMARY} | 해결: ${HTML_FILE}을 함께 갱신하여 stage하거나, 임시 우회는 SKIP_DOC_SYNC=1 환경 변수 사용."
