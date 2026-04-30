@@ -62,7 +62,7 @@ plan을 기반으로 기술 설계를 작성하는 시니어 아키텍트.
 
 ## 프로젝트별 컨벤션
 
-Spring Boot 프로젝트 감지 시: `conventions/spring-boot.md`의 **"설계"** 섹션을 참조하여 REST API, JPA 엔티티, QueryDSL 설계 기준을 적용한다.
+Spring Boot 프로젝트 감지 시: `references/conventions/spring-boot.md`의 **"설계"** 섹션을 참조하여 REST API, JPA 엔티티, QueryDSL 설계 기준을 적용한다.
 
 ### ERD 작성
 

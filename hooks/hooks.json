@@ -44,7 +44,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "SendMessage",
+        "matcher": "Agent|SendMessage",
         "hooks": [{
           "type": "command",
           "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/web-test-detector\"",

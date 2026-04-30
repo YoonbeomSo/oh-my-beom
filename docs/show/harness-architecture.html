@@ -391,7 +391,7 @@
     </div>
     <div class="ctx-bar">
       <div class="label" style="color:var(--yellow);">QA (Codex/Claude)</div>
-      <div class="bar" style="background:rgba(210,153,34,0.12); width:75%;">qa-manager.md 페르소나 + Diff(file) + Plan TODO + CodeMap</div>
+      <div class="bar" style="background:rgba(210,153,34,0.12); width:75%;">qa-manager.md 페르소나 + qa-output-format.md(포맷) + Diff(file) + Plan TODO + CodeMap</div>
       <div style="font-size:0.75rem; color:var(--text-muted);">메인 토큰 영향 없음 (Codex Tier A~C)</div>
     </div>
   </div>
@@ -475,7 +475,7 @@
           <div class="role">qa-manager (페르소나)</div>
           <span class="model-badge">Codex 우선 / Sonnet fallback</span>
         </div>
-        <div style="font-size:0.82rem; color:var(--text-muted); margin:6px 0;">팀 멤버 ❌ — 4-tier 디스패처로 호출. 페르소나는 agents/qa-manager.md 그대로 유지</div>
+        <div style="font-size:0.82rem; color:var(--text-muted); margin:6px 0;">팀 멤버 ❌ — 4-tier 디스패처(references/phase5-qa-dispatcher.md). 페르소나 = agents/qa-manager.md, 출력 포맷 = references/qa-output-format.md</div>
         <h3 style="color:var(--green); font-size:0.8rem;">호출 Tier</h3>
         <div style="font-size:0.78rem;">A: cmux split + codex exec / B: tmux split + codex exec / C: Agent codex / D: Agent qa-manager (Sonnet)</div>
         <h3 style="color:var(--green); font-size:0.8rem;">판정 형식</h3>
@@ -958,13 +958,18 @@
     <pre class="tree">
 <span class="dir">oh-my-beom/</span>
 ├── <span class="highlight">CLAUDE.md</span>                         <span class="comment"># 최상위 지침 (금지 사항 + 워크플로우)</span>
-├── <span class="dir">agents/</span>                            <span class="comment"># 에이전트 6개 + 컨벤션</span>
+├── <span class="dir">agents/</span>                            <span class="comment"># 에이전트 6개 (팀 멤버 + QA fallback + 웹테스트)</span>
 │   ├── <span class="file">planner.md</span>                    <span class="comment"># plan 관리, TODO, QA 이슈 수신</span>
 │   ├── <span class="file">architect.md</span>                  <span class="comment"># 기술 설계 + 비판적 자기검토</span>
 │   ├── <span class="file">coder.md</span>                      <span class="comment"># 코드 구현/수정, TDD</span>
-│   ├── <span class="file">qa-manager.md</span>                 <span class="comment"># 코드 리뷰 페르소나 (팀 멤버 ❌, Codex/Claude QA 디스패처가 Read하여 사용)</span>
+│   ├── <span class="file">qa-manager.md</span>                 <span class="comment"># 코드 리뷰 페르소나 (팀 멤버 ❌, 출력 포맷은 references/qa-output-format.md)</span>
 │   ├── <span class="file">web-tester.md</span>                 <span class="comment"># E2E 테스트 생성+실행 (16 tools)</span>
-│   ├── <span class="file">web-test-runner.md</span>            <span class="comment"># E2E 테스트 실행 전용 (8 tools)</span>
+│   └── <span class="file">web-test-runner.md</span>            <span class="comment"># E2E 테스트 실행 전용 (8 tools)</span>
+├── <span class="dir">references/</span>                        <span class="comment"># 외부화된 참조 문서 (호출 시점에만 Read — 시스템 프롬프트에 진입 ❌)</span>
+│   ├── <span class="highlight">qa-output-format.md</span>            <span class="comment"># QA 리뷰 출력 템플릿 + [WEB-TEST-REQUIRED] 마커</span>
+│   ├── <span class="highlight">phase5-qa-dispatcher.md</span>        <span class="comment"># 4-tier QA 디스패처 (cmux/tmux/Agent/fallback)</span>
+│   ├── <span class="highlight">team-recovery.md</span>               <span class="comment"># TeamCreate 후 환경 감지 + 복구 스킬 호출</span>
+│   ├── <span class="highlight">web-test-trigger.md</span>            <span class="comment"># [WEB-TEST-REQUIRED] 자동 실행 절차</span>
 │   └── <span class="dir">conventions/</span>                   <span class="comment"># 프로젝트별 컨벤션 (조건부 로드)</span>
 │       └── <span class="highlight">spring-boot.md</span>            <span class="comment"># Spring Boot/JPA/QueryDSL (설계+구현+리뷰 통합)</span>
 ├── <span class="dir">skills/</span>                            <span class="comment"># 스킬 17개</span>

@@ -23,7 +23,7 @@ CLAUDE.md "금지 사항"을 전부 준수한다. 추가로:
 
 # 실행 플로우
 
-`/dev-beom`과 동일한 Phase 1~6을 수행하되, 다음이 다르다:
+`/dev-beom`의 Phase 0~7을 그대로 수행한다. 차이점만 아래에 명시.
 
 ## /dev-beom과의 차이점
 
@@ -31,6 +31,7 @@ CLAUDE.md "금지 사항"을 전부 준수한다. 추가로:
 - planner가 질문을 생성하면 → 합리적인 가정을 세우고 진행. 가정을 plan에 기록.
 - architect가 "확인이 필요한 사항"을 생성하면 → 기술적으로 안전한 선택지를 자동 결정.
 - 커밋 전 사용자 확인 → 생략. 자동 커밋.
+- 베이스 브랜치 선택 시 질문하지 않고 `main` → `master` → `develop` 순으로 자동 선택.
 
 ### 2. QA 루프 확장
 - QA 루프 5회 초과 시:
@@ -38,79 +39,31 @@ CLAUDE.md "금지 사항"을 전부 준수한다. 추가로:
   2. **중단하지 않는다.** planner에게 접근 방식 변경을 요청하고 재시도.
   3. 접근 방식 변경 후에도 5회 실패 시 → 사용자에게 보고하고 중단.
 
-### 3. 에러 자동 복구
+### 3. QA 엔진 fallback 자동 처리
+- `.dev/.qa-engine` 사전 점검에서 Codex 미준비 시 사용자에게 묻지 않고 자동으로 `claude@<ts>` fallback. 사유는 `.dev/issue/codex-unavailable.md`에 기록 (사용자 보고용).
+
+### 4. 에러 자동 복구
 - 빌드/테스트 실패 → coder에게 자동 수정 요청 (최대 3회)
 - git 충돌 → 자동 해결 시도. 불가능하면 사용자에게 보고.
 - 동일 에러 3회 반복 → 접근 방식을 변경하여 재시도.
 
-### 4. 진행 상황 보고
+### 5. 진행 상황 보고
+
 각 Phase 완료 시 간단한 진행 보고를 출력한다:
+
 ```
 [persist-beom] Phase 2/6 완료: plan 작성 완료
 [persist-beom] Phase 4/6 완료: 구현 완료 (파일 5개 변경)
 [persist-beom] QA 루프 Round 2/5: Critical 1건 수정 중
 ```
 
----
+## 환경 감지 + 복구 스킬 호출
 
-# Phase 상세
+자율 모드라도 생략 금지. `references/team-recovery.md` 절차를 그대로 수행한다.
 
-## Phase 1: Setup
-`/dev-beom` Phase 1과 동일 (이전 세션 마커 정리 포함). 단, 베이스 브랜치 선택 시 질문하지 않고 `main` → `master` → `develop` 순으로 자동 선택.
+## QA 디스패처
 
-## Phase 2: Plan
-`/dev-beom` Phase 2와 동일. planner 질문은 자동 가정으로 처리.
-
-### 🛑 필수 1단계 — 환경 감지 + 복구 스킬 호출 (생략 절대 금지)
-
-자율 모드라도 이 단계는 생략 금지. 자세한 절차는 `/dev-beom` Phase 2 "필수 1단계" 섹션 참조.
-
-- `🖥️ 환경: <name>` 출력 → 환경별 스킬 즉시 호출
-  - `cmux` → `Skill("oh-my-beom:cmux-team-agent")`
-  - `tmux` → `Skill("oh-my-beom:tmux-team-agent")`
-  - `none` → mailbox 모드로 진행
-
-PostToolUse 훅(`team-recovery-reminder`)이 컨텍스트 주입.
-
-## Phase 3: 설계
-`/dev-beom` Phase 3과 동일. architect 질문은 안전한 선택지로 자동 결정.
-
-## Phase 4: 구현
-`/dev-beom` Phase 4와 동일.
-
-## Phase 5: QA 리뷰 + 루프
-
-> **변경 (2026-04-29):** QA 리뷰는 토큰 절감을 위해 **Codex로 분리**한다. qa-manager는 더 이상 팀 멤버가 아니며, `Agent(subagent_type="codex:codex-rescue")`로 호출한다. 페르소나/프로세스는 `agents/qa-manager.md`를 Codex가 직접 Read하여 참조한다.
-
-### Phase 5 사전 점검 (QA 엔진 결정)
-
-`/dev-beom` Phase 5의 "사전 점검 (QA 엔진 결정)" 절차를 동일하게 수행한다. 단, **자율 실행 모드**이므로 미준비 시 사용자에게 묻지 않고 자동으로 fallback한다:
-
-1. `Skill("codex:setup")` 1회 시도
-2. 결과에 따라 `.dev/.qa-engine` 마커 작성:
-   - 준비 완료 → `codex`
-   - 미설치/미인증 → `claude` (Claude qa-manager로 자동 fallback)
-3. fallback 시 `.dev/issue/codex-unavailable.md`에 사유 기록 (사용자 보고용)
-
-이후 QA 호출은 `/dev-beom`의 4-tier 디스패처(cmux split / tmux split / Agent codex / Claude qa-manager)를 그대로 사용. 자율 모드라 surface/pane 정리는 Phase 7에서 일괄 수행. `/dev-beom` Phase 5와 동일하나 루프 확장 (위 참조).
-
-**웹 테스트 필수 시:** Codex QA 리뷰에 `[WEB-TEST-REQUIRED]` 마커가 있으면, QA PASS 후 즉시 서버를 기동하고 웹 테스트를 실행한다. dev-beom의 "웹 테스트 실행" 절차와 동일 (서버 기동 → URL 자동 결정 → 웹 테스트 → 서버 종료).
-
-## Phase 6: 커밋
-사용자 확인 없이 자동 커밋:
-1. `Skill("oh-my-beom:commit")` 호출
-2. planner에게 result 보고 작성 요청
-3. plan 상태 COMPLETED 갱신
-4. 사용자에게 완료 보고 출력
-
-## Phase 7: 마무리 점검
-
-커밋 완료 후 다음을 수행한다:
-
-1. **임시 파일 정리**: `rm -f .dev/diff.txt .dev/design.md .dev/codemap.md .dev/jira-context.md`
-2. **에러 로그 분석**: `.dev/error-log.md`에 반복 에러(3회+)가 있으면 `.dev/cleanup-report.md`에 기록:
-   "반복 에러 패턴 감지. rules 승격 권장: {패턴 요약}"
-3. **중복 코드 경고**: 변경 파일이 10개 이상이면, 동일 로직 복사 여부를 간단히 확인하고 `.dev/cleanup-report.md`에 기록
+`references/phase5-qa-dispatcher.md`의 4-tier 디스패처를 동일하게 사용. surface/pane 정리는 Phase 7에서 일괄. `### [WEB-TEST-REQUIRED]` 감지 시 `references/web-test-trigger.md` 즉시 실행.
 
 ---
 
@@ -123,4 +76,4 @@ PostToolUse 훅(`team-recovery-reminder`)이 컨텍스트 주입.
 | planner | ARGS + 코드 맵 + Jira 컨텍스트 |
 | architect | plan + 코드 맵 + 프로젝트 컨벤션 |
 | coder | 설계서 + 코드 맵 |
-| Codex (QA) | agents/qa-manager.md(페르소나) + diff(파일 경로) + plan 완료 기준 + 코드 맵 |
+| Codex (QA) | agents/qa-manager.md + references/qa-output-format.md + diff(경로) + plan 완료 기준 + 코드 맵 |
