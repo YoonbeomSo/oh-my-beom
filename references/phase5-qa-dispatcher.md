@@ -29,7 +29,12 @@ else
 fi
 
 if [ "$NEEDS_RECHECK" = "1" ]; then
-  if command -v codex >/dev/null 2>&1 && codex --version >/dev/null 2>&1; then
+  # 주의: cmux 환경에서는 NODE_OPTIONS에 깨진 preload(--require=...)가 박혀
+  # Node 기반 CLI(codex 포함)가 모두 throw로 죽는 케이스가 있다.
+  # 가용성 검사 시점에 NODE_OPTIONS를 비우고 호출해야 codex가 살아있는데도
+  # 'claude'로 잘못 판정되어 Tier D로 빠지는 사고를 막을 수 있다.
+  if command -v codex >/dev/null 2>&1 \
+     && env NODE_OPTIONS="" codex --version >/dev/null 2>&1; then
     ENGINE="codex"
   else
     ENGINE="claude"
@@ -37,6 +42,8 @@ if [ "$NEEDS_RECHECK" = "1" ]; then
   echo "${ENGINE}@$(date +%s)" > "$ENGINE_FILE"
 fi
 ```
+
+> **cmux/codex NODE_OPTIONS 트랩**: cmux는 자체 preload 스크립트(`/var/folders/.../T/cmux-claude-node-options/restore-node-options.cjs`)를 `NODE_OPTIONS="--require=..."`로 주입한다. 이 임시 파일이 시스템에 의해 정리되면 모든 Node CLI(codex 포함)가 즉시 죽는다. **Tier A/B의 `codex exec` 호출도 반드시 `env NODE_OPTIONS=""`로 격리**해야 한다(아래 Tier A/B 코드 참조).
 
 **`needs-setup` 또는 만료된 경우:**
 1. (선택) `Skill("codex:setup")` 호출하여 Codex 인증 가이드
@@ -109,7 +116,8 @@ cat > .dev/qa-prompt.md <<'EOF'
 EOF
 
 # stdin redirect 패턴 (셸 expansion 회피, 따옴표/뉴라인 안전)
-cmux send --surface "$QA_SURFACE_UUID" "codex exec --color never < .dev/qa-prompt.md"$'\n'
+# NODE_OPTIONS 격리: cmux preload 트랩으로 codex가 죽는 케이스 회피
+cmux send --surface "$QA_SURFACE_UUID" "env NODE_OPTIONS='' codex exec --color never < .dev/qa-prompt.md"$'\n'
 
 # 판정 라인 폴링 (Monitor 도구 권장)
 #    until cmux read-screen --surface "$QA_SURFACE_UUID" --scrollback --lines 300 \
@@ -137,7 +145,7 @@ fi
 QA_PANE=$(cat .dev/.qa-pane-id)
 
 # QA 프롬프트는 Tier A와 동일 (.dev/qa-prompt.md 작성)
-tmux send-keys -t "$QA_PANE" "codex exec --color never < .dev/qa-prompt.md" Enter
+tmux send-keys -t "$QA_PANE" "env NODE_OPTIONS='' codex exec --color never < .dev/qa-prompt.md" Enter
 # 폴링: until tmux capture-pane -t "$QA_PANE" -p | grep -E '## 판정:|tokens used'; do sleep 3; done
 qa_result=$(tmux capture-pane -t "$QA_PANE" -p -S -200)
 # 정리는 Phase 7에서 일괄
