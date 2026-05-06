@@ -1,22 +1,48 @@
 #!/usr/bin/env bash
-# PostToolUse: qa-manager 응답에서 [WEB-TEST-REQUIRED] 마커 감지
-# 감지 시 .dev/web-test-required 플래그 생성하여 커밋 전 웹 테스트를 강제한다.
+# PostToolUse: Agent / SendMessage 응답에서 [WEB-TEST-REQUIRED] 마커 감지
+#
+# 변경 (2026-04-30):
+#   - matcher 확장: SendMessage → Agent|SendMessage (Codex Tier C / Claude Tier D 캡처)
+#   - 텍스트 채널만 검사: tool_result의 .content[].text 또는 .stdout/.stderr만 추출
+#     (전체 객체를 str()로 변환하면 메타데이터 안의 단순 인용도 false-positive 발생)
+#   - 라인 시작 패턴: '^### \[WEB-TEST-REQUIRED\]'만 마커로 인정
+#     (planner/coder가 본문에서 마커명을 단순 인용하는 케이스 제외)
 
 set -uo pipefail
 
 INPUT=$(cat /dev/stdin 2>/dev/null || echo '{}')
 
-# tool_result에서 [WEB-TEST-REQUIRED] 마커 확인
+# 텍스트 채널 추출 → 라인 시작 마커 패턴 검사
 HAS_MARKER=$(echo "$INPUT" | python3 -c "
-import json, sys
+import json, re, sys
 try:
     data = json.load(sys.stdin)
-    result = str(data.get('tool_result', ''))
-    if '[WEB-TEST-REQUIRED]' in result:
-        print('yes')
-    else:
-        print('no')
-except:
+    result = data.get('tool_result', {})
+
+    chunks = []
+    if isinstance(result, str):
+        chunks.append(result)
+    elif isinstance(result, dict):
+        # MCP/Anthropic style: content array
+        content = result.get('content')
+        if isinstance(content, list):
+            for c in content:
+                if isinstance(c, dict) and isinstance(c.get('text'), str):
+                    chunks.append(c['text'])
+                elif isinstance(c, str):
+                    chunks.append(c)
+        elif isinstance(content, str):
+            chunks.append(content)
+        # Bash style: stdout/stderr
+        for k in ('stdout', 'stderr', 'output', 'message', 'response'):
+            v = result.get(k)
+            if isinstance(v, str):
+                chunks.append(v)
+
+    text = '\n'.join(chunks)
+    pattern = re.compile(r'^### \[WEB-TEST-REQUIRED\]', re.MULTILINE)
+    print('yes' if pattern.search(text) else 'no')
+except Exception:
     print('no')
 " 2>/dev/null || echo "no")
 

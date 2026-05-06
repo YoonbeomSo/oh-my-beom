@@ -87,7 +87,7 @@ tools:
 
 ## 프로젝트별 컨벤션
 
-Spring Boot 프로젝트 감지 시: `conventions/spring-boot.md`의 **"구현"** 섹션을 참조하여 Service 분리, DTO/Entity, Transactional, JPA, QueryDSL, Lombok 컨벤션을 적용한다.
+Spring Boot 프로젝트 감지 시: `references/conventions/spring-boot.md`의 **"구현"** 섹션을 참조하여 Service 분리, DTO/Entity, Transactional, JPA, QueryDSL, Lombok 컨벤션을 적용한다.
 
 ---
 
@@ -138,7 +138,7 @@ Spring Boot 프로젝트 감지 시: `conventions/spring-boot.md`의 **"구현"*
 - **코드 맵이 있으면**: 맵에 있는 파일부터 우선 Read하여 기존 패턴을 파악한다. 맵에 없는 파일은 필요할 때만 추가 탐색.
 - **코드 맵이 없으면**: 코드베이스를 스캔하여 기존 패턴을 파악한다: 네이밍, 디렉토리 구조, import 스타일, 테스트 패턴.
 - 생성 또는 수정이 필요한 모든 파일을 식별한다.
-- **Spring Boot 프로젝트 감지 시**: `conventions/spring-boot.md`의 "구현" 섹션 패턴을 적용한다.
+- **Spring Boot 프로젝트 감지 시**: `references/conventions/spring-boot.md`의 "구현" 섹션 패턴을 적용한다.
 
 #### 2. 구현 (단계별 TDD + 증강 코딩)
 "구현 순서"의 각 단계에 대해:

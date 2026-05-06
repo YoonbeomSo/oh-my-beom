@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # PostToolUse: Bash 실패 시 에러를 .dev/error-log.md에 기록
-# 동일 에러 2회 이상 반복 시 additionalContext로 경고 주입
+# - 동일 에러 2회 이상 반복 시 additionalContext로 경고 주입
+# - 로그 파일이 100KB 초과하면 .archive로 회전 (무한 누적 방지)
 set -uo pipefail
 
 INPUT=$(cat /dev/stdin 2>/dev/null || echo '{}')
@@ -34,6 +35,17 @@ except: print('')
 # .dev/error-log.md에 기록 + 반복 감지
 mkdir -p .dev
 LOG=".dev/error-log.md"
+
+# 회전: 100KB 초과 시 .archive로 이동 (이전 archive는 덮어씀)
+if [ -f "$LOG" ]; then
+  # wc 출력에 공백/뉴라인이 섞여도 안전하게 숫자만 추출
+  SIZE=$(wc -c < "$LOG" 2>/dev/null)
+  SIZE=${SIZE//[!0-9]/}
+  if [ -n "$SIZE" ] && [ "$SIZE" -gt 102400 ] 2>/dev/null; then
+    mv "$LOG" "${LOG}.archive" 2>/dev/null || true
+  fi
+fi
+
 COUNT=0
 if [ -f "$LOG" ]; then
   COUNT=$(grep -cF "$SIGNATURE" "$LOG" 2>/dev/null || echo 0)
