@@ -569,11 +569,13 @@
   </div>
 
   <div class="card">
-    <h2>Utility Skills (10)</h2>
+    <h2>Utility Skills (13)</h2>
     <div class="grid-3">
       <div class="skill-card"><div class="name">/commit</div><div class="desc">Git 커밋. 이슈키 파싱, lint/test pre-check, 민감파일 감지</div><span class="badge badge-util">Git</span></div>
       <div class="skill-card"><div class="name">/pull-request</div><div class="desc">PR 생성. 커밋 히스토리 기반 제목/본문 자동 생성</div><span class="badge badge-util">Git</span></div>
       <div class="skill-card"><div class="name">/worktree</div><div class="desc">Git worktree 자동화. create/switch/done/remove</div><span class="badge badge-util">Git</span></div>
+      <div class="skill-card" style="border-color:var(--yellow);"><div class="name" style="color:var(--yellow);">/version-bump</div><div class="desc">플러그인 버전 일괄 변경. package.json, plugin.json, marketplace.json 3개 파일 동기화 (semver 또는 명시 버전)</div><span class="badge badge-util">메타</span><div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">version-sync-check 훅과 짝</div></div>
+      <div class="skill-card"><div class="name">/hecto-setup</div><div class="desc">HectoProject용 CLAUDE.md를 현재 프로젝트에 자동 설정</div><span class="badge badge-util">설정</span></div>
       <div class="skill-card" style="border-color:var(--pink);">
         <div class="name" style="color:var(--pink);">/web-test</div>
         <div class="desc">E2E 웹 테스트. Playwright로 계획&rarr;생성&rarr;실행&rarr;수정. OTP 바이패스 지원</div>
@@ -988,6 +990,8 @@
 │   ├── <span class="dir">tdd/</span>                           <span class="comment"># TDD 방법론 (Red-Green-Refactor)</span>
 │   ├── <span class="dir">web-test/</span>                      <span class="comment"># E2E 웹 테스트 (Playwright + OTP 바이패스)</span>
 │   │   └── <span class="dir">references/</span>                <span class="comment"># OTP 탐지 패턴 (외부 분리)</span>
+│   ├── <span class="dir">version-bump/</span>                  <span class="comment"># 플러그인 메타 3개 파일 버전 일괄 동기화</span>
+│   ├── <span class="dir">hecto-setup/</span>                   <span class="comment"># HectoProject CLAUDE.md 설정</span>
 │   └── <span class="dir">new-context/</span>                   <span class="comment"># 도메인 컨텍스트 생성</span>
 ├── <span class="dir">hooks/</span>                             <span class="comment"># 안전 훅 8개</span>
 │   ├── <span class="file">hooks.json</span>                    <span class="comment"># PreToolUse + PostToolUse</span>

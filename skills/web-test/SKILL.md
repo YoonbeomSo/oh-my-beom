@@ -79,9 +79,33 @@ ARGS 없이 호출 시: "테스트할 URL을 입력해주세요. 예: `/web-test
 
 ### 1-7. 테스트 계정 정보 확인
 
-1. `config/config.json`의 `webTest.credentials[호스트명]` 조회 (호스트명 = URL의 host:port)
-2. **있음** → 저장된 ID/PW 사용
-3. **없음** → AskUserQuestion으로 ID/PW 요청 (skip 가능) 후 config에 저장
+다음 우선순위로 조회한다. 먼저 발견되는 값을 사용한다.
+
+1. **사용자 settings.json** (`~/.claude/settings.json` → `~/.claude/settings.local.json` → 프로젝트 `.claude/settings.json` 순서로 탐색)
+   - 키 구조: `{프로젝트키}.{환경}`
+   - 환경 결정: 1) URL이 `localhost`/`127.0.0.1`이면 `local`, 2) 그 외에는 도메인에서 추정(`dev`/`stg`/`prod`)
+   - 프로젝트 키 결정: 작업 프로젝트 디렉토리명을 camelCase로 변환 (`store-admin` → `storeAdmin`, `back-office` → `backOffice`)
+   - 매칭 시 우선 검사: `baseUrl`이 입력 URL과 일치하면 즉시 채택. 불일치 시 `{프로젝트키}.{환경}`으로 fallback
+   - 필드: `user`(또는 `id`), `password`(또는 `pw`)
+   - 예시:
+     ```json
+     {
+       "storeAdmin": {
+         "local": {
+           "baseUrl": "http://localhost:18097",
+           "user": "<id>",
+           "password": "<pw>"
+         }
+       }
+     }
+     ```
+2. **플러그인 config** (`config/config.json`의 `webTest.credentials[호스트명]`)
+3. **없음** → AskUserQuestion으로 ID/PW 요청 (skip 가능). **저장 위치는 `~/.claude/settings.json` 우선** (실제 자격 정보가 git 추적되는 plugin config로 새지 않도록).
+
+**보안 규칙:**
+- 자격 정보를 로그/출력/에러 메시지에 절대 노출하지 않는다
+- Bash 명령 인자로 평문 password를 넘기지 않는다 (환경 변수 또는 stdin 사용)
+- AskUserQuestion에 비밀번호 입력 시 사용자에게 "settings.json에 저장하시겠습니까?" 옵션을 제공하되 기본은 plugin config가 아닌 사용자 settings 경로
 
 ### 1-8. .dev 디렉토리 준비
 - `.dev/` 디렉토리가 없으면 생성
