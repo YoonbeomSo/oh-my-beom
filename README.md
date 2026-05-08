@@ -66,6 +66,7 @@ oh-my-beom/
 │   ├── tmux-team-agent/              # tmux pane 복구 (tmux 전용)
 │   ├── cmux-team-agent/              # cmux surface 복구 (cmux 전용)
 │   ├── humanizer/                    # AI 글쓰기 패턴 제거
+│   ├── hecto-setup/                  # HectoProject CLAUDE.md 자동 설정
 │   └── new-context/                  # 도메인 컨텍스트 생성
 ├── hooks/                            # 안전 훅 8개
 │   ├── hooks.json                    # 훅 설정
@@ -128,6 +129,8 @@ oh-my-beom/
 /fetch-jenkins           # Jenkins 빌드 상태 조회
 /humanizer               # AI 글쓰기 패턴 제거
 /web-test                # E2E 웹 테스트 (Playwright)
+/version-bump patch      # 플러그인 메타 3개 파일 버전 일괄 갱신 (oh-my-beom 자체 개발용)
+/hecto-setup             # HectoProject용 CLAUDE.md 설정
 /new-context payment     # 도메인 컨텍스트 생성
 ```
 
