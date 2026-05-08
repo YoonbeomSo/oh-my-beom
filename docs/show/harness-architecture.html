@@ -743,7 +743,8 @@
         <div class="hook-desc">
           <strong>보호 브랜치 커밋 차단 + 위험 명령 차단.</strong><br>
           <span style="color:var(--red);">차단:</span> 보호 브랜치 git commit/push, force push, <code>rm -rf /</code>, <code>chmod 777</code><br>
-          <span style="color:var(--red);">차단:</span> [WEB-TEST-REQUIRED] 시 웹 테스트 미통과 커밋
+          <span style="color:var(--red);">차단:</span> [WEB-TEST-REQUIRED] 시 웹 테스트 미통과 커밋<br>
+          <span style="color:var(--green);">허용:</span> 원격 브랜치 삭제(<code>--delete</code> / <code>:branch</code>) — 보호 브랜치 자체 삭제는 별도 차단
         </div>
       </div>
       <div class="hook-card">
