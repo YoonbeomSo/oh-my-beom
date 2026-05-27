@@ -48,6 +48,20 @@ EOF
   exit 0
 }
 
+ask() {
+  local reason="$1"
+  cat <<EOF
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "ask",
+    "permissionDecisionReason": "${reason}"
+  }
+}
+EOF
+  exit 0
+}
+
 # rm -rf / 또는 ~ 차단
 if echo "$FULL_CMD" | grep -qE 'rm\s+(-rf|-fr)\s+(/|~|\$HOME)' 2>/dev/null; then
   deny "위험 명령: rm -rf로 루트/홈 디렉토리 삭제 시도 감지"
@@ -116,7 +130,10 @@ while IFS= read -r GIT_CMD; do
 
       if [ "$IS_DELETE" = "1" ]; then
         case "$DEL_TARGET" in
-          main|master|develop|test|dev)
+          test)
+            ask "보호 브랜치 test 원격 삭제 시도입니다. 정말 진행할까요?"
+            ;;
+          main|master|develop|dev)
             deny "보호 브랜치 ${DEL_TARGET}는 삭제할 수 없습니다."
             ;;
         esac
@@ -124,8 +141,13 @@ while IFS= read -r GIT_CMD; do
         continue
       fi
 
-      # 보호 브랜치로의 직접 push 차단
-      for b in main master develop test dev; do
+      # 보호 브랜치로의 직접 push: test는 ask, 나머지는 deny
+      case "$GIT_CMD" in
+        *"origin test"*|*"origin/test"*|*":test"*|*"HEAD:test"*)
+          ask "test 브랜치로 직접 push 시도입니다. 정말 진행할까요?"
+          ;;
+      esac
+      for b in main master develop dev; do
         case "$GIT_CMD" in
           *"origin ${b}"*|*"origin/${b}"*|*":${b}"*|*"HEAD:${b}"*)
             deny "Protected branch: ${b} 브랜치로 직접 push할 수 없습니다."
@@ -133,11 +155,13 @@ while IFS= read -r GIT_CMD; do
         esac
       done
 
-      # 현재 보호 브랜치에서 타겟 미지정 bare push 차단
+      # 현재 보호 브랜치에서 타겟 미지정 bare push: test는 ask, 나머지는 deny
       CURRENT=$(get_branch)
       if [[ -n "$CURRENT" && "$CURRENT" =~ $PROTECTED_RE ]]; then
         if echo "$GIT_CMD" | grep -qE 'origin[[:space:]]+[a-zA-Z]' 2>/dev/null; then
           :
+        elif [ "$CURRENT" = "test" ]; then
+          ask "현재 test 브랜치에서 push 시도입니다. 정말 진행할까요?"
         else
           deny "Protected branch: ${CURRENT} 브랜치에서 직접 push할 수 없습니다. 작업 브랜치로 전환하세요."
         fi

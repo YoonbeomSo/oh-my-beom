@@ -19,6 +19,7 @@ oh-my-beom 플러그인의 안전 훅.
 - 이벤트: PreToolUse (Bash)
 - 타임아웃: 2초
 - 차단 시: exit 2 + 작업 브랜치 생성 안내
+- **예외 (ask)**: `test` 브랜치로의 **push** (직접 push, bare push, 원격 삭제)는 deny 대신 `ask` 권한 결정으로 사용자에게 확인을 받는다. `test` 브랜치 **커밋**과 다른 보호 브랜치(`main`/`master`/`develop`/`dev`)의 모든 작업은 그대로 deny.
 
 ### code-quality-gate (PreToolUse/Write|Edit)
 
