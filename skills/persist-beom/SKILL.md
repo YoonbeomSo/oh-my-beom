@@ -1,6 +1,6 @@
 ---
 name: persist-beom
-description: "자율 실행. 에이전트 팀(planner+architect+coder)을 실행하여 질문 없이 끝까지 설계→구현→리뷰(Codex QA)→커밋을 수행한다."
+description: "자율 실행. 에이전트 팀(planner+architect+coder)을 실행하여 질문 없이 끝까지 설계→구현→리뷰(qa-manager)→커밋을 수행한다."
 argument-hint: "[Jira URL 또는 이슈키] <작업 설명>"
 ---
 
@@ -39,15 +39,12 @@ CLAUDE.md "금지 사항"을 전부 준수한다. 추가로:
   2. **중단하지 않는다.** planner에게 접근 방식 변경을 요청하고 재시도.
   3. 접근 방식 변경 후에도 5회 실패 시 → 사용자에게 보고하고 중단.
 
-### 3. QA 엔진 fallback 자동 처리
-- `.dev/.qa-engine` 사전 점검에서 Codex 미준비 시 사용자에게 묻지 않고 자동으로 `claude@<ts>` fallback. 사유는 `.dev/issue/codex-unavailable.md`에 기록 (사용자 보고용).
-
-### 4. 에러 자동 복구
+### 3. 에러 자동 복구
 - 빌드/테스트 실패 → coder에게 자동 수정 요청 (최대 3회)
 - git 충돌 → 자동 해결 시도. 불가능하면 사용자에게 보고.
 - 동일 에러 3회 반복 → 접근 방식을 변경하여 재시도.
 
-### 5. 진행 상황 보고
+### 4. 진행 상황 보고
 
 각 Phase 완료 시 간단한 진행 보고를 출력한다:
 
@@ -61,9 +58,9 @@ CLAUDE.md "금지 사항"을 전부 준수한다. 추가로:
 
 자율 모드라도 생략 금지. `references/team-recovery.md` 절차를 그대로 수행한다.
 
-## QA 디스패처
+## QA 리뷰
 
-`references/phase5-qa-dispatcher.md`의 4-tier 디스패처를 동일하게 사용. surface/pane 정리는 Phase 7에서 일괄. `### [WEB-TEST-REQUIRED]` 감지 시 `references/web-test-trigger.md` 즉시 실행.
+`references/phase5-qa-dispatcher.md` 절차 그대로 사용. `Agent(oh-my-beom:qa-manager)` 호출 + 루프(최대 5회). tmux pane 정리는 Phase 7에서 일괄. `### [WEB-TEST-REQUIRED]` 감지 시 `references/web-test-trigger.md` 즉시 실행.
 
 ---
 
@@ -76,4 +73,4 @@ CLAUDE.md "금지 사항"을 전부 준수한다. 추가로:
 | planner | ARGS + 코드 맵 + Jira 컨텍스트 |
 | architect | plan + 코드 맵 + 프로젝트 컨벤션 |
 | coder | 설계서 + 코드 맵 |
-| Codex (QA) | agents/qa-manager.md + references/qa-output-format.md + diff(경로) + plan 완료 기준 + 코드 맵 |
+| qa-manager (QA) | diff(경로) + plan 완료 기준 + 코드 맵 (페르소나/포맷은 본인 시스템 프롬프트와 references/qa-output-format.md 참조) |

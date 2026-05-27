@@ -1003,7 +1003,7 @@
 │   ├── <span class="file">code-quality-gate</span>             <span class="comment"># 시크릿/보안/위험SQL/exec/subprocess 감지</span>
 │   ├── <span class="highlight">error-learner</span>                 <span class="comment"># Bash 실패 에러 기록 + 반복 감지 → 접근 변경 유도</span>
 │   ├── <span class="file">web-test-detector</span>             <span class="comment"># [WEB-TEST-REQUIRED] 마커 감지</span>
-│   ├── <span class="file">team-recovery-reminder</span>        <span class="comment"># TeamCreate 후 환경 감지 + 복구 스킬 호출 컨텍스트 자동 주입</span>
+│   ├── <span class="file">team-recovery-reminder</span>        <span class="comment"># TeamCreate 후 $TMUX 감지 + tmux-team-agent 호출 컨텍스트 자동 주입 (tmux 전용)</span>
 │   └── <span class="file">README.md</span>                     <span class="comment"># 훅 설명</span>
 ├── <span class="dir">rules/</span>                             <span class="comment"># 행동 규칙 2개</span>
 │   ├── <span class="file">behavior.md</span>                   <span class="comment"># 7가지 행동 원칙</span>

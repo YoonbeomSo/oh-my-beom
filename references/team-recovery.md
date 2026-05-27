@@ -9,8 +9,7 @@ TeamCreate 직후 **다음 SendMessage보다 먼저** 이 단계를 수행한다
 1. 환경 감지 후 **사용자에게 announcement 출력**:
 
    ```bash
-   if [ -n "$CMUX_SOCKET" ]; then ENV=cmux
-   elif [ -n "$TMUX" ]; then ENV=tmux
+   if [ -n "$TMUX" ]; then ENV=tmux
    else ENV=none
    fi
    echo "🖥️ 환경: $ENV"
@@ -20,7 +19,6 @@ TeamCreate 직후 **다음 SendMessage보다 먼저** 이 단계를 수행한다
 
    | 환경 | 호출 | 생략 시 |
    |------|------|---------|
-   | `cmux` | `Skill("oh-my-beom:cmux-team-agent")` | 화면 분할 실패. surface가 탭으로 쌓임 |
    | `tmux` | `Skill("oh-my-beom:tmux-team-agent")` | pane이 빈 셸로 남음, 에이전트 미시작 |
    | `none` | 호출 생략 (mailbox 모드) | — |
 
