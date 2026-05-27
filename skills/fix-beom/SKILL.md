@@ -1,6 +1,6 @@
 ---
 name: fix-beom
-description: "버그 수정. 에이전트 팀(planner+coder)을 실행하여 분석→수정→리뷰(Codex QA)→커밋까지 수행한다."
+description: "버그 수정. 에이전트 팀(planner+coder)을 실행하여 분석→수정→리뷰(qa-manager)→커밋까지 수행한다."
 argument-hint: "[Jira URL 또는 이슈키] <버그 설명>"
 ---
 
@@ -98,7 +98,7 @@ plan: {docs/plan/plan_{작업내용}.md 내용}
 
 ## Phase 5: QA 리뷰 + 루프
 
-`references/phase5-qa-dispatcher.md` 절차 그대로 사용. 4-tier 디스패처 + 루프 + `### [WEB-TEST-REQUIRED]` 자동 실행.
+`references/phase5-qa-dispatcher.md` 절차 그대로 사용. `Agent(oh-my-beom:qa-manager)` 호출 + 루프(최대 5회) + `### [WEB-TEST-REQUIRED]` 자동 실행.
 
 ## Phase 6: 커밋
 
@@ -109,7 +109,7 @@ plan: {docs/plan/plan_{작업내용}.md 내용}
 
 `/dev-beom` Phase 7과 동일:
 - 임시 파일 정리(설계 산출물)
-- QA/Team surface·pane 일괄 close
+- tmux pane 일괄 정리 (`.dev/.qa-pane-id`, `.dev/.team-pane-id`)
 - error-log.md 회전(100KB 초과 시)
 - 중복 코드 경고(10개 파일 이상 변경 시)
 
@@ -121,4 +121,4 @@ plan: {docs/plan/plan_{작업내용}.md 내용}
 |---------|----------|
 | planner | ARGS + 코드 맵 + Jira 컨텍스트 |
 | coder | plan + 코드 맵 |
-| Codex (QA) | agents/qa-manager.md + references/qa-output-format.md + diff(경로) + plan 완료 기준 + 코드 맵 |
+| qa-manager (QA) | diff(경로) + plan 완료 기준 + 코드 맵 (페르소나/포맷은 본인 시스템 프롬프트와 references/qa-output-format.md 참조) |

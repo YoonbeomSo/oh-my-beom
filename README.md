@@ -9,32 +9,33 @@
 claude plugin install oh-my-beom@syb1224
 ```
 
-### 권장 의존성: Codex 플러그인 (QA 토큰 절감용)
+## 업데이트
 
-이 하네스의 **Phase 5 (QA 리뷰)는 기본적으로 Codex로 분리** 실행됩니다. Claude 메인 세션의 컨텍스트를 소모하지 않고 별도 모델이 코드 리뷰를 수행하므로 토큰이 절감됩니다.
+새 버전이 `main`에 머지된 뒤 로컬을 갱신하려면:
 
-```bash
-claude plugin install codex
+```
+/plugin
 ```
 
-**Codex 계정 연동 시점:**
-- **최초 1회**: 다음 명령으로 CLI 준비 상태를 확인합니다.
-  ```
-  /codex:setup
-  ```
-  Codex CLI가 미설치/미인증이면 이 단계에서 안내가 표시됩니다.
-- **첫 QA 호출 시**: `/dev-beom`, `/fix-beom`, `/persist-beom`을 처음 실행하면 Phase 5 진입 직전에 자동으로 가용성을 검증하고 결과를 `.dev/.qa-engine`에 저장합니다 (세션당 1회).
+→ 메뉴에서 `oh-my-beom` 선택 → **Update**.
 
-**환경별 자동 디스패처 (4-tier):**
+또는 CLI:
 
-| Tier | 조건 | 호출 방식 | 가시성 | 토큰 절감 |
-|------|------|---------|-------|----------|
-| A | cmux + Codex 준비 | cmux 분할 surface + `codex exec` | ✅ 실시간 관찰 | ✅ |
-| B | tmux + Codex 준비 | tmux 분할 pane + `codex exec` | ✅ 실시간 관찰 | ✅ |
-| C | (multiplexer 없음) + Codex 준비 | `Agent(codex:codex-rescue)` 백그라운드 | ❌ 결과만 노출 | ✅ |
-| D | Codex 미준비 | `Agent(oh-my-beom:qa-manager)` (Sonnet fallback) | ❌ | ❌ (메인 토큰 소비) |
+```bash
+claude plugin update oh-my-beom
+# 갱신이 안 잡히면 재설치:
+claude plugin install oh-my-beom@syb1224
+```
 
-세션당 1회 `.dev/.qa-engine` 마커로 엔진(`codex`/`claude`)을 결정하고, 호출 시점에 환경 변수(`$CMUX_SOCKET`, `$TMUX`)로 Tier A/B/C를 선택합니다. Codex 미설치 상태에서도 Tier D로 자동 fallback해 동작합니다.
+설치된 버전 확인:
+
+```bash
+cat ~/.claude/plugins/cache/syb1224/oh-my-beom/*/.claude-plugin/plugin.json | grep version
+```
+
+### QA 리뷰 방식
+
+Phase 5 QA 리뷰는 `Agent(subagent_type="oh-my-beom:qa-manager")` 단일 호출로 수행됩니다. qa-manager는 Sonnet 모델로 동작하며, Agent 일회성 호출이므로 페르소나가 메인 세션 컨텍스트에 영구 진입하지 않습니다.
 
 ---
 
@@ -58,13 +59,13 @@ oh-my-beom/
 │   ├── tdd/                          # TDD 방법론 (Red-Green-Refactor)
 │   ├── web-test/                     # E2E 웹 테스트 (Playwright + OTP 바이패스)
 │   ├── commit/                       # Git 커밋 (이슈키 파싱, pre-check)
-│   ├── pull-request/                 # PR 자동 생성
+│   ├── pull-request/                 # GitHub PR 자동 생성
+│   ├── merge-request/                # GitLab MR 자동 생성
 │   ├── fetch-jira-issue/             # Jira 이슈 조회 (내부 유틸리티)
 │   ├── fetch-jenkins/                # Jenkins 빌드 관리
 │   ├── worktree/                     # Git worktree 자동화
 │   ├── version-bump/                 # 플러그인 버전 일괄 갱신 (3개 파일 동기화)
 │   ├── tmux-team-agent/              # tmux pane 복구 (tmux 전용)
-│   ├── cmux-team-agent/              # cmux surface 복구 (cmux 전용)
 │   ├── humanizer/                    # AI 글쓰기 패턴 제거
 │   ├── hecto-setup/                  # HectoProject CLAUDE.md 자동 설정
 │   └── new-context/                  # 도메인 컨텍스트 생성
@@ -95,14 +96,12 @@ oh-my-beom/
 
 ### 4개 진입점
 
-| 명령 | 용도 | 에이전트 팀 (Claude) | QA |
-|------|------|---------------------|----|
-| `/dev-beom` | 기능 개발 | planner + architect + coder | Codex 4-tier 디스패처 |
-| `/fix-beom` | 버그 수정 | planner + coder | Codex 4-tier 디스패처 |
+| 명령 | 용도 | 에이전트 팀 | QA |
+|------|------|------------|----|
+| `/dev-beom` | 기능 개발 | planner + architect + coder | qa-manager (Sonnet) |
+| `/fix-beom` | 버그 수정 | planner + coder | qa-manager (Sonnet) |
 | `/analysis-beom` | 코드/정책 분석 | Explore 에이전트 | — |
-| `/persist-beom` | 자율 실행 | planner + architect + coder (질문 없이 끝까지) | Codex 4-tier 디스패처 |
-
-> QA 리뷰는 토큰 절감을 위해 Codex로 분리되어 있으며, Codex 미설치 시 Claude `qa-manager`(Sonnet)로 자동 fallback됩니다. 자세한 내용은 위 "권장 의존성: Codex 플러그인" 섹션 참조.
+| `/persist-beom` | 자율 실행 | planner + architect + coder (질문 없이 끝까지) | qa-manager (Sonnet) |
 
 ### 기본 사용 예시
 
@@ -124,7 +123,8 @@ oh-my-beom/
 
 ```bash
 /commit                  # 변경사항 커밋 (이슈키 자동 파싱)
-/pull-request            # PR 생성 (커밋 히스토리 기반)
+/pull-request            # GitHub PR 생성 (커밋 히스토리 기반)
+/merge-request           # GitLab MR 생성 (커밋 히스토리 기반)
 /worktree create feature # Git worktree 생성
 /fetch-jenkins           # Jenkins 빌드 상태 조회
 /humanizer               # AI 글쓰기 패턴 제거
@@ -151,22 +151,22 @@ architect: 기술 설계 (.dev/design.md)
   ↓
 coder: 구현
   ↓
-QA 4-tier 디스패처 (Codex 우선, Claude fallback) → PASS / FAIL 판정
+Agent(oh-my-beom:qa-manager) → PASS / FAIL 판정
   ├── PASS → /commit → result 보고
   └── FAIL → QA 루프 (최대 5회)
               ↓
-         planner: plan 수정 → coder: 수정 → QA 디스패처 재호출
+         planner: plan 수정 → coder: 수정 → qa-manager 재호출
               ↓
          5회 초과 → issue 보고서 (docs/issue/) → 사용자에게 보고
 ```
 
 ### QA 루프
 
-QA 디스패처가 **Critical** 이슈를 발견하면 수정 루프가 시작됩니다:
+qa-manager가 **Critical** 이슈를 발견하면 수정 루프가 시작됩니다:
 
 1. **planner**: plan 파일에 이슈 기록 + 수정 방향 결정
 2. **coder**: 수정 방향에 따라 코드 수정
-3. **QA 디스패처**: 재리뷰 (같은 Tier 재사용 — cmux/tmux split surface는 재활용)
+3. **qa-manager**: 재리뷰 (Agent 재호출)
 4. PASS가 나올 때까지 반복 (최대 5회)
 5. 5회 초과 시 `docs/issue/issue_{작업내용}.md`에 미해결 보고서 생성
 
@@ -246,7 +246,7 @@ QA 루프 5회 초과 시 자동 생성. 미해결 이슈, 시도 이력, 권장
 | `code-quality-gate` | Write/Edit 전 | 시크릿 하드코딩, eval(), SQL 인젝션 감지 + 플러그인 파일 보호 |
 | `error-learner` | Bash 실행 후 | 에러 기록 + 반복 감지 → 접근 방식 변경 유도 |
 | `web-test-detector` | SendMessage 후 | QA 응답에서 [WEB-TEST-REQUIRED] 마커 감지 |
-| `team-recovery-reminder` | TeamCreate 후 | 환경(cmux/tmux) 감지 + 복구 스킬 호출 명령을 additionalContext로 자동 주입 |
+| `team-recovery-reminder` | TeamCreate 후 | tmux 환경 감지 + `tmux-team-agent` 호출 명령을 additionalContext로 자동 주입 |
 
 ### 금지 사항 (CLAUDE.md)
 
