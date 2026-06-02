@@ -51,7 +51,7 @@ oh-my-beom/
 │   ├── qa-manager.md                 # 코드 리뷰, 스펙 검증, 기본 보안 체크
 │   ├── web-tester.md                 # E2E 테스트 생성+실행 (16 tools)
 │   └── web-test-runner.md            # E2E 테스트 실행 전용 (8 tools)
-├── skills/                           # 스킬 17개 (메인 4 + 유틸 13)
+├── skills/                           # 스킬 18개 (메인 4 + 유틸 14)
 │   ├── dev-beom/                     # 기능 개발
 │   ├── fix-beom/                     # 버그 수정
 │   ├── analysis-beom/                # 코드/정책 분석
@@ -63,6 +63,7 @@ oh-my-beom/
 │   ├── merge-request/                # GitLab MR 자동 생성
 │   ├── fetch-jira-issue/             # Jira 이슈 조회 (내부 유틸리티)
 │   ├── fetch-jenkins/                # Jenkins 빌드 관리
+│   ├── fetch-elk/                    # ELK/Elasticsearch 로그 조회
 │   ├── worktree/                     # Git worktree 자동화
 │   ├── version-bump/                 # 플러그인 버전 일괄 갱신 (3개 파일 동기화)
 │   ├── tmux-team-agent/              # tmux pane 복구 (tmux 전용)
@@ -127,6 +128,7 @@ oh-my-beom/
 /merge-request           # GitLab MR 생성 (커밋 히스토리 기반)
 /worktree create feature # Git worktree 생성
 /fetch-jenkins           # Jenkins 빌드 상태 조회
+/fetch-elk               # ELK/Elasticsearch 로그 조회·분석
 /humanizer               # AI 글쓰기 패턴 제거
 /web-test                # E2E 웹 테스트 (Playwright)
 /version-bump patch      # 플러그인 메타 3개 파일 버전 일괄 갱신 (oh-my-beom 자체 개발용)

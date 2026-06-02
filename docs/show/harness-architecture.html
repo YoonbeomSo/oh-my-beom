@@ -167,7 +167,7 @@
   <div class="stats-row">
     <div class="stat"><div class="stat-num" style="color:var(--accent)">4</div><div class="stat-label">진입점 스킬</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--green)">6</div><div class="stat-label">에이전트</div></div>
-    <div class="stat"><div class="stat-num" style="color:var(--yellow)">10</div><div class="stat-label">유틸리티 스킬</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--yellow)">11</div><div class="stat-label">유틸리티 스킬</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--red)">8</div><div class="stat-label">안전 훅</div></div>
     <div class="stat"><div class="stat-num" style="color:var(--purple)">2</div><div class="stat-label">Rules</div></div>
   </div>
@@ -591,6 +591,7 @@
       </div>
       <div class="skill-card"><div class="name">/fetch-jira-issue</div><div class="desc">Jira 이슈 조회. MCP 우선, REST fallback</div><span class="badge badge-ext">내부 유틸</span></div>
       <div class="skill-card"><div class="name">/fetch-jenkins</div><div class="desc">Jenkins 빌드 상태/트리거/로그 확인</div><span class="badge badge-ext">외부 연동</span></div>
+      <div class="skill-card"><div class="name">/fetch-elk</div><div class="desc">ELK/Elasticsearch 로그 조회·에러 패턴 추출 (읽기 전용)</div><span class="badge badge-ext">외부 연동</span></div>
       <div class="skill-card"><div class="name">/tmux-team-agent</div><div class="desc">TeamCreate 후 빈 tmux pane 감지 + CLI 복구 (tmux 전용)</div><span class="badge badge-util">인프라</span></div>
       <div class="skill-card"><div class="name">/humanizer</div><div class="desc">AI 글쓰기 패턴 제거. 40+ 패턴 감지/교정</div><span class="badge badge-util">글쓰기</span></div>
       <div class="skill-card"><div class="name">/new-context</div><div class="desc">새 도메인 컨텍스트 디렉토리 생성</div><span class="badge badge-util">설정</span></div>
@@ -975,7 +976,7 @@
 │   ├── <span class="highlight">web-test-trigger.md</span>            <span class="comment"># [WEB-TEST-REQUIRED] 자동 실행 절차</span>
 │   └── <span class="dir">conventions/</span>                   <span class="comment"># 프로젝트별 컨벤션 (조건부 로드)</span>
 │       └── <span class="highlight">spring-boot.md</span>            <span class="comment"># Spring Boot/JPA/QueryDSL (설계+구현+리뷰 통합)</span>
-├── <span class="dir">skills/</span>                            <span class="comment"># 스킬 16개</span>
+├── <span class="dir">skills/</span>                            <span class="comment"># 스킬 18개</span>
 │   ├── <span class="dir">dev-beom/</span>                      <span class="comment"># 기능 개발 (3명 팀 + qa-manager)</span>
 │   ├── <span class="dir">fix-beom/</span>                      <span class="comment"># 버그 수정 (2명 팀 + qa-manager)</span>
 │   ├── <span class="dir">analysis-beom/</span>                 <span class="comment"># 코드/정책 분석</span>
@@ -985,6 +986,7 @@
 │   ├── <span class="dir">merge-request/</span>                 <span class="comment"># GitLab MR 자동 생성</span>
 │   ├── <span class="dir">fetch-jira-issue/</span>              <span class="comment"># Jira 조회 (내부 유틸)</span>
 │   ├── <span class="dir">fetch-jenkins/</span>                 <span class="comment"># Jenkins 빌드 관리</span>
+│   ├── <span class="dir">fetch-elk/</span>                     <span class="comment"># ELK/Elasticsearch 로그 조회 (읽기 전용)</span>
 │   ├── <span class="dir">worktree/</span>                      <span class="comment"># Git worktree 관리</span>
 │   ├── <span class="dir">tmux-team-agent/</span>               <span class="comment"># tmux pane 복구 (tmux 전용)</span>
 │   ├── <span class="dir">humanizer/</span>                     <span class="comment"># AI 글쓰기 교정</span>
