@@ -1,6 +1,6 @@
 ---
 name: fetch-elk
-description: Use when user asks to query ELK / Elasticsearch / Kibana logs, mentions "ELK", "엘크", "Kibana", "elasticsearch", "로그 조회", "에러 로그 찾아", "로그 분석", or shares an elk.* / kibana URL. Reads the Elasticsearch endpoint from ~/.claude/elk.settings.json (auto-creates the file and asks for esUrl/kibanaUrl one at a time if missing; auth is fixed to none), then performs index discovery, time-windowed log search, and error/field pattern extraction via the ES HTTP API directly.
+description: Use when user asks to query ELK / Elasticsearch / Kibana logs, mentions "ELK", "엘크", "Kibana", "elasticsearch", "로그 조회", "에러 로그 찾아", "로그 분석", or shares an elk.* / kibana URL. Reads the Elasticsearch endpoint from ~/.claude/elk.settings.json (auto-creates the file and asks for esUrl/kibanaUrl one at a time if missing; auth is fixed to none), then performs index discovery, time-windowed log search, and error/field pattern extraction via the ES HTTP API directly. Determines target environment (real/test) from user's wording or URL before connecting; asks once with a 2-choice question when ambiguous (no default auto-selection).
 ---
 
 # Fetch ELK
@@ -15,6 +15,7 @@ ELK 클러스터의 Elasticsearch HTTP API를 curl/python으로 직접 호출하
 
 - 이 스킬은 `~/.claude/elk.settings.json` 에 **등록된 ES 엔드포인트에만** 연동한다.
 - 설정에 없는 ES/Elasticsearch URL을 사용자가 요청하면, 먼저 설정 파일에 등록하도록 안내한 뒤 사용한다.
+- **환경(real/test) 먼저 결정 후 해당 env에만 접속. 모호하면 추측하지 말고 Step 0에서 되묻기.**
 - **읽기 전용**: `_search`, `_count`, `_cat/*`, `_mapping`, `_msearch` 외의 호출(PUT/DELETE/POST 인덱스 작업)은 절대 금지.
 
 ## When to Use
@@ -23,6 +24,7 @@ ELK 클러스터의 Elasticsearch HTTP API를 curl/python으로 직접 호출하
 - "로그 조회", "에러 로그 찾아", "로그에서 ~검색", "로그 분석", "영향 범위", "어떤 사용자가 ~ 했어" 요청 시
 - 사용자가 `elk.*` / `kibana.*` URL을 공유한 경우
 - 메일/Slack 알림 외의 **전수(원본) 로그**가 필요한 분석
+- 환경 신호(운영/테스트 키워드·URL)가 있으면 해당 env 선택. 없으면 Step 0에서 1회 되묻기.
 
 ## 조회 흐름
 
@@ -32,9 +34,11 @@ digraph fetch_elk {
     node [shape=box];
 
     parse [label="1. 요청 파싱\n(시간/서비스/키워드)"];
-    check_file [label="2a. ~/.claude/elk.settings.json\n파일 존재?" shape=diamond];
+    decide_env [label="0. 환경 결정\n(real/test?)" shape=diamond];
+    ask_env [label="AskUserQuestion\n운영(real)/테스트(test)\n(기본값 없음)"];
+    check_file [label="1a. ~/.claude/elk.settings.json\n파일 존재?" shape=diamond];
     create_file [label="파일 생성\n(auth:none 고정)"];
-    check_fields [label="2b. esUrl·kibanaUrl\n값 존재?" shape=diamond];
+    check_fields [label="1b. esUrl·kibanaUrl\n값 존재?" shape=diamond];
     ask_one [label="누락 항목만\nAskUserQuestion 1개씩"];
     write_back [label="받은 값을\n설정 파일에 기록"];
     discover [label="3. 인덱스 발견\n_cat/indices"];
@@ -44,7 +48,10 @@ digraph fetch_elk {
     extract [label="7. message 정규식으로\n필드 추출"];
     aggregate [label="8. 고유값 집계 +\n외부 데이터와 교차 검증"];
 
-    parse -> check_file;
+    parse -> decide_env;
+    decide_env -> check_file [label="명확(real/test)"];
+    decide_env -> ask_env [label="모호"];
+    ask_env -> check_file;
     check_file -> create_file [label="no"];
     check_file -> check_fields [label="yes"];
     create_file -> check_fields;
@@ -60,20 +67,42 @@ digraph fetch_elk {
 }
 ```
 
+## Step 0: 환경 결정 (real/test)
+
+접속 전에 **반드시** 대상 환경을 확정한다. 모호하면 운영 기본선택 안 함 — `default` 키는 자동선택 근거가 아님.
+
+### 키워드 매핑 (대소문자 무시, 부분문자열, URL 우선)
+
+| 신호 | 판정 |
+|---|---|
+| "운영", "운영ELK", "real", "prod", "프로덕션", "라이브" 또는 운영 elk.* URL | `real` |
+| "테스트", "스테이징", "staging", "test" 또는 test-elk.* / staging-elk.* URL | `test` |
+| 신호 없음("elk 조사해", "로그 조회", "에러 로그 찾아") 또는 신호 상충 | 모호 → 되묻기 |
+
+### 모호 시 되묻기
+
+모호할 때만 `AskUserQuestion` **1회**, 2지선다:
+
+> 어느 환경의 ELK를 조회할까요?
+> 1. 운영(real)
+> 2. 테스트(test)
+
+**기본값 없음** — 운영 오접속 방지. 사용자 선택 후 해당 `ENV_NAME`("real" 또는 "test")으로 확정하고 Step 1로 진행. 명확한 경우 이 질문을 건너뜀.
+
 ## Step 1: 접속 설정 로드 (`~/.claude/elk.settings.json`)
 
-스킬 시작 시 **가장 먼저** 설정을 로드한다. 순서는 **(1a) 파일 존재 확인 → (1b) 필수 필드(`esUrl`·`kibanaUrl`) 값 확인**이며, 누락된 것만 실행자에게 하나씩 물어본다. 보안 민감 정보이므로 저장소가 아니라 글로벌 `~/.claude/` 아래에만 둔다.
+Step 0에서 확정된 `ENV_NAME`("real" 또는 "test")을 기준으로 설정을 로드한다. 순서는 **(1a) 파일 존재 확인 → (1b) 선택 env의 필수 필드(`esUrl`·`kibanaUrl`) 값 확인**이며, 누락된 것만 실행자에게 하나씩 물어본다. 보안 민감 정보이므로 저장소가 아니라 글로벌 `~/.claude/` 아래에만 둔다.
 
 ### 1a. 파일 존재 확인 → 없으면 생성
 
-`~/.claude/elk.settings.json` 이 없으면 아래 골격으로 **새로 생성**한다. `esUrl`·`kibanaUrl` 은 빈 문자열(`""`)로 두고 1b에서 채운다. `auth` 는 항상 `{"type": "none"}` 으로 **고정**한다(이 스킬은 무인증 ES 전용 — auth 는 절대 묻지 않는다).
+`~/.claude/elk.settings.json` 이 없으면 아래 골격으로 **새로 생성**한다. 실제 생성 시 `esUrl`·`kibanaUrl` 은 **빈 문자열(`""`)로 둔다**(아래 스키마의 `<...>` 는 구조 참조용 표기이며, real·test 두 env 모두 빈 문자열로 생성). 1b에서 채운다. `auth` 는 항상 `{"type": "none"}` 으로 **고정**한다(이 스킬은 무인증 ES 전용 — auth 는 절대 묻지 않는다).
 
 ### 1b. 필수 필드 확인 → 누락분만 1개씩 질문
 
-`default` 가 가리키는 환경(보통 `real`)에서 `esUrl`, `kibanaUrl` 값이 채워져 있는지 확인한다. **비어 있거나 없는 항목만** `AskUserQuestion` 으로 **한 번에 하나씩** 실행자에게 묻고, 받은 값을 설정 파일에 기록한 뒤 진행한다.
+**Step 0에서 선택된 env(`ENV_NAME`)에서** `esUrl`, `kibanaUrl` 값이 채워져 있는지 확인한다. **비어 있거나 없는 항목만** `AskUserQuestion` 으로 **한 번에 하나씩** 실행자에게 묻고, 받은 값을 설정 파일에 기록한 뒤 진행한다. 다른 env 값으로 fallback 금지.
 
-- `esUrl` 누락 → "ES 엔드포인트 URL?" 질문 (예: `http://<host>:9200`) — 필수
-- `kibanaUrl` 누락 → "Kibana URL?" 질문 (예: `https://<kibana-host>`) — CSV export / index UID 매핑 참조용
+- `esUrl` 누락 → "`{ENV_NAME}` ES 엔드포인트 URL?" 질문 (예: `http://<host>:9200`) — 필수
+- `kibanaUrl` 누락 → "`{ENV_NAME}` Kibana URL?" 질문 (예: `https://<kibana-host>`) — CSV export / index UID 매핑 참조용
 
 > - 두 값이 모두 채워져 있으면 **질문 없이** 바로 Step 2로 진행한다.
 > - 한 번에 하나씩만 물어본다(esUrl 먼저, 그다음 kibanaUrl). 두 개를 한 질문에 묶지 않는다.
@@ -89,12 +118,19 @@ digraph fetch_elk {
       "esUrl": "http://<ES_HOST>:9200",
       "kibanaUrl": "https://<KIBANA_HOST>",
       "auth": { "type": "none" }
+    },
+    "test": {
+      "esUrl": "http://<TEST_ES_HOST>:9200",
+      "kibanaUrl": "https://<TEST_KIBANA_HOST>",
+      "auth": { "type": "none" }
     }
   }
 }
 ```
 
 > `auth` 는 `{"type": "none"}` 으로 **고정**이다 — 이 스킬은 무인증 ES 전용이며 인증 방식을 묻거나 바꾸지 않는다.
+
+> `default` 는 참고용으로만 남긴다. 환경 결정은 Step 0이 담당하며, **모호 시 default 자동진행 금지**.
 
 > ⚠️ 이 파일은 **글로벌 `~/.claude/` 에만** 저장한다. 플러그인 저장소는 공개이므로 ES 주소를 코드/문서에 절대 적지 않는다. 새 환경 추가 시 `environments` 에 키를 추가한다.
 
@@ -104,9 +140,9 @@ digraph fetch_elk {
 import json, os
 PATH = os.path.expanduser("~/.claude/elk.settings.json")
 CFG  = json.load(open(PATH))
-ENV  = CFG["environments"][CFG.get("default", "real")]
-ES     = ENV["esUrl"]       # 1b에서 보장: 빈 값이면 AskUserQuestion으로 먼저 채움
-KIBANA = ENV.get("kibanaUrl")
+ENV_NAME = "real"  # ← Step 0 결정값("real"|"test")으로 치환. default 자동사용 금지
+ENV = CFG["environments"][ENV_NAME]
+ES, KIBANA = ENV["esUrl"], ENV.get("kibanaUrl")
 # auth 는 none 고정 — 인증 헤더/옵션 없음
 ```
 
@@ -117,7 +153,8 @@ KIBANA = ENV.get("kibanaUrl")
 서비스/도메인을 모르면 항상 `_cat/indices` 부터 호출하여 인덱스 목록을 확인한다. (`$ES` 는 Step 1에서 로드한 `esUrl`)
 
 ```bash
-ES="$(python3 -c 'import json,os;c=json.load(open(os.path.expanduser("~/.claude/elk.settings.json")));print(c["environments"][c.get("default","real")]["esUrl"])')"
+ENV_NAME="real"   # 또는 "test" — Step 0 환경 결정 결과로 설정
+ES="$(python3 -c "import json,os;c=json.load(open(os.path.expanduser('~/.claude/elk.settings.json')));print(c['environments']['${ENV_NAME}']['esUrl'])")"
 curl -s --max-time 15 "${ES}/_cat/indices?format=json&bytes=mb" \
   | python3 -c "
 import sys, json
@@ -290,6 +327,8 @@ out_path.write_text(json.dumps({
 |---|---|---|
 | `~/.claude/elk.settings.json` 없음 | 최초 실행 | Step 1a대로 파일 생성(auth:none 고정) 후, 1b에서 누락 필드만 1개씩 질문 |
 | `esUrl`/`kibanaUrl` 빈 값 | 필드 미입력 | Step 1b대로 누락 항목만 `AskUserQuestion` 1개씩 → 파일에 기록 |
+| 환경 판단 불가("로그 조회" 등 신호 없음) | 발화 모호 | Step 0대로 `AskUserQuestion` 1회 2지선다(운영/테스트, 기본값 없음) |
+| 선택 env(`real`/`test`) 필드 누락 | 해당 env 미설정 | Step 1b대로 그 env 누락 항목만 질문. 다른 env 값으로 fallback 금지 |
 | `connection refused` / timeout | 사내망 미접속 | VPN/사내망 연결 확인 후 재시도 |
 | `401 / 403` | ES가 인증 요구 (이 스킬은 무인증 전용) | 무인증 접근 가능한 ES인지·네트워크 경로 확인 |
 | `index_not_found_exception` | 인덱스 패턴 오타 | `_cat/indices` 로 실제 인덱스명 확인 |
@@ -309,3 +348,5 @@ out_path.write_text(json.dumps({
 - **메일/알림 수치만 보고 영향 범위 추정**: 알림 dedup/throttling으로 누락이 흔함. **반드시 ES 전수 데이터**로 영향 범위 산출.
 - **multiline 묶음 무시**: 같은 트랜잭션의 ELK_START/Request body/ERROR/스택트레이스가 한 doc인지 분리된 doc인지 확인 (샘플 doc의 `len(message)` 와 `log.flags` 로 판단).
 - **무인증이라고 함부로 인덱스 변경/삭제**: 이 스킬은 **읽기 전용**. `_search`, `_count`, `_cat/*`, `_mapping` 외의 호출(PUT/DELETE/POST 인덱스 작업)은 절대 금지.
+- **환경 추측·기본값 자동선택**: 발화가 모호하면 Step 0에서 반드시 되묻는다. `default` 키를 근거로 자동진행 금지.
+- **test 필드를 real 값으로 fallback**: 선택 env에 필드가 없으면 다른 env로 채우지 않는다. 해당 env의 값을 1b에서 직접 질문한다.
