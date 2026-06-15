@@ -1,7 +1,7 @@
 ---
 name: weekly-report
-version: 1.0.0
-description: 헥토헬스케어 주간보고를 Notion에 작성한다. 이전 주간보고 + 배포 트래커 + TODO 보드를 조합하여 새 주의 페이지를 생성한다. 식별자는 ~/.claude/weekly-report.settings.json에서 읽는다(없으면 자동 생성).
+version: 1.1.0
+description: 헥토헬스케어 주간보고를 Notion에 작성한다. 이전 주간보고 + TODO·배포 통합 트래커를 조합하여 새 주의 페이지를 생성한다. 식별자는 ~/.claude/weekly-report.settings.json에서 읽는다(없으면 자동 생성).
 argument-hint: [기준일(YYYY-MM-DD, 생략 시 이번 주 목요일)]
 allowed-tools:
   - mcp__claude_ai_Notion__notion-search
@@ -26,10 +26,11 @@ Notion 워크스페이스 "헥토 헬스케어 개발"의 주간보고 DB에 새
 |---|---|---|
 | weeklyReportCollectionId | 주간보고 DB 검색 | collection://<uuid> |
 | weeklyReportDataSourceId | 주간보고 페이지 생성 parent | <uuid> |
-| deployTrackerCollectionId | 배포 트래커 검색 | collection://<uuid> |
-| todoCollectionId | TODO 보드 검색 | collection://<uuid> |
+| trackerCollectionId | TODO·배포 통합 트래커 검색 | collection://<uuid> |
 | parentPageUrl | 부모 페이지 | https://www.notion.so/<id> |
 | authorUserId | 작성자 user ID | <uuid> |
+
+> **DB 구조 메모**: 과거에는 `🚀 배포 트래커`와 `✅ TODO`가 별도 DB(+ relation)였으나, 현재는 **`✅ TODO & 🚀 배포` 단일 DB**로 통합되었다. 한 행이 TODO이면서 배포일 수도 있으며, 노션에서는 뷰(view)로 구분한다. 따라서 `trackerCollectionId` 하나만 사용한다.
 
 ## 인자 처리
 
@@ -43,6 +44,25 @@ Notion 워크스페이스 "헥토 헬스케어 개발"의 주간보고 DB에 새
 - 다음 주 종료일 = 주 종료일 + 7
 
 예: 2026-05-14 (목) → This Week: 2026.05.08~2026.05.14 / Next Week: 2026.05.15~2026.05.21
+
+## 통합 트래커 데이터 소스 스키마 (참고)
+
+`trackerCollectionId`가 가리키는 `✅ TODO & 🚀 배포` 데이터 소스의 속성:
+
+| 속성 | 타입 | 값 |
+|---|---|---|
+| `이름` | title | 항목 제목 |
+| `상태` | select | 임시보류 / 할 일 / 진행 중 / 완료 🙌 / 보류 (TODO 진행 상태) |
+| `배포 상태` | select | 시작 전 / 보류 / 진행 중 / 리뷰 중 / 승인 완료 / 배포 완료 |
+| `배포일` | date | `date:배포일:start` |
+| `배포 유형` | select | 메이저 / 마이너 / 픽스 |
+| `날짜` | date | `date:날짜:start` (TODO 작업일) |
+| `JIRA` | url | 이슈 링크 |
+| `작성일시` | created_time | 자동 |
+
+- **배포 항목**: `배포일`이 설정된 행 (배포 트래커 뷰 기준).
+- **TODO 항목**: `상태`가 할 일 / 진행 중 / 보류 / 임시보류 인 행 (TODO 뷰 기준).
+- 한 행이 `배포일`과 `상태`를 동시에 가질 수 있다.
 
 ## 절차
 
@@ -58,26 +78,26 @@ Notion 워크스페이스 "헥토 헬스케어 개발"의 주간보고 DB에 새
 {
   "weeklyReportCollectionId": "",
   "weeklyReportDataSourceId": "",
-  "deployTrackerCollectionId": "",
-  "todoCollectionId": "",
+  "trackerCollectionId": "",
   "parentPageUrl": "",
   "authorUserId": ""
 }
 ```
 
+> **구버전 마이그레이션**: 기존 파일에 `deployTrackerCollectionId` / `todoCollectionId` 키가 남아 있으면 무시한다. 두 DB가 하나로 통합되었으므로 `trackerCollectionId`(통합 DB)만 사용한다. 값이 비어 있으면 0b에서 질문한다.
+
 #### 0b. 누락 키 확인 → 빈 값만 1개씩 질문
 
-6개 키 중 값이 비어 있는 것만 `AskUserQuestion`으로 **한 번에 하나씩** 묻는다. 각 키의 응답을 받는 **즉시** `Write`로 설정 파일에 기록하고(일괄 아님), 다음 키로 넘어간다. 모두 채워져 있으면 질문 없이 진행.
+5개 키 중 값이 비어 있는 것만 `AskUserQuestion`으로 **한 번에 하나씩** 묻는다. 각 키의 응답을 받는 **즉시** `Write`로 설정 파일에 기록하고(일괄 아님), 다음 키로 넘어간다. 모두 채워져 있으면 질문 없이 진행.
 
 질문 순서:
 1. `weeklyReportCollectionId` — "주간보고 DB collection ID?" (예: `collection://<uuid>`)
-2. `deployTrackerCollectionId` — "배포 트래커 collection ID?" (예: `collection://<uuid>`)
-3. `todoCollectionId` — "TODO 보드 collection ID?" (예: `collection://<uuid>`)
-4. `weeklyReportDataSourceId` — "주간보고 페이지 생성용 data_source_id (UUID)?"
-5. `parentPageUrl` — "부모 페이지 URL?" (예: `https://www.notion.so/<id>`)
-6. `authorUserId` — "작성자 user ID (UUID)?"
+2. `trackerCollectionId` — "TODO·배포 통합 트래커 collection ID?" (예: `collection://<uuid>`)
+3. `weeklyReportDataSourceId` — "주간보고 페이지 생성용 data_source_id (UUID)?"
+4. `parentPageUrl` — "부모 페이지 URL?" (예: `https://www.notion.so/<id>`)
+5. `authorUserId` — "작성자 user ID (UUID)?"
 
-이후 Step 1~6의 `CFG.<키>` 표기는 모두 Step 0에서 로드한 설정값으로 **치환**하여 사용한다. `CFG.<키>` 문자열을 그대로 API 호출에 전달하지 않는다.
+이후 Step 1~5의 `CFG.<키>` 표기는 모두 Step 0에서 로드한 설정값으로 **치환**하여 사용한다. `CFG.<키>` 문자열을 그대로 API 호출에 전달하지 않는다.
 
 > ⚠️ 이 파일은 **글로벌 `~/.claude/`에만** 저장한다. 플러그인 저장소는 공개이므로 실제 식별자를 코드/문서에 절대 적지 않는다.
 
@@ -85,25 +105,29 @@ Notion 워크스페이스 "헥토 헬스케어 개발"의 주간보고 DB에 새
 
 주간보고 DB를 `notion-search`로 "주간보고_소윤범" 검색(data_source_url = `CFG.weeklyReportCollectionId`) 후 가장 최신(`BASE_DATE`보다 이전) 페이지를 찾고 `notion-fetch`로 내용을 가져온다. 이전 보고서의 "Next Week" 항목, "To-Do" 항목을 추출하여 이번 주 진행 컨텍스트로 활용한다.
 
-### 2단계: 배포 트래커 조회
+### 2단계: 통합 트래커 조회 (배포 + TODO)
 
-`notion-search` (data_source_url = `CFG.deployTrackerCollectionId`)로 이번 주에 영향이 있는 배포 페이지들을 수집한다. 각 페이지를 `notion-fetch`로 열어 다음을 확인:
+`notion-search` (data_source_url = `CFG.trackerCollectionId`)로 통합 트래커 페이지들을 수집한다. 이번 주 작업/이번~다음 주 배포 예정 위주로 가져오고, 각 페이지를 `notion-fetch`로 열어 `이름`·`배포일`·`배포 상태`·`배포 유형`·`상태`·`날짜`·`JIRA`를 확인한다. (단일 DB이므로 한 번의 검색으로 배포·TODO 항목을 함께 수집한 뒤 메모리에서 분류한다.)
 
-- `배포일` (date:배포일:start)
-- `진행 상태` (배포 완료 / 승인 완료 / 진행 중 / 등)
-- 페이지 제목
+수집 항목을 아래 기준으로 분류한다.
 
-이번 주 보고에 포함할 항목:
-- **This Week**: 주 시작일 ≤ 배포일 ≤ 주 종료일 인 항목, 또는 진행 중이면서 이번 주 작업한 항목
-- **Next Week**: 다음 주 배포 예정 항목 + 이전 주 "Next Week"에서 이월된 항목
+**This Week** (이번 주 완료/진행):
+- `배포일`이 `주 시작일 ≤ 배포일 ≤ 주 종료일` 범위인 항목
+- 또는 `배포 상태`가 진행 중 / 리뷰 중 / 승인 완료이며 이번 주 작업한 항목
+- 또는 `상태`가 완료 🙌 이고 `날짜`가 이번 주인 TODO
 
-### 3단계: TODO 보드 조회
+**Next Week** (다음 주 예정):
+- `배포일`이 `다음 주 시작일 ≤ 배포일 ≤ 다음 주 종료일` 범위인 항목
+- 이전 보고서 "Next Week"에서 이월된 항목
+- `상태`가 할 일 / 진행 중이며 `배포일`이 아직 없는 소규모 TODO → **배포일 없이** Next Week에 추가
 
-`notion-search` (data_source_url = `CFG.todoCollectionId`)로 "상태"가 `할 일` 또는 `진행 중`이며 최근(주 시작일 이후 작성/수정) 항목들을 수집한다. 이미 배포 트래커에 등록되어 This Week/Next Week에 들어간 항목은 중복 제거한다.
+**To-Do** (장기 / 일정 미정):
+- 이전 보고서 To-Do 섹션의 장기 항목(예: 하네스 플러그인 개발, 크롤링 등)
+- `배포 상태`가 시작 전 / 보류이거나 배포일정이 미정인 진행 중 항목
 
-소규모 TODO 항목들은 **배포일 없이** Next Week에 추가한다. 단, 이전 보고서의 To-Do 섹션에 있던 장기 항목(예: 하네스 플러그인 개발, 크롤링 등)은 별도 To-Do 섹션에 유지한다.
+**중복 제거**: 한 행이 `배포일`과 `상태`를 동시에 가질 수 있으므로 동일 `이름`(또는 페이지 URL) 기준으로 한 번만 노출한다. `배포일`이 있으면 배포 항목으로 우선 분류하고 TODO 중복은 제거한다.
 
-### 4단계: 페이지 생성
+### 3단계: 페이지 생성
 
 `notion-create-pages`로 주간보고 data source에 생성:
 
@@ -123,17 +147,17 @@ Notion 워크스페이스 "헥토 헬스케어 개발"의 주간보고 DB에 새
 }
 ```
 
-### 5단계: content 템플릿
+### 4단계: content 템플릿
 
 ```
 ## 🙆🏻‍♂️ This Week {color="blue"}
 > <주 시작일>~<주 종료일>
-- <항목><span color="blue"> - <상태> |   <배포일> 배포</span>
+- <항목><span color="blue"> - <배포 상태 또는 상태> |   <배포일> 배포</span>
 - ...
 
 ## 🙋🏻‍♂️ Next Week {color="red"}
 > <다음 주 시작일>~<다음 주 종료일>
-- <항목><span color="blue"> - <상태> |   <배포일> 배포</span>
+- <항목><span color="blue"> - <배포 상태> |   <배포일> 배포</span>
 - <소규모 TODO 항목><span color="blue"> - 할 일</span>
 - ...
 
@@ -145,7 +169,7 @@ Notion 워크스페이스 "헥토 헬스케어 개발"의 주간보고 DB에 새
 
 날짜 포맷: `YYYY.MM.DD` (마침표 구분). 항목 텍스트의 `[`, `]`, `|`는 Notion Markdown에서 `\[`, `\]`, `\|`로 이스케이프한다.
 
-### 6단계: 결과 보고
+### 5단계: 결과 보고
 
 - 생성된 페이지 URL
 - This Week / Next Week / To-Do 각 섹션의 항목 수

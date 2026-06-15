@@ -66,6 +66,8 @@ docs/plan/plan_{작업내용}.md 파일을 생성하세요.
 """)
 ```
 
+planner 결과를 확인한다. planner가 질문 목록을 반환하면 **`AskUserQuestion` 도구**로 사용자에게 제시하고(권장안을 첫 옵션으로 "(권장)" 표기, 자유 입력이 필요하면 "Other"), 답변을 planner에게 전달한 뒤 진행한다. 질문이 없으면 Phase 3로 진행한다.
+
 ## Phase 3: 설계 (영향 범위 분석)
 
 architect 없이, coder에게 직접 영향 범위 확인을 포함하여 수정을 요청한다.
