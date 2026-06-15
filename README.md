@@ -64,6 +64,7 @@ oh-my-beom/
 │   ├── fetch-jira-issue/             # Jira 이슈 조회 (내부 유틸리티)
 │   ├── fetch-jenkins/                # Jenkins 빌드 관리
 │   ├── fetch-elk/                    # ELK/Elasticsearch 로그 조회
+│   ├── branch-status/                # 여러 저장소 브랜치 merge 현황 표
 │   ├── worktree/                     # Git worktree 자동화
 │   ├── version-bump/                 # 플러그인 버전 일괄 갱신 (3개 파일 동기화)
 │   ├── tmux-team-agent/              # tmux pane 복구 (tmux 전용)
@@ -129,6 +130,7 @@ oh-my-beom/
 /worktree create feature # Git worktree 생성
 /fetch-jenkins           # Jenkins 빌드 상태 조회
 /fetch-elk               # ELK/Elasticsearch 로그 조회·분석
+/branch-status           # 여러 저장소 브랜치 merge 현황을 시각적 표로 정리
 /humanizer               # AI 글쓰기 패턴 제거
 /web-test                # E2E 웹 테스트 (Playwright)
 /version-bump patch      # 플러그인 메타 3개 파일 버전 일괄 갱신 (oh-my-beom 자체 개발용)

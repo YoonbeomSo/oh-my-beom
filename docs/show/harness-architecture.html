@@ -569,12 +569,13 @@
   </div>
 
   <div class="card">
-    <h2>Utility Skills (14)</h2>
+    <h2>Utility Skills (16)</h2>
     <div class="grid-3">
       <div class="skill-card"><div class="name">/commit</div><div class="desc">Git 커밋. 이슈키 파싱, lint/test pre-check, 민감파일 감지</div><span class="badge badge-util">Git</span></div>
       <div class="skill-card"><div class="name">/pull-request</div><div class="desc">GitHub PR 생성. 커밋 히스토리 기반 제목/본문 자동 생성 (gh CLI)</div><span class="badge badge-util">Git</span></div>
       <div class="skill-card"><div class="name">/merge-request</div><div class="desc">GitLab MR 생성. 커밋 히스토리 기반 제목/본문 자동 생성 (glab CLI)</div><span class="badge badge-util">Git</span></div>
       <div class="skill-card"><div class="name">/worktree</div><div class="desc">Git worktree 자동화. create/switch/done/remove</div><span class="badge badge-util">Git</span></div>
+      <div class="skill-card"><div class="name">/branch-status</div><div class="desc">여러 저장소의 브랜치 merge 현황을 매트릭스 표로 출력. ancestry/코드 마커 2가지 판정 모드 (읽기 전용)</div><span class="badge badge-util">Git</span></div>
       <div class="skill-card" style="border-color:var(--yellow);"><div class="name" style="color:var(--yellow);">/version-bump</div><div class="desc">플러그인 버전 일괄 변경. package.json, plugin.json, marketplace.json 3개 파일 동기화 (semver 또는 명시 버전)</div><span class="badge badge-util">메타</span><div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">version-sync-check 훅과 짝</div></div>
       <div class="skill-card"><div class="name">/hecto-setup</div><div class="desc">HectoProject용 CLAUDE.md를 현재 프로젝트에 자동 설정</div><span class="badge badge-util">설정</span></div>
       <div class="skill-card" style="border-color:var(--pink);">
@@ -977,7 +978,7 @@
 │   ├── <span class="highlight">web-test-trigger.md</span>            <span class="comment"># [WEB-TEST-REQUIRED] 자동 실행 절차</span>
 │   └── <span class="dir">conventions/</span>                   <span class="comment"># 프로젝트별 컨벤션 (조건부 로드)</span>
 │       └── <span class="highlight">spring-boot.md</span>            <span class="comment"># Spring Boot/JPA/QueryDSL (설계+구현+리뷰 통합)</span>
-├── <span class="dir">skills/</span>                            <span class="comment"># 스킬 18개</span>
+├── <span class="dir">skills/</span>                            <span class="comment"># 스킬 20개</span>
 │   ├── <span class="dir">dev-beom/</span>                      <span class="comment"># 기능 개발 (3명 팀 + qa-manager)</span>
 │   ├── <span class="dir">fix-beom/</span>                      <span class="comment"># 버그 수정 (2명 팀 + qa-manager)</span>
 │   ├── <span class="dir">analysis-beom/</span>                 <span class="comment"># 코드/정책 분석</span>
@@ -990,6 +991,7 @@
 │   ├── <span class="dir">fetch-elk/</span>                     <span class="comment"># ELK/Elasticsearch 로그 조회 (읽기 전용)</span>
 │   ├── <span class="dir">weekly-report/</span>                 <span class="comment"># 헥토헬스케어 주간보고 Notion 작성</span>
 │   ├── <span class="dir">worktree/</span>                      <span class="comment"># Git worktree 관리</span>
+│   ├── <span class="dir">branch-status/</span>                 <span class="comment"># 여러 저장소 브랜치 merge 현황 매트릭스 (읽기 전용)</span>
 │   ├── <span class="dir">tmux-team-agent/</span>               <span class="comment"># tmux pane 복구 (tmux 전용)</span>
 │   ├── <span class="dir">humanizer/</span>                     <span class="comment"># AI 글쓰기 교정</span>
 │   ├── <span class="dir">tdd/</span>                           <span class="comment"># TDD 방법론 (Red-Green-Refactor)</span>
