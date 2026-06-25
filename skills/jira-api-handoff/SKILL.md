@@ -25,8 +25,11 @@ allowed-tools:
 ## 의존 도구
 
 공식 Atlassian MCP(`mcp__claude_ai_Atlassian__*`)가 세션에 로드되어 있어야 한다. 미연결 시 사용자에게 연결 안내 후 중단.
-- `getJiraIssue` — 이슈 존재/제목 확인
+- `getJiraIssue` — 이슈 존재/제목 확인, reporter accountId 조회(QA 모드 재할당 시)
 - `addCommentToJiraIssue` — 댓글 작성(`commentId` 생략) 또는 갱신(`commentId` 지정), `contentFormat: "adf"`
+- `getTransitionsForJiraIssue` — 이슈에서 가능한 상태 전환 목록 조회(QA 모드 완료 단계)
+- `transitionJiraIssue` — 이슈 상태 전환(QA 모드 완료 단계: "해결" 전환)
+- `editJiraIssue` — 이슈 필드 수정(QA 모드 완료 단계: 담당자 재할당)
 - (보조) `getAccessibleAtlassianResources` — cloudId 못 찾을 때
 
 ## 입력
@@ -214,6 +217,40 @@ doc
 - 갱신(재배포 등): `commentId`를 함께 전달(전체 본문 교체).
 - 게시 전 본문을 사용자에게 보여주고 확인받는 것을 권장한다(운영 이슈 외부 노출 행위).
 - 완료 후 `https://{site}.atlassian.net/browse/{KEY}` 링크와 요약 보고.
+
+### Step Q-5: 완료 단계 — 상태 전환 + 담당자 재할당
+
+댓글 작성(Step Q-4) 완료 후, 사용자에게 **한 번에** 확인한다.
+
+> 다음 작업을 진행할까요?
+> - 상태를 "해결"로 변경
+> - 담당자를 보고자(`{reporter 표시이름}`)로 재할당
+> (각각 스킵 가능합니다.)
+
+사용자가 확인하면 아래 순서대로 실행. 거부하면 Step Q-4 결과 링크만 보고하고 종료.
+
+#### 상태 → 해결
+
+1. `getTransitionsForJiraIssue(cloudId, issueIdOrKey)`로 가능한 전환 목록을 조회한다.
+2. 목록에서 이름이 "해결", "Resolved", "Done" 등 해결 계열인 전환의 `id`를 찾는다. **전환 id를 하드코딩하지 않는다.**
+3. 매칭 전환 발견 시: `transitionJiraIssue(cloudId, issueIdOrKey, transition:{id:"<전환id>"})`
+4. 매칭 전환이 없거나 여러 개로 모호한 경우: 가능한 전환 목록(이름+id)을 사용자에게 보여주고 어떤 것으로 할지 묻는다.
+5. 엣지케이스:
+   - 이미 "해결" 상태인 경우 → "이미 해결 상태입니다"로 안내하고 스킵.
+   - 권한 없어 실패 시 → 오류 내용 보고하고 담당자 재할당 단계는 계속 진행.
+
+#### 담당자 → 보고자
+
+1. `getJiraIssue(cloudId, issueIdOrKey, fields:["reporter"])`로 reporter의 `accountId`를 읽는다.
+2. reporter가 있으면: `editJiraIssue(cloudId, issueIdOrKey, fields:{assignee:{accountId:"<reporter accountId>"}})`
+3. 엣지케이스:
+   - reporter가 없는 경우 → "보고자 정보가 없어 재할당을 건너뜁니다"로 안내.
+   - reporter == 현재 담당자인 경우 → "이미 보고자가 담당자입니다"로 안내하고 스킵.
+   - 권한 없어 실패 시 → 오류 내용 보고.
+
+#### 결과 보고
+
+변경된 항목(상태, 담당자)을 요약하고 이슈 링크(`https://{site}.atlassian.net/browse/{KEY}`)를 출력한다.
 
 ---
 
