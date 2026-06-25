@@ -5,8 +5,23 @@
 
 ## 설치
 
+처음 설치는 **두 단계**입니다 — 마켓플레이스를 한 번 등록한 뒤 플러그인을 설치합니다.
+
 ```bash
+# 1. 마켓플레이스 등록 (소스 = GitHub repo, 최초 1회만)
+claude plugin marketplace add YoonbeomSo/oh-my-beom
+
+# 2. 플러그인 설치 (마켓플레이스 "이름"은 syb1224 — repo명이 아님!)
 claude plugin install oh-my-beom@syb1224
+```
+
+> ⚠️ repo명은 `oh-my-beom`이지만 마켓플레이스 이름은 `syb1224`입니다(`marketplace.json`의 `name` 필드).
+> 1단계 없이 `install`만 하면 `Marketplace 'syb1224' not found`로 실패합니다.
+
+설치 후 Claude Code를 재시작하면 스킬·에이전트가 로드됩니다. 설치 확인:
+
+```bash
+claude plugin list | grep -A2 oh-my-beom
 ```
 
 ## 업데이트
@@ -22,7 +37,10 @@ claude plugin install oh-my-beom@syb1224
 또는 CLI:
 
 ```bash
-claude plugin update oh-my-beom
+# 1. 마켓플레이스 캐시를 먼저 최신화 (repo 최신 pull)
+claude plugin marketplace update syb1224
+# 2. 플러그인 갱신
+claude plugin update oh-my-beom@syb1224
 # 갱신이 안 잡히면 재설치:
 claude plugin install oh-my-beom@syb1224
 ```
