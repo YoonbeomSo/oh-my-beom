@@ -69,7 +69,7 @@ oh-my-beom/
 │   ├── qa-manager.md                 # 코드 리뷰, 스펙 검증, 기본 보안 체크
 │   ├── web-tester.md                 # E2E 테스트 생성+실행 (16 tools)
 │   └── web-test-runner.md            # E2E 테스트 실행 전용 (8 tools)
-├── skills/                           # 스킬 18개 (메인 4 + 유틸 14)
+├── skills/                           # 스킬 21개 (메인 4 + 유틸 17)
 │   ├── dev-beom/                     # 기능 개발
 │   ├── fix-beom/                     # 버그 수정
 │   ├── analysis-beom/                # 코드/정책 분석
@@ -79,7 +79,8 @@ oh-my-beom/
 │   ├── commit/                       # Git 커밋 (이슈키 파싱, pre-check)
 │   ├── pull-request/                 # GitHub PR 자동 생성
 │   ├── merge-request/                # GitLab MR 자동 생성
-│   ├── fetch-jira-issue/             # Jira 이슈 조회 (내부 유틸리티)
+│   ├── fetch-jira-issue/             # Jira/Confluence 조회 (공식 Atlassian MCP, 내부 유틸)
+│   ├── jira-api-handoff/             # Jira 이슈에 백엔드 API 변경 핸드오프 댓글 작성 (ADF)
 │   ├── fetch-jenkins/                # Jenkins 빌드 관리
 │   ├── fetch-elk/                    # ELK/Elasticsearch 로그 조회
 │   ├── branch-status/                # 여러 저장소 브랜치 merge 현황 표
@@ -127,16 +128,16 @@ oh-my-beom/
 
 ```bash
 # 기능 개발 (Jira 이슈 연동)
-/dev-beom https://jira.example.com/browse/PROJ-123 로그인 기능 추가
+/dev-beom https://your-site.atlassian.net/browse/PROJ-123 로그인 기능 추가
 
 # 버그 수정
-/fix-beom https://jira.example.com/browse/PROJ-456 결제 오류 수정
+/fix-beom https://your-site.atlassian.net/browse/PROJ-456 결제 오류 수정
 
 # 코드 분석
 /analysis-beom 결제 모듈 아키텍처 분석
 
 # 자율 실행 (질문 없이 끝까지)
-/persist-beom https://jira.example.com/browse/PROJ-789 사용자 인증 개선
+/persist-beom https://your-site.atlassian.net/browse/PROJ-789 사용자 인증 개선
 ```
 
 ### 유틸리티 스킬
@@ -147,6 +148,7 @@ oh-my-beom/
 /merge-request           # GitLab MR 생성 (커밋 히스토리 기반)
 /worktree create feature # Git worktree 생성
 /fetch-jenkins           # Jenkins 빌드 상태 조회
+/jira-api-handoff        # Jira 이슈에 백엔드 API 변경 핸드오프 댓글 작성 (ADF)
 /fetch-elk               # ELK/Elasticsearch 로그 조회·분석
 /branch-status           # 여러 저장소 브랜치 merge 현황을 시각적 표로 정리
 /humanizer               # AI 글쓰기 패턴 제거

@@ -17,7 +17,7 @@ CLAUDE.md "금지 사항"을 전부 준수한다. 추가로:
 
 - `ARGS`: 버그 설명. Jira URL 또는 이슈 키가 포함될 수 있다.
 
-ARGS 없이 호출 시: "수정할 버그를 설명해주세요. 예: `/fix-beom https://jira.example.com/browse/PROJ-456 결제 오류 수정`"
+ARGS 없이 호출 시: "수정할 버그를 설명해주세요. 예: `/fix-beom https://your-site.atlassian.net/browse/PROJ-456 결제 오류 수정`"
 
 ---
 

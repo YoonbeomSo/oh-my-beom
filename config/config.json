@@ -12,7 +12,7 @@
   "protectedPluginPaths": ["hooks/", "rules/", "config/", "agents/", "skills/", ".claude-plugin/", "CLAUDE.md"],
   "issueKey": {
     "pattern": "^[A-Z]+-[0-9]+$",
-    "description": "대문자 영문 1자 이상 + '-' + 숫자 1자 이상 (e.g., JIRA-123, AFS-6)"
+    "description": "대문자 영문 1자 이상 + '-' + 숫자 1자 이상 (e.g., JIRA-123, ABC-6)"
   },
   "sensitiveFilePatterns": [
     ".env*",

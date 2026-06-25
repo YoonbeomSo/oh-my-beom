@@ -1,6 +1,6 @@
 ---
 name: merge-request
-version: 1.2.0
+version: 1.3.0
 description: GitLab 저장소에서 커밋 히스토리로부터 제목과 본문을 자동 생성하여 MR 생성. target≠base 자동 정렬, 부수 변경 감지, cross-project 링크 정규화 포함.
 argument-hint: [base-branch] [target-branch] [--verify]
 allowed-tools:
@@ -109,7 +109,7 @@ allowed-tools:
 
 - 브랜치명에서 `[A-Z]+-[0-9]+` 패턴 추출.
 - 미발견 시 AskUserQuestion (옵션: "건너뛰기").
-- 이슈 키 발견 시 **"작업 배경" 섹션 첫 줄에만** 인용 블록으로 삽입한다 (Jira URL이 `JIRA_BASE_URL` env에 있으면 링크 형태). 최상단 별도 노출은 하지 않는다 — 중복 표기 금지.
+- 이슈 키 발견 시 **"작업 배경" 섹션 첫 줄에만** 인용 블록으로 삽입한다. 이슈 트래커 호스트는 **저장소에 하드코딩하지 않는다** — 커밋 메시지/브랜치 컨텍스트에 `https://{host}/browse/{KEY}` 형태 URL이 이미 있으면 그 호스트로 마크다운 링크를 만들고, 호스트를 모르면 **이슈 키 텍스트만** 인용한다(링크 없음). 최상단 별도 노출은 하지 않는다 — 중복 표기 금지.
 
 ## Target ≠ Base 자동 정렬 (Step 4 — 핵심 신규 기능)
 
@@ -247,6 +247,8 @@ MR 생성/갱신 후:
 
 ## 변경 이력
 
+- **v1.3.0**:
+  - **이슈 키 링크 생성 방식 변경** — `JIRA_BASE_URL` env 의존 제거. 커밋/브랜치 컨텍스트에 URL이 있으면 그 호스트로 링크 생성, 없으면 이슈 키 텍스트만 인용. 이슈 트래커 호스트 저장소 하드코딩 금지.
 - **v1.2.0**:
   - **명령 충돌 수정** — Step 3-1의 `update-index --chmod` + `checkout --` 동시 사용 제거 (덮어쓰기 버그).
   - **`--verify` 플래그 정식화** — argument-hint와 Arguments 섹션에 명시.
