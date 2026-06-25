@@ -17,7 +17,7 @@ CLAUDE.md "금지 사항"을 전부 준수한다. 추가로:
 
 - `ARGS`: 작업 설명. Jira URL(`*/browse/ISSUE-KEY`) 또는 이슈 키(`PROJECT-123`)가 포함될 수 있다.
 
-ARGS 없이 호출 시: "개발할 기능을 설명해주세요. 예: `/dev-beom https://jira.example.com/browse/PROJ-123 로그인 기능 추가`"
+ARGS 없이 호출 시: "개발할 기능을 설명해주세요. 예: `/dev-beom https://your-site.atlassian.net/browse/PROJ-123 로그인 기능 추가`"
 
 ---
 

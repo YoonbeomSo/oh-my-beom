@@ -79,7 +79,7 @@ Arguments:
 
 - `git branch --show-current`로 브랜치명을 확인한다.
 - 브랜치명에서 이슈 키 패턴 (`[A-Z]+-[0-9]+`)을 추출한다.
-- 예시: `feat/JIRA-123/login` → `JIRA-123`, `AFS-6/local-ddl` → `AFS-6`
+- 예시: `feat/JIRA-123/login` → `JIRA-123`, `PROJ-7/local-ddl` → `PROJ-7`
 - 미발견 시: AskUserQuestion으로 입력을 요청한다. "건너뛰기 (이슈 키 없이 진행)" 옵션을 포함한다.
 
 ## 커밋 메시지 생성
