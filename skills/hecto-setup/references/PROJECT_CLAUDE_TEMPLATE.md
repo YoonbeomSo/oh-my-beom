@@ -3,52 +3,40 @@ description:
 alwaysApply: true
 ---
 
-# HectoProject
+# MyProject
 
-Hecto Lab의 다양한 프로젝트를 포함하는 모노레포 워크스페이스입니다.
+Spring Boot 기반 백엔드 프로젝트입니다.
 
 ## 프로젝트 구조
 
 ```
-HectoProject/
-├── Config/                    # 인프라 설정 (Gateway, Config Server, DB)
-├── Healthcare/                # 헬스케어 API 서비스
-├── HectoApp/                  # 메인 앱 서비스
-├── HectoHealthcareHomePage/   # 헬스케어 홈페이지 (Gradle)
-├── HectoHomePage/             # 헥토 홈페이지
-├── Medibuddy/                 # 메디버디 서비스
-├── OKHilda/                   # OK힐다 서비스
-├── frontend/                  # 프론트엔드 프로젝트
-│   ├── ai-assistant/          # AI 어시스턴트
-│   ├── user-pc-v2/            # 유저 PC 버전
-│   └── user-v2/               # 유저 모바일 버전
-├── user-backend-v2/           # 유저 백엔드 v2 서비스들
-├── v2/                        # v2 관리자 서비스
-└── java-spring-thread-pool-test/  # 테스트 프로젝트
+MyProject/
+├── config/                    # 인프라 설정 (Gateway, Config Server, DB)
+├── service-a/                 # 서비스 A
+├── service-b/                 # 서비스 B
+└── frontend/                  # 프론트엔드 프로젝트
 ```
 
 ## 기술 스택
 
 ### Backend
 - **Java 17**
-- **Spring Boot 3.2.x**
+- **Spring Boot 3.x**
 - **Spring Cloud** (Eureka, Gateway, OpenFeign)
-- **JPA / QueryDSL 5.0**
+- **JPA / QueryDSL**
 - **MySQL**
-- **Ehcache** (캐싱)
-- **Resilience4j** (서킷 브레이커)
 
 ### Build Tools
 - **Gradle** (신규 프로젝트)
 - **Maven** (레거시 프로젝트)
 
 ### Frontend
-- Vue.js / Nuxt.js
+- Vue.js / Nuxt.js (또는 프로젝트 사용 기술 스택)
 
 ## 공통 패키지 구조
 
 ```
-com.hecto.lab/
+com.example.app/
 ├── common/          # 공통 설정, 예외 처리
 ├── constant/        # 상수 정의
 ├── controller/      # REST API 컨트롤러
@@ -77,9 +65,10 @@ mvn test
 
 ## 프로파일
 
+- `local` - 로컬 개발 환경
 - `test` - 테스트 환경
 - `stage` - 스테이징 환경
-- `real` - 운영 환경
+- `prod` - 운영 환경
 
 ## 코딩 컨벤션
 
@@ -148,6 +137,5 @@ mvn test
 
 ## 주의사항
 
-- 각 서브 프로젝트는 독립적인 Git 저장소일 수 있음
 - 환경별 설정 파일(`application-{profile}.properties`) 확인 필요
-- Eureka 서버 연동 시 서비스 등록 확인
+- 외부 서비스 연동 시 서비스 등록 및 설정 확인

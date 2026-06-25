@@ -32,7 +32,7 @@
 - **처리(확정)**: 라이브 Notion 조회는 하지 않는다. 대신 **설정 파일 키를 용도별로 분리**하여 혼선을 차단한다 — 검색용 collection ID와 페이지 생성용 data_source_id를 별개 키로 둔다 (예: `weeklyReportCollectionId` vs `weeklyReportDataSourceId`). architect/coder에게 이 키 분리 설계를 전달.
 
 ### 이슈 2 — 사내 식별자 노출 (옵션 A 채택, 전부 외부화)
-- **현상**: Notion data source ID 3개(주간보고/배포 트래커/TODO), 부모 페이지 URL, 사용자 UUID(소윤범)가 SKILL.md에 하드코딩됨. 저장소는 공개(MIT).
+- **현상**: Notion data source ID 3개(주간보고/배포 트래커/TODO), 부모 페이지 URL, 사용자 UUID가 SKILL.md에 하드코딩됨. 저장소는 공개(MIT).
 - **선례**: `fetch-elk` 스킬은 사내 ES/Kibana URL을 코드에 박지 않고 글로벌 설정 파일(`~/.claude/elk.settings.json`)에서 읽으며, 파일이 없으면 자동 생성 + 누락 키를 `AskUserQuestion`으로 하나씩 질의하고, "공개 저장소에 사내 주소를 절대 적지 않는다"를 명시적 규칙으로 둔다.
 - **처리(확정 — 옵션 A)**: 모든 식별자를 글로벌 설정 파일 `~/.claude/weekly-report.settings.json`으로 외부화한다.
   - SKILL.md에는 실제 식별자를 **일절** 두지 않고, 키 이름/용도만 placeholder(`<...>`)로 문서화한다.
@@ -51,8 +51,8 @@
   - [x] `weeklyReportDataSourceId` — 주간보고 페이지 생성용 data_source_id (`<uuid>` 계열) — **검색용과 별개 키로 분리** (이슈 1 혼선 방지)
   - [x] `deployTrackerCollectionId` — 배포 트래커 검색용
   - [x] `todoCollectionId` — TODO 보드 검색용
-  - [x] `parentPageUrl` — 부모 페이지 URL (헥토 헬스케어 개발)
-  - [x] `authorUserId` — 작성자 user ID (소윤범; 다른 작성자면 동적 치환)
+  - [x] `parentPageUrl` — 부모 페이지 URL
+  - [x] `authorUserId` — 작성자 user ID (다른 작성자면 동적 치환)
   - [x] fetch-elk 스키마 스타일(`default` + `environments`)을 따를지, 단일 평면 객체로 갈지 architect가 판단.
 - [x] **2. 디렉토리 생성** — `skills/weekly-report/` 생성.
 - [x] **3. SKILL.md 복원 작성** — 캐시 원본을 기반으로 작성하되 옵션 A 외부화 반영:
