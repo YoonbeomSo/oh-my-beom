@@ -1,7 +1,7 @@
 ---
 name: weekly-report
 version: 1.1.0
-description: 헥토헬스케어 주간보고를 Notion에 작성한다. 이전 주간보고 + TODO·배포 통합 트래커를 조합하여 새 주의 페이지를 생성한다. 식별자는 ~/.claude/weekly-report.settings.json에서 읽는다(없으면 자동 생성).
+description: 주간보고를 Notion에 작성한다. 이전 주간보고 + TODO·배포 통합 트래커를 조합하여 새 주의 페이지를 생성한다. 식별자는 ~/.claude/weekly-report.settings.json에서 읽는다(없으면 자동 생성).
 argument-hint: [기준일(YYYY-MM-DD, 생략 시 이번 주 목요일)]
 allowed-tools:
   - mcp__claude_ai_Notion__notion-search
@@ -14,7 +14,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-Notion 워크스페이스 "헥토 헬스케어 개발"의 주간보고 DB에 새 주의 보고서를 작성한다.
+Notion 워크스페이스(`CFG.workspaceName`)의 주간보고 DB에 새 주의 보고서를 작성한다.
 
 항상 한국어로 응답한다.
 
@@ -24,6 +24,9 @@ Notion 워크스페이스 "헥토 헬스케어 개발"의 주간보고 DB에 새
 
 | 설정 키 | 용도 | 표기 형식 |
 |---|---|---|
+| workspaceName | Notion 워크스페이스 표시명 | <워크스페이스명> |
+| parentPageTitle | 부모 페이지 표시명 | <페이지명> |
+| authorName | 주간보고 페이지 제목/검색에 쓰이는 작성자 표시명 | <작성자명> |
 | weeklyReportCollectionId | 주간보고 DB 검색 | collection://<uuid> |
 | weeklyReportDataSourceId | 주간보고 페이지 생성 parent | <uuid> |
 | trackerCollectionId | TODO·배포 통합 트래커 검색 | collection://<uuid> |
@@ -76,6 +79,9 @@ Notion 워크스페이스 "헥토 헬스케어 개발"의 주간보고 DB에 새
 
 ```json
 {
+  "workspaceName": "",
+  "parentPageTitle": "",
+  "authorName": "",
   "weeklyReportCollectionId": "",
   "weeklyReportDataSourceId": "",
   "trackerCollectionId": "",
@@ -88,14 +94,17 @@ Notion 워크스페이스 "헥토 헬스케어 개발"의 주간보고 DB에 새
 
 #### 0b. 누락 키 확인 → 빈 값만 1개씩 질문
 
-5개 키 중 값이 비어 있는 것만 `AskUserQuestion`으로 **한 번에 하나씩** 묻는다. 각 키의 응답을 받는 **즉시** `Write`로 설정 파일에 기록하고(일괄 아님), 다음 키로 넘어간다. 모두 채워져 있으면 질문 없이 진행.
+각 키 중 값이 비어 있는 것만 `AskUserQuestion`으로 **한 번에 하나씩** 묻는다. 각 키의 응답을 받는 **즉시** `Write`로 설정 파일에 기록하고(일괄 아님), 다음 키로 넘어간다. 모두 채워져 있으면 질문 없이 진행.
 
 질문 순서:
-1. `weeklyReportCollectionId` — "주간보고 DB collection ID?" (예: `collection://<uuid>`)
-2. `trackerCollectionId` — "TODO·배포 통합 트래커 collection ID?" (예: `collection://<uuid>`)
-3. `weeklyReportDataSourceId` — "주간보고 페이지 생성용 data_source_id (UUID)?"
-4. `parentPageUrl` — "부모 페이지 URL?" (예: `https://www.notion.so/<id>`)
-5. `authorUserId` — "작성자 user ID (UUID)?"
+1. `workspaceName` — "Notion 워크스페이스 이름?" (예: `내 팀 개발`)
+2. `parentPageTitle` — "주간보고 부모 페이지 표시명?" (예: `주간보고`)
+3. `authorName` — "주간보고 페이지 제목에 쓸 작성자 이름?" (예: `<작성자명>`)
+4. `weeklyReportCollectionId` — "주간보고 DB collection ID?" (예: `collection://<uuid>`)
+5. `trackerCollectionId` — "TODO·배포 통합 트래커 collection ID?" (예: `collection://<uuid>`)
+6. `weeklyReportDataSourceId` — "주간보고 페이지 생성용 data_source_id (UUID)?"
+7. `parentPageUrl` — "부모 페이지 URL?" (예: `https://www.notion.so/<id>`)
+8. `authorUserId` — "작성자 user ID (UUID)?"
 
 이후 Step 1~5의 `CFG.<키>` 표기는 모두 Step 0에서 로드한 설정값으로 **치환**하여 사용한다. `CFG.<키>` 문자열을 그대로 API 호출에 전달하지 않는다.
 
@@ -103,7 +112,7 @@ Notion 워크스페이스 "헥토 헬스케어 개발"의 주간보고 DB에 새
 
 ### 1단계: 이전 주간보고 페치
 
-주간보고 DB를 `notion-search`로 "주간보고_소윤범" 검색(data_source_url = `CFG.weeklyReportCollectionId`) 후 가장 최신(`BASE_DATE`보다 이전) 페이지를 찾고 `notion-fetch`로 내용을 가져온다. 이전 보고서의 "Next Week" 항목, "To-Do" 항목을 추출하여 이번 주 진행 컨텍스트로 활용한다.
+주간보고 DB를 `notion-search`로 "주간보고_" + `CFG.authorName` 검색(data_source_url = `CFG.weeklyReportCollectionId`) 후 가장 최신(`BASE_DATE`보다 이전) 페이지를 찾고 `notion-fetch`로 내용을 가져온다. 이전 보고서의 "Next Week" 항목, "To-Do" 항목을 추출하여 이번 주 진행 컨텍스트로 활용한다.
 
 ### 2단계: 통합 트래커 조회 (배포 + TODO)
 
@@ -136,7 +145,7 @@ Notion 워크스페이스 "헥토 헬스케어 개발"의 주간보고 DB에 새
   "parent": {"type": "data_source_id", "data_source_id": "<weeklyReportDataSourceId>"},
   "pages": [{
     "properties": {
-      "Name": "<BASE_DATE> 주간보고_소윤범",
+      "Name": "<BASE_DATE> 주간보고_<CFG.authorName>",
       "date:작성 일시:start": "<BASE_DATE>",
       "date:작성 일시:is_datetime": 0,
       "작성자": "[\"<authorUserId>\"]"

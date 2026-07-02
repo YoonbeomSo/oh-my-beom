@@ -37,12 +37,12 @@
 
 | 라운드 | 결과 | 내용 |
 |--------|------|------|
-| Round 1 | FAIL | Critical 1건(plan 파일에 사내 식별자 실값 `dfca2be4`/`03046688` 노출), Warning 3건(SKILL.md 모호 흐름, DoD 스코프 누락 등) |
+| Round 1 | FAIL | Critical 1건(plan 파일에 사내 식별자 실값 노출), Warning 3건(SKILL.md 모호 흐름, DoD 스코프 누락 등) |
 | Round 2 | PASS | 전부 해소 — plan 실값 placeholder 치환, DoD 스코프를 "추적 파일 전체"로 확장, 추적 파일 실값 0건 grep 검증 |
 
 ## 검증
 
-- `git grep`으로 `dfca2be4|03046688|dfda2be4|850a2be4|f5751207|2765f632` 검색 → `skills/`·`docs/show/`에서 실값 0건.
+- `git grep`으로 Notion data source ID 등 사내 식별자 검색 → `skills/`·`docs/show/`에서 실값 0건.
 - 커밋 변경 파일 6개 = 보고된 목록과 일치. 버전 3파일 2.19.0 일치.
 - 빌드/타입체크 없는 마크다운 기반 플러그인 — frontmatter 유효성·자동 발견·식별자 일관성·문서 동기화 중심 검증으로 충족.
 
