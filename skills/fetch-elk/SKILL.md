@@ -1,6 +1,6 @@
 ---
 name: fetch-elk
-description: Use when user asks to query ELK / Elasticsearch / Kibana logs, mentions "ELK", "엘크", "Kibana", "elasticsearch", "로그 조회", "에러 로그 찾아", "로그 분석", or shares an elk.* / kibana URL. Reads the Elasticsearch endpoint from ~/.claude/elk.settings.json (auto-creates the file and asks for esUrl/kibanaUrl one at a time if missing; auth is fixed to none), then performs index discovery, time-windowed log search, and error/field pattern extraction via the ES HTTP API directly. Determines target environment (real/test) from user's wording or URL before connecting; asks once with a 2-choice question when ambiguous (no default auto-selection).
+description: Use when user asks to query ELK / Elasticsearch / Kibana logs, mentions "ELK", "엘크", "Kibana", "elasticsearch", "로그 조회", "에러 로그 찾아", "로그 분석", or shares an elk.* / kibana URL. Reads the Elasticsearch/OpenSearch endpoint from ~/.claude/elk.settings.json (auto-creates the file and asks for esUrl/kibanaUrl, plus user/password when auth is basic, one at a time if missing), then performs index discovery, time-windowed log search, and error/field pattern extraction via the ES HTTP API directly. Determines target environment (real/test/staging) from user's wording or URL before connecting — "스테이징"/"STG"/stage-log URL means staging, not test; asks once with a 3-choice question when ambiguous (no default auto-selection).
 ---
 
 # Fetch ELK
@@ -9,13 +9,15 @@ description: Use when user asks to query ELK / Elasticsearch / Kibana logs, ment
 
 ELK 클러스터의 Elasticsearch HTTP API를 curl/python으로 직접 호출하여 **로그 검색·에러 패턴 추출**을 수행하는 skill. Kibana 웹 UI를 거치지 않고 ES에 직접 쿼리하므로 임의 조건/대량 추출이 가능하다.
 
-접속 대상 ES 엔드포인트(`esUrl`)·Kibana URL 은 **코드에 박지 않고** 글로벌 설정 파일 `~/.claude/elk.settings.json` 에서 읽는다. 이 파일은 사내 서버 주소를 담으므로 **플러그인 저장소(공개)에는 절대 커밋하지 않는다.** 인증은 `none` 고정이므로 자격증명은 저장하지 않는다.
+접속 대상 ES 엔드포인트(`esUrl`)·Kibana URL 은 **코드에 박지 않고** 글로벌 설정 파일 `~/.claude/elk.settings.json` 에서 읽는다. 이 파일은 사내 서버 주소와 (basic 인증 env의) 자격증명을 담으므로 **플러그인 저장소(공개)에는 절대 커밋하지 않는다.**
+
+환경은 셋이다: `real`(운영 ELK, 무인증) / `test`(개발서버 ELK, 무인증) / `staging`(스테이징 AWS OpenSearch, basic 인증). staging 로그는 real·test ELK 어디에도 실리지 않으므로 스테이징 이슈는 반드시 `staging` env로 조회한다.
 
 ## 접속 대상 (절대 규칙)
 
 - 이 스킬은 `~/.claude/elk.settings.json` 에 **등록된 ES 엔드포인트에만** 연동한다.
 - 설정에 없는 ES/Elasticsearch URL을 사용자가 요청하면, 먼저 설정 파일에 등록하도록 안내한 뒤 사용한다.
-- **환경(real/test) 먼저 결정 후 해당 env에만 접속. 모호하면 추측하지 말고 Step 0에서 되묻기.**
+- **환경(real/test/staging) 먼저 결정 후 해당 env에만 접속. 모호하면 추측하지 말고 Step 0에서 되묻기.**
 - **읽기 전용**: `_search`, `_count`, `_cat/*`, `_mapping`, `_msearch` 외의 호출(PUT/DELETE/POST 인덱스 작업)은 절대 금지.
 
 ## When to Use
@@ -24,7 +26,8 @@ ELK 클러스터의 Elasticsearch HTTP API를 curl/python으로 직접 호출하
 - "로그 조회", "에러 로그 찾아", "로그에서 ~검색", "로그 분석", "영향 범위", "어떤 사용자가 ~ 했어" 요청 시
 - 사용자가 `elk.*` / `kibana.*` URL을 공유한 경우
 - 메일/Slack 알림 외의 **전수(원본) 로그**가 필요한 분석
-- 환경 신호(운영/테스트 키워드·URL)가 있으면 해당 env 선택. 없으면 Step 0에서 1회 되묻기.
+- 환경 신호(운영/테스트/스테이징 키워드·URL)가 있으면 해당 env 선택. 없으면 Step 0에서 1회 되묻기.
+- Jira 이슈 제목의 `[STG]`, 스크린샷 URL의 `staging.*`·`stagingapi.*` 호스트, 스테이징 로그 대시보드(`stage-log.*`) URL 공유는 모두 `staging` 신호다.
 
 ## 조회 흐름
 
@@ -34,11 +37,11 @@ digraph fetch_elk {
     node [shape=box];
 
     parse [label="1. 요청 파싱\n(시간/서비스/키워드)"];
-    decide_env [label="0. 환경 결정\n(real/test?)" shape=diamond];
-    ask_env [label="AskUserQuestion\n운영(real)/테스트(test)\n(기본값 없음)"];
+    decide_env [label="0. 환경 결정\n(real/test/staging?)" shape=diamond];
+    ask_env [label="AskUserQuestion\n운영(real)/테스트(test)/스테이징(staging)\n(기본값 없음)"];
     check_file [label="1a. ~/.claude/elk.settings.json\n파일 존재?" shape=diamond];
-    create_file [label="파일 생성\n(auth:none 고정)"];
-    check_fields [label="1b. esUrl·kibanaUrl\n값 존재?" shape=diamond];
+    create_file [label="파일 생성\n(real·test auth:none,\nstaging auth:basic)"];
+    check_fields [label="1b. esUrl·kibanaUrl\n(+basic이면 user·password)\n값 존재?" shape=diamond];
     ask_one [label="누락 항목만\nAskUserQuestion 1개씩"];
     write_back [label="받은 값을\n설정 파일에 기록"];
     discover [label="3. 인덱스 발견\n_cat/indices"];
@@ -49,7 +52,7 @@ digraph fetch_elk {
     aggregate [label="8. 고유값 집계 +\n외부 데이터와 교차 검증"];
 
     parse -> decide_env;
-    decide_env -> check_file [label="명확(real/test)"];
+    decide_env -> check_file [label="명확(real/test/staging)"];
     decide_env -> ask_env [label="모호"];
     ask_env -> check_file;
     check_file -> create_file [label="no"];
@@ -67,7 +70,7 @@ digraph fetch_elk {
 }
 ```
 
-## Step 0: 환경 결정 (real/test)
+## Step 0: 환경 결정 (real/test/staging)
 
 접속 전에 **반드시** 대상 환경을 확정한다. 모호하면 운영 기본선택 안 함 — `default` 키는 자동선택 근거가 아님.
 
@@ -76,37 +79,45 @@ digraph fetch_elk {
 | 신호 | 판정 |
 |---|---|
 | "운영", "운영ELK", "real", "prod", "프로덕션", "라이브" 또는 운영 elk.* URL | `real` |
-| "테스트", "스테이징", "staging", "test" 또는 test-elk.* / staging-elk.* URL | `test` |
+| "테스트", "test", "개발서버" 또는 test-elk.* URL | `test` |
+| "스테이징", "staging", "stage", "STG", "[STG]" 또는 stage-log.* / staging.* / stagingapi.* / stagingweb.* URL | `staging` |
 | 신호 없음("elk 조사해", "로그 조회", "에러 로그 찾아") 또는 신호 상충 | 모호 → 되묻기 |
+
+> "스테이징"은 `test`가 아니다. 스테이징 서버(`stagingapi.*`)의 로그는 test ELK에 없다. 과거 매핑(스테이징→test)으로 조회하면 0건이 나오면서 "실패 없음"으로 오판한다.
 
 ### 모호 시 되묻기
 
-모호할 때만 `AskUserQuestion` **1회**, 2지선다:
+모호할 때만 `AskUserQuestion` **1회**, 3지선다:
 
-> 어느 환경의 ELK를 조회할까요?
+> 어느 환경의 로그를 조회할까요?
 > 1. 운영(real)
 > 2. 테스트(test)
+> 3. 스테이징(staging)
 
-**기본값 없음** — 운영 오접속 방지. 사용자 선택 후 해당 `ENV_NAME`("real" 또는 "test")으로 확정하고 Step 1로 진행. 명확한 경우 이 질문을 건너뜀.
+**기본값 없음** — 운영 오접속 방지. 사용자 선택 후 해당 `ENV_NAME`("real" | "test" | "staging")으로 확정하고 Step 1로 진행. 명확한 경우 이 질문을 건너뜀.
 
 ## Step 1: 접속 설정 로드 (`~/.claude/elk.settings.json`)
 
-Step 0에서 확정된 `ENV_NAME`("real" 또는 "test")을 기준으로 설정을 로드한다. 순서는 **(1a) 파일 존재 확인 → (1b) 선택 env의 필수 필드(`esUrl`·`kibanaUrl`) 값 확인**이며, 누락된 것만 실행자에게 하나씩 물어본다. 보안 민감 정보이므로 저장소가 아니라 글로벌 `~/.claude/` 아래에만 둔다.
+Step 0에서 확정된 `ENV_NAME`("real" | "test" | "staging")을 기준으로 설정을 로드한다. 순서는 **(1a) 파일 존재 확인 → (1b) 선택 env의 필수 필드(`esUrl`·`kibanaUrl`, `auth.type`이 `basic`이면 `auth.user`·`auth.password`까지) 값 확인**이며, 누락된 것만 실행자에게 하나씩 물어본다. 보안 민감 정보이므로 저장소가 아니라 글로벌 `~/.claude/` 아래에만 둔다.
 
 ### 1a. 파일 존재 확인 → 없으면 생성
 
-`~/.claude/elk.settings.json` 이 없으면 아래 골격으로 **새로 생성**한다. 실제 생성 시 `esUrl`·`kibanaUrl` 은 **빈 문자열(`""`)로 둔다**(아래 스키마의 `<...>` 는 구조 참조용 표기이며, real·test 두 env 모두 빈 문자열로 생성). 1b에서 채운다. `auth` 는 항상 `{"type": "none"}` 으로 **고정**한다(이 스킬은 무인증 ES 전용 — auth 는 절대 묻지 않는다).
+`~/.claude/elk.settings.json` 이 없으면 아래 골격으로 **새로 생성**한다. 실제 생성 시 `esUrl`·`kibanaUrl`·`auth.user`·`auth.password` 는 **빈 문자열(`""`)로 둔다**(아래 스키마의 `<...>` 는 구조 참조용 표기). 1b에서 채운다. `auth.type` 은 env별로 고정이다 — `real`·`test` 는 `none`, `staging` 은 `basic`. **type 자체는 묻지 않는다.**
+
+파일은 있는데 `staging` 키가 없으면(구버전 설정) `environments.staging` 을 위 골격대로 추가한 뒤 1b로 간다.
 
 ### 1b. 필수 필드 확인 → 누락분만 1개씩 질문
 
-**Step 0에서 선택된 env(`ENV_NAME`)에서** `esUrl`, `kibanaUrl` 값이 채워져 있는지 확인한다. **비어 있거나 없는 항목만** `AskUserQuestion` 으로 **한 번에 하나씩** 실행자에게 묻고, 받은 값을 설정 파일에 기록한 뒤 진행한다. 다른 env 값으로 fallback 금지.
+**Step 0에서 선택된 env(`ENV_NAME`)에서** `esUrl`, `kibanaUrl` 값이 채워져 있는지 확인한다. `auth.type` 이 `basic` 이면 `auth.user`, `auth.password` 도 확인한다. **비어 있거나 없는 항목만** `AskUserQuestion` 으로 **한 번에 하나씩** 실행자에게 묻고, 받은 값을 설정 파일에 기록한 뒤 진행한다. 다른 env 값으로 fallback 금지.
 
-- `esUrl` 누락 → "`{ENV_NAME}` ES 엔드포인트 URL?" 질문 (예: `http://<host>:9200`) — 필수
-- `kibanaUrl` 누락 → "`{ENV_NAME}` Kibana URL?" 질문 (예: `https://<kibana-host>`) — CSV export / index UID 매핑 참조용
+- `esUrl` 누락 → "`{ENV_NAME}` ES 엔드포인트 URL?" 질문 (예: `http://<host>:9200`, staging은 `https://<opensearch-host>`) — 필수
+- `kibanaUrl` 누락 → "`{ENV_NAME}` Kibana/Dashboards URL?" 질문 (예: `https://<kibana-host>`, staging은 `https://<opensearch-host>/_dashboards`) — CSV export / index UID 매핑 참조용
+- (basic만) `auth.user` 누락 → "`{ENV_NAME}` OpenSearch 로그인 아이디?" 질문
+- (basic만) `auth.password` 누락 → "`{ENV_NAME}` OpenSearch 비밀번호?" 질문 — 받은 값은 설정 파일에만 기록하고 **대화·세션 문서·로그에 다시 출력하지 않는다**
 
-> - 두 값이 모두 채워져 있으면 **질문 없이** 바로 Step 2로 진행한다.
-> - 한 번에 하나씩만 물어본다(esUrl 먼저, 그다음 kibanaUrl). 두 개를 한 질문에 묶지 않는다.
-> - `auth` 는 묻지 않는다. 항상 `none` 고정.
+> - 필수 값이 모두 채워져 있으면 **질문 없이** 바로 Step 2로 진행한다.
+> - 한 번에 하나씩만 물어본다(esUrl → kibanaUrl → user → password). 여러 개를 한 질문에 묶지 않는다.
+> - `auth.type` 은 묻지 않는다. env별 고정(real·test=none, staging=basic).
 
 ### 파일 스키마
 
@@ -123,12 +134,17 @@ Step 0에서 확정된 `ENV_NAME`("real" 또는 "test")을 기준으로 설정�
       "esUrl": "http://<TEST_ES_HOST>:9200",
       "kibanaUrl": "https://<TEST_KIBANA_HOST>",
       "auth": { "type": "none" }
+    },
+    "staging": {
+      "esUrl": "https://<STAGING_OPENSEARCH_HOST>",
+      "kibanaUrl": "https://<STAGING_OPENSEARCH_HOST>/_dashboards",
+      "auth": { "type": "basic", "user": "<USER>", "password": "<PASSWORD>" }
     }
   }
 }
 ```
 
-> `auth` 는 `{"type": "none"}` 으로 **고정**이다 — 이 스킬은 무인증 ES 전용이며 인증 방식을 묻거나 바꾸지 않는다.
+> `auth.type` 은 env별 고정이다 — `real`·`test` 는 `none`(무인증 ES), `staging` 은 `basic`(AWS OpenSearch 내부 사용자). 인증 방식 자체를 묻거나 바꾸지 않는다. `staging` 은 ES REST가 호스트 루트(`/_cat/indices`, `/{index}/_search`)에 노출되고 Dashboards 는 `/_dashboards` 경로다. 무인증 호출은 401 `Authentication required` 로 거절된다.
 
 > `default` 는 참고용으로만 남긴다. 환경 결정은 Step 0이 담당하며, **모호 시 default 자동진행 금지**.
 
@@ -140,22 +156,37 @@ Step 0에서 확정된 `ENV_NAME`("real" 또는 "test")을 기준으로 설정�
 import json, os
 PATH = os.path.expanduser("~/.claude/elk.settings.json")
 CFG  = json.load(open(PATH))
-ENV_NAME = "real"  # ← Step 0 결정값("real"|"test")으로 치환. default 자동사용 금지
+ENV_NAME = "real"  # ← Step 0 결정값("real"|"test"|"staging")으로 치환. default 자동사용 금지
 ENV = CFG["environments"][ENV_NAME]
 ES, KIBANA = ENV["esUrl"], ENV.get("kibanaUrl")
-# auth 는 none 고정 — 인증 헤더/옵션 없음
+AUTH = ENV.get("auth", {"type": "none"})
+
+def auth_headers():
+    if AUTH.get("type") != "basic":
+        return {}
+    import base64
+    token = base64.b64encode(f'{AUTH["user"]}:{AUTH["password"]}'.encode()).decode()
+    return {"Authorization": f"Basic {token}"}
 ```
 
-`auth` 가 `none` 고정이므로 ES 호출 시 인증 헤더·옵션을 붙이지 않는다(`urllib`/curl 호출에 `-u`/`Authorization` 헤더 불필요). ES 호출은 `requests` 같은 외부 패키지 없이 `curl` + python3 표준 라이브러리(`urllib`)로만 수행한다.
+`auth.type` 이 `none` 이면 인증 헤더·옵션을 붙이지 않는다. `basic` 이면 모든 호출에 `auth_headers()` 를 합치고, curl 은 `-u "$USER:$PASS"` 를 쓴다(값은 설정 파일에서 읽어 셸 변수로만 전달, 명령 문자열에 직접 박지 않는다). ES 호출은 `requests` 같은 외부 패키지 없이 `curl` + python3 표준 라이브러리(`urllib`)로만 수행한다.
+
+```bash
+# curl 용 (basic env)
+read -r ES_USER ES_PASS < <(python3 -c "import json,os;e=json.load(open(os.path.expanduser('~/.claude/elk.settings.json')))['environments']['${ENV_NAME}']['auth'];print(e.get('user',''),e.get('password',''))")
+CURL_AUTH=(); [ -n "$ES_USER" ] && CURL_AUTH=(-u "$ES_USER:$ES_PASS")
+curl -s --max-time 15 "${CURL_AUTH[@]}" "${ES}/_cat/indices?format=json"
+```
 
 ## Step 2: 인덱스 발견
 
 서비스/도메인을 모르면 항상 `_cat/indices` 부터 호출하여 인덱스 목록을 확인한다. (`$ES` 는 Step 1에서 로드한 `esUrl`)
 
 ```bash
-ENV_NAME="real"   # 또는 "test" — Step 0 환경 결정 결과로 설정
+ENV_NAME="real"   # "test" | "staging" — Step 0 환경 결정 결과로 설정
 ES="$(python3 -c "import json,os;c=json.load(open(os.path.expanduser('~/.claude/elk.settings.json')));print(c['environments']['${ENV_NAME}']['esUrl'])")"
-curl -s --max-time 15 "${ES}/_cat/indices?format=json&bytes=mb" \
+# basic env(staging)면 Step 1 헬퍼의 CURL_AUTH 배열을 함께 넘긴다
+curl -s --max-time 15 "${CURL_AUTH[@]}" "${ES}/_cat/indices?format=json&bytes=mb" \
   | python3 -c "
 import sys, json
 rows = [r for r in json.load(sys.stdin) if not r['index'].startswith('.')]
@@ -177,6 +208,16 @@ for r in rows[:30]:
 | `admin-YYYY.MM` | 어드민 |
 | `eureka-YYYY.MM` | Eureka 서비스 디스커버리 |
 | `gateway-YYYY.MM` | (구) gateway 로그 |
+
+환경별 특징:
+
+| env | 인덱스 형태 | 서비스 구분 필드 |
+|---|---|---|
+| `real` | `store-`·`gw-`·`healthcare-`·`admin-` 월별 분리 | `app.name.keyword`, `host.hostname.keyword` |
+| `test` | `test-YYYY.MM` 단일 인덱스 | `log.file.path.keyword`(`.../boot_<service>/logs/logback.log`) |
+| `staging` | AWS OpenSearch 3.x. 인덱스 명명은 `_cat/indices` 로 확인 [확인필요: 첫 접속 후 이 표 갱신] | 첫 접속 후 `_mapping` 으로 확인 |
+
+staging 서버는 real·test 인덱스에 **한 건도 실리지 않는다.** 스테이징 이슈를 real/test 에서 0건으로 확인하고 "실패 없음"이라 판정하지 않는다.
 
 ## Step 3: 시간 윈도 계산 — 핵심 함정
 
@@ -272,7 +313,7 @@ def es_search(index, body):
     req = urllib.request.Request(
         f"{ES}/{index}/_search",
         data=json.dumps(body).encode(),
-        headers={"Content-Type": "application/json"},
+        headers={"Content-Type": "application/json", **auth_headers()},
         method="POST",
     )
     with urllib.request.urlopen(req, timeout=30) as resp:
@@ -325,12 +366,15 @@ out_path.write_text(json.dumps({
 
 | 증상 | 원인 | 대응 |
 |---|---|---|
-| `~/.claude/elk.settings.json` 없음 | 최초 실행 | Step 1a대로 파일 생성(auth:none 고정) 후, 1b에서 누락 필드만 1개씩 질문 |
+| `~/.claude/elk.settings.json` 없음 | 최초 실행 | Step 1a대로 파일 생성(real·test auth:none, staging auth:basic) 후, 1b에서 누락 필드만 1개씩 질문 |
+| 파일은 있는데 `staging` 키 없음 | 구버전 설정 | Step 1a대로 `environments.staging` 골격 추가 후 1b 진행 |
 | `esUrl`/`kibanaUrl` 빈 값 | 필드 미입력 | Step 1b대로 누락 항목만 `AskUserQuestion` 1개씩 → 파일에 기록 |
-| 환경 판단 불가("로그 조회" 등 신호 없음) | 발화 모호 | Step 0대로 `AskUserQuestion` 1회 2지선다(운영/테스트, 기본값 없음) |
-| 선택 env(`real`/`test`) 필드 누락 | 해당 env 미설정 | Step 1b대로 그 env 누락 항목만 질문. 다른 env 값으로 fallback 금지 |
+| 환경 판단 불가("로그 조회" 등 신호 없음) | 발화 모호 | Step 0대로 `AskUserQuestion` 1회 3지선다(운영/테스트/스테이징, 기본값 없음) |
+| 선택 env(`real`/`test`/`staging`) 필드 누락 | 해당 env 미설정 | Step 1b대로 그 env 누락 항목만 질문. 다른 env 값으로 fallback 금지 |
 | `connection refused` / timeout | 사내망 미접속 | VPN/사내망 연결 확인 후 재시도 |
-| `401 / 403` | ES가 인증 요구 (이 스킬은 무인증 전용) | 무인증 접근 가능한 ES인지·네트워크 경로 확인 |
+| `401 Authentication required` (staging) | basic 자격증명 누락·오류 | 설정 파일 `staging.auth.user/password` 확인. 비어 있으면 1b대로 질문 |
+| `401 / 403` (real/test) | 무인증 ES가 인증 요구 | 네트워크 경로·프록시 확인. real/test 에 자격증명을 추가하지 않는다 |
+| `405` on `HEAD /_cat/indices` (staging) | OpenSearch가 HEAD 미지원 | 정상. GET 으로 호출 |
 | `index_not_found_exception` | 인덱스 패턴 오타 | `_cat/indices` 로 실제 인덱스명 확인 |
 | `parsing_exception: malformed query` | JSON body 안 `aggs` 와 `query` 키 위치 잘못됨 | 최상위 키와 `query.bool.filter` 의 중첩 구조 확인 |
 | 매치 0건인데 데이터는 있을 것 같음 | (1) 시간대 변환 누락 (2) 월 rotation으로 다른 인덱스 (3) `match_phrase` analyzer 영향 | KST→UTC 재확인, 전월 인덱스 추가, 다른 키워드(`RESULT_CODE`, `BaseController.java` 등)로 대체 |
@@ -339,8 +383,10 @@ out_path.write_text(json.dumps({
 ## Common Mistakes
 
 - **설정을 코드에 하드코딩**: ES 주소(`esUrl`)·Kibana URL 은 항상 `~/.claude/elk.settings.json` 에서 읽는다. 저장소(공개)에 절대 적지 않는다.
-- **auth 를 묻거나 바꿈**: 이 스킬은 무인증 전용. `auth` 는 `none` 고정이며 인증 방식을 질문하지 않는다.
-- **필수 필드 누락분을 한 질문에 묶음**: `esUrl`·`kibanaUrl` 은 누락분만 `AskUserQuestion` 으로 **하나씩** 묻는다.
+- **auth.type 을 묻거나 바꿈**: env별 고정(real·test=none, staging=basic). 인증 방식 자체를 질문하지 않고, basic env 는 누락된 user/password 만 묻는다.
+- **비밀번호를 대화에 되풀이**: 받은 password 는 설정 파일에만 쓴다. 요약·세션 문서·커밋 메시지에 남기지 않는다.
+- **스테이징을 test 로 조회**: "스테이징"·"STG"·staging.* URL 은 `staging` env 다. test ELK 에는 스테이징 로그가 없어 0건이 "정상"으로 보인다.
+- **필수 필드 누락분을 한 질문에 묶음**: `esUrl`·`kibanaUrl`(·`user`·`password`) 은 누락분만 `AskUserQuestion` 으로 **하나씩** 묻는다.
 - **KST→UTC 변환 누락**: 가장 흔한 실수. 새벽 시간대는 전월 인덱스에 있다.
 - **모든 Java exception이 검색된다고 가정**: `IllegalArgumentException`, `must not be null` 등은 phrase로 못 잡는 경우 있음. 더 유니크한 키워드 사용.
 - **단일 인덱스만 검색**: KST 새벽 ~ 오전이 포함되면 반드시 멀티 인덱스(`store-2026.05,store-2026.06`).
@@ -349,4 +395,4 @@ out_path.write_text(json.dumps({
 - **multiline 묶음 무시**: 같은 트랜잭션의 ELK_START/Request body/ERROR/스택트레이스가 한 doc인지 분리된 doc인지 확인 (샘플 doc의 `len(message)` 와 `log.flags` 로 판단).
 - **무인증이라고 함부로 인덱스 변경/삭제**: 이 스킬은 **읽기 전용**. `_search`, `_count`, `_cat/*`, `_mapping` 외의 호출(PUT/DELETE/POST 인덱스 작업)은 절대 금지.
 - **환경 추측·기본값 자동선택**: 발화가 모호하면 Step 0에서 반드시 되묻는다. `default` 키를 근거로 자동진행 금지.
-- **test 필드를 real 값으로 fallback**: 선택 env에 필드가 없으면 다른 env로 채우지 않는다. 해당 env의 값을 1b에서 직접 질문한다.
+- **다른 env 값으로 fallback**: 선택 env에 필드가 없으면 다른 env로 채우지 않는다. 해당 env의 값을 1b에서 직접 질문한다.
